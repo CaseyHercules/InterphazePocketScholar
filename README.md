@@ -1,2 +1,3 @@
-# Interphaze Pocket Scholar - Place to update your interphaze Character
-Hopefully will replace the wordpress version
+# Interphaze Pocket Scholar
+The place to update your Interphaze Character
+Hopefully will replace the WordPress site

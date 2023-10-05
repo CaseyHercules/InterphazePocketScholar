@@ -13,16 +13,12 @@ const SignIn = () => {
         <p></p>
         <p></p>
         <p></p>
-        <p className="text-sm max-w-xs mx-auto">
-          By continuing, you are setting up a Interphaze account and agree to
-          our User Agreement and Privacy Policy.
-        </p>
       </div>
       <p className="px-8 text-center text-sm text-muted-foreground">
         New to Interphaze?{" "}
         <Link
           href="/sign-up"
-          className="hover:text-brand text-sm underline underline-offset-4"
+          className="hover:text-primary text-sm underline underline-offset-4"
         >
           Sign Up
         </Link>

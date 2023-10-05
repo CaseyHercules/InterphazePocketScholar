@@ -9,6 +9,7 @@ import axios, { AxiosError } from "axios";
 import { RequestValidatorPayload } from "@/lib/validators/requests";
 import { toast } from "@/hooks/use-toast";
 import { useCustomToast } from "@/hooks/use-custom-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 const page = () => {
   const router = useRouter();
@@ -53,11 +54,12 @@ const page = () => {
       });
     },
     onSuccess: (data) => {
-      return toast({
+      toast({
         title: "Request sent",
         description: "This reviewed by the Phaze team, Thank you!",
         variant: "default",
       });
+      router.push("/requests");
     },
   });
 
@@ -76,12 +78,13 @@ const page = () => {
         <hr className="bg-foreground h-px" />
 
         <div>
-          <p className="text-lg font-medium">Request Title</p>
+          {/* <p className="text-lg font-medium">Request Title</p> */}
           <div className="relative pb-4">
             <Input
               value={title}
+              placeholder="Title of request (e.g. New Spell or Ability)"
               onChange={(e) => setTitle(e.target.value)}
-              className="pl-6"
+              className="pl-2.5"
             />
           </div>
           {/* <p className="text-lg font-medium">Request Type</p>
@@ -92,12 +95,13 @@ const page = () => {
               className="pl-6"
             />
           </div> */}
-          <p className="text-lg font-medium">Request description</p>
+          {/* <p className="text-lg font-medium">Request description</p> */}
           <div className="relative">
-            <Input
+            <Textarea
               value={description}
+              placeholder="Please describe your request in detail"
+              className="resize-y"
               onChange={(e) => setDesc(e.target.value)}
-              className="pl-6"
             />
           </div>
         </div>

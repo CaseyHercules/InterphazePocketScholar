@@ -37,7 +37,9 @@ const NavBar = async () => {
 
           {/* search bar */}
           {session?.user ? (
-            <UserAccountNav user={session.user} />
+            <div className="hidden sm:block">
+              <UserAccountNav user={session.user} />
+            </div>
           ) : (
             <div className="hidden sm:block">
               <Link href="/login" className={buttonVariants()}>

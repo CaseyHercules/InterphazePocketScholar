@@ -2,6 +2,7 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
+import CreatePostMini from "@/components/CreatePostMini";
 
 interface pageProps {
   params: {
@@ -46,6 +47,7 @@ const page = async ({ params }: pageProps) => {
       ) : (
         <div>Not Authed</div>
       )}
+      <CreatePostMini session={session} />
 
       {/* <ul>
         {topic.posts.map((post) => (

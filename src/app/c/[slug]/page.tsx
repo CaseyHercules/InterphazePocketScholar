@@ -33,7 +33,7 @@ const page = async ({ params }: pageProps) => {
     where: { id: session?.user?.id },
   });
 
-  // if (!topic) return notFound();
+  if (!topic) return notFound();
 
   return (
     <>

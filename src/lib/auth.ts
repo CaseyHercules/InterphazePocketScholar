@@ -1,5 +1,6 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import {db} from "./db";
+import { Role } from "@prisma/client";
 import { NextAuthOptions, getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import Wordpress from "next-auth/providers/wordpress";
@@ -50,12 +51,18 @@ export const authOptions: NextAuthOptions = {
                     data: { username: nanoid(10) },
                 })
             }
+            
             return {
                 id: dbUser.id,
                 name: dbUser.name,
                 email: dbUser.email,
                 image: dbUser.image,
                 username: dbUser.username,
+                role: dbUser.role,
+                isAdmin: dbUser.role === Role.ADMIN,
+                isRoot: dbUser.role === Role.SUPERADMIN,
+                isSpellWright: dbUser.role === Role.SPELLWRIGHT,
+                isModerator: dbUser.role === Role.MODERATOR
             };
         },
         redirect() {

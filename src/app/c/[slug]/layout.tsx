@@ -2,9 +2,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { format } from "date-fns";
 import { Role } from "@prisma/client";
-import { map } from "zod";
+import { User } from "lucide-react";
 
 const Layout = async ({
   children,
@@ -14,9 +13,12 @@ const Layout = async ({
   params: { slug: string };
 }) => {
   const session = await getAuthSession();
-  const UserObj = await db.user.findFirst({
-    where: { id: session?.user?.id },
-  });
+  const UserObj = session?.user
+    ? await db.user.findFirst({
+        where: { id: session?.user?.id },
+      })
+    : null;
+
   const topic = await db.topic.findFirst({
     where: { title: slug },
     include: {
@@ -27,18 +29,22 @@ const Layout = async ({
       },
     },
   });
+  console.log(session);
+  console.log(session);
+  console.log(session?.user?.id);
+  console.log(UserObj);
 
   return (
     <div className="sm:container max-w-7xl mx-auto h-full">
       <div>
         {/* Button to back */}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:map-x-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:map-x-4 py-8">
           <div className="flex flex-col col-span-2 space-y-6">{children}</div>
 
-          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last">
-            <div className="px-6 py-2">
-              <p className="font-semibold text-center capitalize">
+          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last hidden md:block">
+            <div className="px-6">
+              <p className="font-semibold py-3 text-center capitalize">
                 Quick Navigation
               </p>
             </div>
@@ -52,9 +58,9 @@ const Layout = async ({
                     variant: "outline",
                     className: "w-full mb-6",
                   })}
-                  href={`c/${slug}/create`}
+                  href={`/c/${slug}/create`}
                 >
-                  Create Post
+                  {session?.user.email}
                 </Link>
               ) : (
                 <div></div>

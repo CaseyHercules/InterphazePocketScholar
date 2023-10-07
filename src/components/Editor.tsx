@@ -191,7 +191,7 @@ export const Editor: React.FC<EditorProps> = ({ topicId }) => {
             placeholder="Title"
             className="w-full resize-none appearance-none overflow-hidden bg-transparent text-5xl font-bold focus:outline-none"
           />
-          <div id="editor" className="min-h-[500px]" />
+          <div id="editor" className="min-h-[100px]" />
         </div>
       </form>
     </div>

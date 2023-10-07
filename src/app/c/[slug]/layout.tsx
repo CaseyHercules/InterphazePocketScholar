@@ -29,11 +29,6 @@ const Layout = async ({
       },
     },
   });
-  console.log(session);
-  console.log(session);
-  console.log(session?.user?.id);
-  console.log(UserObj);
-
   return (
     <div className="sm:container max-w-7xl mx-auto h-full">
       <div>

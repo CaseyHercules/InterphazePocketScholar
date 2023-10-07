@@ -55,7 +55,7 @@ const Layout = async ({
                   })}
                   href={`/c/${slug}/create`}
                 >
-                  {session?.user.email}
+                  Create Post
                 </Link>
               ) : (
                 <div></div>

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
 import CreatePostMini from "@/components/CreatePostMini";
+import PostList from "@/components/PostList";
+import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
 
 interface pageProps {
   params: {
@@ -24,7 +26,7 @@ const page = async ({ params }: pageProps) => {
         orderBy: {
           title: "asc",
         },
-        take: 10,
+        take: INFINITE_SCROLL_PAGINATION_RESULTS,
       },
     },
   });
@@ -41,11 +43,7 @@ const page = async ({ params }: pageProps) => {
         Page title: {slug}
       </h1>
 
-      {UserObj?.role != Role.USER ? (
-        <div>{/* <CreatePostMini session={session} /> */}</div>
-      ) : (
-        <div className="hidden">Not Authed</div>
-      )}
+      <PostList initialPosts={topic.posts} topicName={topic.title} />
 
       {/* <ul>
         {topic.posts.map((post) => (

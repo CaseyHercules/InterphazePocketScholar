@@ -40,14 +40,12 @@ const page = async ({ params }: pageProps) => {
       <h1 className="font-bold text-3xl md:text-4xl h-14">
         Page title: {slug}
       </h1>
-      <p>topic if exists: {topic?.title}</p>
 
       {UserObj?.role != Role.USER ? (
-        <div>Create Post Button</div>
+        <div>{/* <CreatePostMini session={session} /> */}</div>
       ) : (
-        <div>Not Authed</div>
+        <div className="hidden">Not Authed</div>
       )}
-      <CreatePostMini session={session} />
 
       {/* <ul>
         {topic.posts.map((post) => (

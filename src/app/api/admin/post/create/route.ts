@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { TopicValidator } from "@/lib/validators/topics";
 import { z } from "zod";
 import { Role } from "@prisma/client";
+import { PostValidator } from "@/lib/validators/post";
 
 export async function POST(req: Request) {
     try {
@@ -16,19 +17,22 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json()
-        const {title} = TopicValidator.parse(body)
+        const {topicId, title, content} = PostValidator.parse(body)
 
-        const topic = await db.topic.create({
+        await db.post.create({
             data: {
                 title,
+                content,
+                userId: session?.user?.id,
+                topicId,
             }})
-            return new Response(topic.title)
+            return new Response('OK')
     } catch (error) {
         if(error instanceof z.ZodError) {
             return new Response(error.message, { status: 422 })
         }
 
-        return new Response('Could not process request', { status: 500 })
+        return new Response('Could not post to this topic, please try again later', { status: 500 })
 
         
     }

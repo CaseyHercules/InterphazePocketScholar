@@ -3,6 +3,8 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { format } from "date-fns";
+import { Role } from "@prisma/client";
+import { map } from "zod";
 
 const Layout = async ({
   children,
@@ -12,6 +14,9 @@ const Layout = async ({
   params: { slug: string };
 }) => {
   const session = await getAuthSession();
+  const UserObj = await db.user.findFirst({
+    where: { id: session?.user?.id },
+  });
   const topic = await db.topic.findFirst({
     where: { title: slug },
     include: {
@@ -24,7 +29,7 @@ const Layout = async ({
   });
 
   return (
-    <div className="sm:container max-w-7xl mx-auto h-full pt-12">
+    <div className="sm:container max-w-7xl mx-auto h-full">
       <div>
         {/* Button to back */}
 
@@ -32,36 +37,30 @@ const Layout = async ({
           <div className="flex flex-col col-span-2 space-y-6">{children}</div>
 
           <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last">
-            <div className="px-6 py-4">
-              <p className="font-semibold py-3">About {slug}</p>
+            <div className="px-6 py-2">
+              <p className="font-semibold text-center capitalize">
+                Quick Navigation
+              </p>
             </div>
 
-            <dl className="divide-y divide-gray-100 px-6 py-4 text-sm leading-6 bg-white">
-              <div className="flex justify-between gap-x-4 py-3">
-                <dt className="text-gray-500">Created</dt>
-                <dd className="text-gray-700">
-                  <time dateTime={topic?.createdAt.toDateString()}>
-                    {/* {format(topic!.createdAt, "MMMM d, yyyy")} */}
-                  </time>
-                </dd>
-              </div>
-              <div className="flex justify-between gap-x-4 py-3">
-                <dt className="text-gray-500">Members</dt>
-                <dd className="flex items-start gap-x-2">
-                  <div className="text-gray-900">34</div>
-                </dd>
-              </div>
-
-              <Link
-                className={buttonVariants({
-                  variant: "outline",
-                  className: "w-full mb-6",
-                })}
-                href={`r/${slug}/submit`}
-              >
-                Create Post
-              </Link>
+            <dl className="divide-y divide-opacity-10 px-6 text-sm leading-6 bg-white">
+              {UserObj?.role === Role.ADMIN ||
+              UserObj?.role === Role.SUPERADMIN ||
+              UserObj?.role === Role.MODERATOR ? (
+                <Link
+                  className={buttonVariants({
+                    variant: "outline",
+                    className: "w-full mb-6",
+                  })}
+                  href={`c/${slug}/create`}
+                >
+                  Create Post
+                </Link>
+              ) : (
+                <div></div>
+              )}
             </dl>
+            <div className="px-6 py-2">Posts go here</div>
           </div>
         </div>
       </div>

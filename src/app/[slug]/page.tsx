@@ -5,6 +5,8 @@ import { Role } from "@prisma/client";
 import CreatePostMini from "@/components/CreatePostMini";
 import PostList from "@/components/PostList";
 import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
+import { Console } from "console";
+import { getRole } from "@/lib/getRole";
 
 interface pageProps {
   params: {
@@ -22,6 +24,7 @@ const page = async ({ params }: pageProps) => {
       posts: {
         include: {
           User: true,
+          Topic: true,
         },
         orderBy: {
           title: "asc",
@@ -31,9 +34,7 @@ const page = async ({ params }: pageProps) => {
     },
   });
 
-  const UserObj = await db.user.findFirst({
-    where: { id: session?.user?.id },
-  });
+  const UserRole = await getRole(session);
 
   if (!topic) return notFound();
 
@@ -42,8 +43,11 @@ const page = async ({ params }: pageProps) => {
       <h1 className="font-bold text-3xl md:text-4xl h-14">
         Page title: {slug}
       </h1>
-
-      <PostList initialPosts={topic.posts} topicName={topic.title} />
+      <PostList
+        initialPosts={topic.posts}
+        topicName={topic.title}
+        userRole={UserRole}
+      />
 
       {/* <ul>
         {topic.posts.map((post) => (

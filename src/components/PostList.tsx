@@ -8,13 +8,15 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import Post from "./Post";
 import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
+import { Role } from "@prisma/client";
 
 interface PostListProps {
   initialPosts: ExtenededPost[];
   topicName?: string;
+  userRole?: Role;
 }
 
-const PostList: FC<PostListProps> = ({ initialPosts, topicName }) => {
+const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
   const lastPostRef = useRef<HTMLElement>(null);
   const { ref, entry } = useIntersection({
     root: lastPostRef.current,
@@ -43,6 +45,14 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName }) => {
     }
   );
 
+  //view extra params on posts
+  const vxp =
+    userRole === Role.ADMIN ||
+    userRole === Role.SUPERADMIN ||
+    userRole === Role.MODERATOR
+      ? true
+      : false;
+
   const posts = data?.pages.flatMap((page) => page) ?? initialPosts;
 
   return (
@@ -51,11 +61,23 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName }) => {
         if (index === posts.length - 1) {
           return (
             <li key={post.id} ref={ref}>
-              <Post />
+              <Post
+                topicName={post.Topic.title}
+                post={post}
+                viewExtraParams={vxp}
+              />
             </li>
           );
         } else {
-          return <Post />;
+          return (
+            <li key={"d"}>
+              <Post
+                topicName={post.Topic.title}
+                post={post}
+                viewExtraParams={vxp}
+              />
+            </li>
+          );
         }
       })}
     </ul>

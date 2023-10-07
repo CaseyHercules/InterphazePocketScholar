@@ -10,9 +10,10 @@ interface pageProps {
 }
 
 const page = async ({ params }: pageProps) => {
+  const { slug } = params;
   const topic = await db.topic.findFirst({
     where: {
-      title: params.slug,
+      title: slug,
     },
   });
 
@@ -27,7 +28,7 @@ const page = async ({ params }: pageProps) => {
             Create Post
           </h3>
           <p className="ml-2 mt-1 truncate text-sm text-gray-500">
-            in c/{params.slug}
+            in {params.slug}
           </p>
         </div>
       </div>

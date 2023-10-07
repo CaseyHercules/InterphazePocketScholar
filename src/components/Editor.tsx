@@ -5,7 +5,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { PostRequest, PostValidator } from "@/lib/validators/post";
-import EditorJS from "@editorjs/editorjs";
+import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
 import { uploadFiles } from "@/lib/uploadthing";
 import { toast } from "@/hooks/use-toast";
@@ -177,8 +177,8 @@ export const Editor: React.FC<EditorProps> = ({ topicId }) => {
     <div className="w-full p-4 bg-stone-50 rounded-lg border border-stone-100">
       <form
         id="topic-post-form"
-        className="w-git gap-4"
-        onSubmit={handleSubmit((e) => {})}
+        className="w-git"
+        onSubmit={handleSubmit(onSubmit)}
       >
         <div className="prose prose-stone dark:prose-invert">
           <TextareaAutosize

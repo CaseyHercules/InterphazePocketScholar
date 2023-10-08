@@ -40,6 +40,7 @@ model Session {
 model Topic {
   id        String   @id @default(cuid())
   title     String
+  shortDesc String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   posts     Post[]

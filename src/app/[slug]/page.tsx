@@ -41,7 +41,7 @@ const page = async ({ params }: pageProps) => {
   return (
     <>
       <h1 className="font-bold text-3xl md:text-4xl h-14">
-        Page title: {slug}
+        {topic?.shortDesc ? topic?.shortDesc : topic?.title}
       </h1>
       <PostList
         initialPosts={topic.posts}

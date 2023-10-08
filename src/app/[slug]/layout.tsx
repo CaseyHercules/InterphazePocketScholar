@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { User } from "lucide-react";
+import PostList from "@/components/PostList";
+import PostSideBar from "@/components/PostSideBar";
 
 const Layout = async ({
   children,
@@ -30,6 +32,7 @@ const Layout = async ({
       },
     },
   });
+
   return (
     <div className="sm:container max-w-7xl mx-auto h-full">
       <div>
@@ -39,20 +42,20 @@ const Layout = async ({
           <div className="flex flex-col col-span-2 space-y-6">{children}</div>
 
           <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last hidden md:block">
-            <div className="px-6">
-              <p className="font-semibold py-3 text-center capitalize">
-                Quick Navigation
-              </p>
+            <p className="font-semibold pt-2 text-center capitalize">
+              Quick Navigation
+            </p>
+            <div className="px-6 py-2">
+              <PostSideBar postList={topic?.posts} />
             </div>
-
-            <dl className="divide-y divide-opacity-10 px-6 text-sm leading-6 bg-white">
+            <dl className="divide-y divide-opacity-10 px-6 text-sm leading-6 bg-white pb-4">
               {UserObj?.role === Role.ADMIN ||
               UserObj?.role === Role.SUPERADMIN ||
               UserObj?.role === Role.MODERATOR ? (
                 <Link
                   className={buttonVariants({
                     variant: "outline",
-                    className: "w-full mb-6",
+                    className: "w-full",
                   })}
                   href={`/${slug}/create`}
                 >
@@ -62,7 +65,6 @@ const Layout = async ({
                 <div></div>
               )}
             </dl>
-            <div className="px-6 py-2">Posts go here</div>
           </div>
         </div>
       </div>

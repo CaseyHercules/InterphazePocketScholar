@@ -1,7 +1,7 @@
 "use client";
 
 import { ExtenededPost } from "@/types/db";
-import { FC, useRef } from "react";
+import { FC, useEffect, useRef } from "react";
 import { useIntersection } from "@mantine/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -9,11 +9,12 @@ import { useSession } from "next-auth/react";
 import Post from "./Post";
 import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
 import { Role } from "@prisma/client";
+import { Loader2 } from "lucide-react";
 
 interface PostListProps {
   initialPosts: ExtenededPost[];
-  topicName?: string;
-  userRole?: Role;
+  topicName: string;
+  userRole: Role;
 }
 
 const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
@@ -23,14 +24,10 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
     threshold: 1,
   });
 
-  const { data: session } = useSession();
-
   const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery(
     ["useInfiniteQuery"],
     async ({ pageParam = 1 }) => {
-      const query =
-        `/api/posts?limit=${10}&page=${pageParam}` +
-        (!!topicName ? `&topic=${topicName}` : "");
+      const query = `/api/posts?limit=${INFINITE_SCROLL_PAGINATION_RESULTS}&page=${pageParam}&topic=${topicName}`;
       const { data } = await axios.get(query);
       return data as ExtenededPost[];
     },
@@ -45,7 +42,12 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
     }
   );
 
-  //view extra params on posts
+  useEffect(() => {
+    if (entry?.isIntersecting) {
+      fetchNextPage();
+    }
+  }, [entry, fetchNextPage]);
+
   const vxp =
     userRole === Role.ADMIN ||
     userRole === Role.SUPERADMIN ||
@@ -54,6 +56,8 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
       : false;
 
   const posts = data?.pages.flatMap((page) => page) ?? initialPosts;
+  // log to the console the posts topics names
+  console.log(posts.map((post) => post.Topic));
 
   return (
     <ul className="flex flex-col col-span-2 space-y-6">
@@ -62,7 +66,7 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
           return (
             <li key={post.id} ref={ref}>
               <Post
-                topicName={post.Topic.title}
+                topicName={post.Topic?.title}
                 post={post}
                 viewExtraParams={vxp}
               />
@@ -70,16 +74,20 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
           );
         } else {
           return (
-            <li key={"d"}>
-              <Post
-                topicName={post.Topic.title}
-                post={post}
-                viewExtraParams={vxp}
-              />
-            </li>
+            <Post
+              key={post.id}
+              topicName={post.Topic?.title}
+              post={post}
+              viewExtraParams={vxp}
+            />
           );
         }
       })}
+      {isFetchingNextPage && (
+        <li className="flex justify-center">
+          <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+        </li>
+      )}
     </ul>
   );
 };

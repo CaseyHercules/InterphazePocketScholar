@@ -24,6 +24,7 @@ const Layout = async ({
     include: {
       posts: {
         include: {
+          Topic: true,
           User: true,
         },
       },

@@ -1,6 +1,6 @@
-import { Topic } from "@prisma/client";
+import type { Post, Topic, User } from "@prisma/client";
 
 export type ExtenededPost = Post & {
-    topic: Topic
-    author: User
-}
+  Topic: Topic;
+  author: User;
+};

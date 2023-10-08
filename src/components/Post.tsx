@@ -1,21 +1,18 @@
 import { FC, useRef } from "react";
-
 import { Post, User } from "@prisma/client";
 import { formatTimeToNow } from "@/lib/utils";
-import { vi } from "date-fns/locale";
 import EditorOutput from "./EditorOutput";
 
 interface PostProps {
   post: Post & {
     User: User;
   };
-  topicName?: string;
+  topicName: string;
   viewExtraParams: boolean;
 }
 
 const Post: FC<PostProps> = ({ topicName, post, viewExtraParams }) => {
   const pRef = useRef<HTMLDivElement>(null);
-  console.log(viewExtraParams);
   return (
     <div className="rounded-md bg-white shadow">
       <div className="px-6 py-4 flex justify-between">

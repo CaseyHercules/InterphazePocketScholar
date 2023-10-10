@@ -42,6 +42,7 @@ export const EditPostEditor: FC<EditorProps> = ({
       topicId,
       title: "",
       content: null,
+      id: formId,
     },
   });
 
@@ -50,8 +51,6 @@ export const EditPostEditor: FC<EditorProps> = ({
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-
-  // console.log(initBlocks);
 
   const initializeEditor = useCallback(async () => {
     const EditorJS = (await import("@editorjs/editorjs")).default;
@@ -155,14 +154,14 @@ export const EditPostEditor: FC<EditorProps> = ({
       const { data } = await axios.post("/api/admin/post/update", playload);
       return data;
     },
-    onError: () => {
+    onError: (err) => {
       return toast({
         title: "Error",
         description: "Post was not created. Please try again later.",
         variant: "destructive",
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       const newPath = pathname.split("/").slice(0, -1).join("/");
       router.push(newPath);
       router.refresh();

@@ -46,7 +46,7 @@ const MenuWide = () => {
             <a href="/rules/summary">
               <MenubarItem>Summary</MenubarItem>
             </a>
-            <a href="/rules/character">
+            <a href="/rules/advancement">
               <MenubarItem>Character Advancement</MenubarItem>
             </a>
             <MenubarSub>
@@ -203,7 +203,17 @@ const MenuSmall = () => {
             </MenubarSub>
             <MenubarSub>
               <MenubarSubTrigger>New to Phaze</MenubarSubTrigger>
-              <MenubarSubContent></MenubarSubContent>
+              <MenubarSubContent>
+                <a href="/intro/new">
+                  <MenubarItem>Intro to Interphaze</MenubarItem>
+                </a>
+                <a href="/intro/conduct">
+                  <MenubarItem>Code of conduct</MenubarItem>
+                </a>
+                <a href="/intro/character">
+                  <MenubarItem>Character Creation</MenubarItem>
+                </a>
+              </MenubarSubContent>
             </MenubarSub>
             <MenubarSub>
               <MenubarSubTrigger>Rules</MenubarSubTrigger>
@@ -211,7 +221,7 @@ const MenuSmall = () => {
                 <a href="/rules/summary">
                   <MenubarItem>Summary</MenubarItem>
                 </a>
-                <a href="/rules/character">
+                <a href="/rules/advancement">
                   <MenubarItem>Character Advancement</MenubarItem>
                 </a>
                 <MenubarSub>

@@ -4,11 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  PostRequest,
-  PostValidator,
-  UpdateRequest,
-} from "@/lib/validators/post";
+import { PostValidator, UpdateRequest } from "@/lib/validators/post";
 import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
 import { uploadFiles } from "@/lib/uploadthing";
@@ -161,14 +157,14 @@ export const EditPostEditor: FC<EditorProps> = ({
       const { data } = await axios.post("/api/admin/post/update", playload);
       return data;
     },
-    onError: (_) => {
+    onError: () => {
       return toast({
         title: "Error",
         description: "Post was not created. Please try again later.",
         variant: "destructive",
       });
     },
-    onSuccess: (_) => {
+    onSuccess: () => {
       const newPath = pathname.split("/").slice(0, -1).join("/");
       router.push(newPath);
       router.refresh();

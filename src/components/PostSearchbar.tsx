@@ -60,7 +60,7 @@ const PostSearchbar = () => {
             <CommandGroup heading="Posts">
               {queryResults?.map((post) => (
                 <CommandItem
-                  onSelect={(e) => {
+                  onSelect={() => {
                     // @ts-expect-error db cant find linked table
                     router.push(`/${post.Topic.title}/${post.id}`);
                     router.refresh();

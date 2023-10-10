@@ -157,6 +157,7 @@ export const Icons = {
       height="24"
       viewBox="0 0 28 28"
       preserveAspectRatio="xMinYMin meet"
+      {...props}
     >
       <title>WordPress.org</title>
       <path

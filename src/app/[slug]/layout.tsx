@@ -3,8 +3,6 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { Role } from "@prisma/client";
-import { User } from "lucide-react";
-import PostList from "@/components/PostList";
 import PostSideBar from "@/components/PostSideBar";
 import PostSearchbar from "@/components/PostSearchbar";
 

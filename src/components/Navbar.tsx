@@ -4,7 +4,6 @@ import { buttonVariants } from "./ui/button";
 import { getAuthSession } from "@/lib/auth";
 import UserAccountNav from "./UserAccountNav";
 import { MenuWide, MenuSmall } from "@/components/Menu";
-import Searchbar from "./PostSearchbar";
 
 const NavBar = async () => {
   const session = await getAuthSession();

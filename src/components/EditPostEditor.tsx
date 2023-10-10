@@ -161,14 +161,14 @@ export const EditPostEditor: FC<EditorProps> = ({
       const { data } = await axios.post("/api/admin/post/update", playload);
       return data;
     },
-    onError: (err) => {
+    onError: (_) => {
       return toast({
         title: "Error",
         description: "Post was not created. Please try again later.",
         variant: "destructive",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (_) => {
       const newPath = pathname.split("/").slice(0, -1).join("/");
       router.push(newPath);
       router.refresh();

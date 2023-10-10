@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useCustomToast } from "@/hooks/use-custom-toast";
 import { Textarea } from "@/components/ui/textarea";
 
-const page = () => {
+const Page = () => {
   const router = useRouter();
   const [title, setTitle] = useState<string>("");
   const [description, setDesc] = useState<string>("");
@@ -132,4 +132,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

@@ -4,10 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Icons } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { signIn } from "next-auth/react";
-import { toast } from "../hooks/use-toast";
 import { useToast } from "../hooks/use-toast";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -49,9 +46,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         type="button"
         disabled={isLoading}
         onClick={() => {
-          loginWith("wordpress").catch((error) => {
-            console.error(error);
-          });
+          loginWith("wordpress").catch((error) => {});
         }}
       >
         {isLoading ? (
@@ -67,9 +62,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         type="button"
         disabled={isLoading}
         onClick={() => {
-          loginWith("google").catch((error) => {
-            console.error(error);
-          });
+          loginWith("google").catch((error) => {});
         }}
       >
         {isLoading ? (

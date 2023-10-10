@@ -18,12 +18,20 @@ interface EditorOutputProps {
 
 const style = {
   header: {
-    h2: { fontSize: "1.3rem", lineHeight: "1.5rem" },
+    h2: { fontSize: "1.3rem", lineHeight: "1.5rem", fontWeight: "bold" },
   },
   paragraph: {
     fontSize: "1rem",
     lineHeight: "1.55rem",
-    color: "#374151",
+  },
+  list: {
+    container: {
+      paddingInlineStart: "1.2rem",
+      listStyleType: "disc",
+    },
+    listItem: {
+      paddingInlineStart: ".5rem",
+    },
   },
 };
 

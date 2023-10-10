@@ -59,7 +59,7 @@ const page = async ({ params }: pageProps) => {
             ) : null}
           </p>
 
-          <h1 className="text-xl font-semibold py-2 leading-6 text-gray-900">
+          <h1 className="text-2xl font-semibold py-2 leading-6 text-gray-900">
             {post?.title}
           </h1>
 

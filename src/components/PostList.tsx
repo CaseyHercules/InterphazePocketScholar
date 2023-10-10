@@ -3,9 +3,8 @@
 import { ExtenededPost } from "@/types/db";
 import { FC, useEffect, useRef } from "react";
 import { useIntersection } from "@mantine/hooks";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useSession } from "next-auth/react";
 import Post from "./Post";
 import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
 import { Role } from "@prisma/client";

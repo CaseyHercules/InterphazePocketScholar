@@ -10,7 +10,7 @@ import { TopicValidatorPayload } from "@/lib/validators/topics";
 import { toast } from "@/hooks/use-toast";
 import { useCustomToast } from "@/hooks/use-custom-toast";
 
-const page = () => {
+const Page = () => {
   const router = useRouter();
   const [title, setTitle] = useState<string>("");
   const { loginToast } = useCustomToast();
@@ -116,7 +116,7 @@ const page = () => {
           </Button>
         </div>
         <p className="text-xs pb-2 text-center">
-          Admin Console Utility, for creating new topics. Shouldn't be used by
+          Admin Console Utility, for creating new topics. Should not be used by
           any unless it is inital data load.
         </p>
       </div>
@@ -124,4 +124,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

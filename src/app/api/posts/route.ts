@@ -28,7 +28,6 @@ export async function GET(req: Request) {
 
     return new Response(JSON.stringify(posts));
   } catch (error) {
-    // console.log(error);
     return new Response("Could not fetch posts 500", { status: 500 });
   }
 }

@@ -16,7 +16,6 @@ import {
 
 import { Menu } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "./ui/button";
 
 const MenuWide = () => {
   return (

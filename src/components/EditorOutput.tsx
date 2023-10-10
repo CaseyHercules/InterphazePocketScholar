@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from "next/dynamic";
 import { FC } from "react";
 import CustomCodeRenderer from "@/components/renderers/CustomCodeRenderer";
@@ -15,9 +17,13 @@ interface EditorOutputProps {
 }
 
 const style = {
+  header: {
+    h2: { fontSize: "1.3rem", lineHeight: "1.5rem" },
+  },
   paragraph: {
-    fontSize: ".9rem",
-    lineHeight: "1.25rem",
+    fontSize: "1rem",
+    lineHeight: "1.55rem",
+    color: "#374151",
   },
 };
 

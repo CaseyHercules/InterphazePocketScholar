@@ -56,8 +56,6 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
       : false;
 
   const posts = data?.pages.flatMap((page) => page) ?? initialPosts;
-  // log to the console the posts topics names
-  console.log(posts.map((post) => post.Topic));
 
   return (
     <ul className="flex flex-col col-span-2 space-y-6">

@@ -4,7 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { PostRequest, PostValidator } from "@/lib/validators/post";
+import {
+  PostRequest,
+  PostValidator,
+  UpdateRequest,
+} from "@/lib/validators/post";
 import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
 import { uploadFiles } from "@/lib/uploadthing";
@@ -13,6 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { FC } from "react";
+import _ from "lodash";
 
 type FormData = z.infer<typeof PostValidator>;
 
@@ -20,9 +25,17 @@ interface EditorProps {
   topicId: string;
   formId: string;
   content?: any;
+  title: string;
 }
 
-export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
+//ref.current?.blocks.insert("text", "asdkjfghaskdfgk");
+
+export const EditPostEditor: FC<EditorProps> = ({
+  topicId,
+  formId,
+  content,
+  title,
+}) => {
   const {
     register,
     handleSubmit,
@@ -41,6 +54,9 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const initBlocks = content["blocks"];
+
+  // console.log(initBlocks);
 
   const initializeEditor = useCallback(async () => {
     const EditorJS = (await import("@editorjs/editorjs")).default;
@@ -61,7 +77,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
         },
         placeholder: "Type here to write your post...",
         inlineToolbar: true,
-        data: { blocks: [] },
+        data: content,
         tools: {
           header: Header,
           linkTool: {
@@ -102,6 +118,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
     if (typeof window !== "undefined") {
       setIsMounted(true);
     }
+    ref.current?.blocks.insert("text", "asdkjfghaskdfgk");
   }, []);
 
   useEffect(() => {
@@ -121,6 +138,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
       await initializeEditor();
       setTimeout(() => {
         _titleRef?.current?.focus();
+        _titleRef!.current!.value = title;
       }, 0);
     };
     if (isMounted) {
@@ -132,14 +150,15 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
     }
   }, [isMounted, initializeEditor]);
 
-  const { mutate: createPost } = useMutation({
-    mutationFn: async ({ title, content, topicId }: PostRequest) => {
-      const playload: PostRequest = {
+  const { mutate: updatePost } = useMutation({
+    mutationFn: async ({ title, content, topicId, id }: UpdateRequest) => {
+      const playload: UpdateRequest = {
         title,
         content,
         topicId,
+        id,
       };
-      const { data } = await axios.post("/api/admin/post/create", playload);
+      const { data } = await axios.post("/api/admin/post/update", playload);
       return data;
     },
     onError: (err) => {
@@ -154,7 +173,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
       router.push(newPath);
       router.refresh();
       return toast({
-        description: "Post has been published!",
+        description: "Post has been updated!",
         variant: "default",
       });
     },
@@ -162,12 +181,13 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
 
   async function onSubmit(data: FormData) {
     const blocks = await ref.current?.save();
-    const payload: PostRequest = {
+    const payload: UpdateRequest = {
       title: data.title,
       content: blocks,
       topicId,
+      id: formId,
     };
-    createPost(payload);
+    updatePost(payload);
   }
 
   if (!isMounted) {
@@ -190,7 +210,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
             placeholder="Title"
             className="w-full resize-none appearance-none overflow-hidden bg-transparent text-5xl font-bold focus:outline-none"
           />
-          <div id="editor" className="min-h-[100px]" />
+          <div id="editor" className="min-h-[10px]" />
         </div>
       </form>
     </div>

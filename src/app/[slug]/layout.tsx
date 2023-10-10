@@ -6,6 +6,7 @@ import { Role } from "@prisma/client";
 import { User } from "lucide-react";
 import PostList from "@/components/PostList";
 import PostSideBar from "@/components/PostSideBar";
+import PostSearchbar from "@/components/PostSearchbar";
 
 const Layout = async ({
   children,
@@ -45,10 +46,13 @@ const Layout = async ({
             <p className="font-semibold pt-2 text-center capitalize">
               Quick Navigation
             </p>
+            <div className="px-4 pt-2">
+              <PostSearchbar />
+            </div>
             <div className="px-6 py-2">
               <PostSideBar postList={topic?.posts} />
             </div>
-            <dl className="divide-y divide-opacity-10 px-6 text-sm leading-6 bg-white pb-4">
+            <dl className="divide-y divide-opacity-10 px-4 text-sm leading-6 bg-white pb-4">
               {UserObj?.role === Role.ADMIN ||
               UserObj?.role === Role.SUPERADMIN ||
               UserObj?.role === Role.MODERATOR ? (
@@ -61,9 +65,7 @@ const Layout = async ({
                 >
                   Create Post
                 </Link>
-              ) : (
-                <div></div>
-              )}
+              ) : null}
             </dl>
           </div>
         </div>

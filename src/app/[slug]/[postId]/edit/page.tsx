@@ -1,45 +1,47 @@
-import { Editor } from "@/components/Editor";
+import { EditPostEditor } from "@/components/EditPostEditor";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 
 interface pageProps {
   params: {
-    slug: string;
+    postId: string;
   };
 }
 
-const formId = "topic-post-form";
-
 const page = async ({ params }: pageProps) => {
-  const { slug } = params;
-  const topic = await db.topic.findFirst({
+  const post = await db.post.findFirst({
     where: {
-      title: slug,
+      id: params.postId,
     },
   });
 
-  if (!topic) return notFound();
+  if (!post) return notFound();
 
   return (
     <div className="flex flex-col items-start gap-6">
       {/* heading */}
       <div className="border-b border-gray-200 pb-5">
         <div className="-ml-2 -mt-2 flex flex-wrap items-baseline">
-          <h3 className="ml-2 mt-2 text-base font-semibold leading-6 text-gray-900">
-            Create Post
-          </h3>
           <p className="ml-2 mt-1 truncate text-sm text-gray-500">
-            in {params.slug}
+            Currently editing post:
           </p>
+          <h3 className="ml-2 mt-2 text-base font-semibold leading-6 text-gray-900">
+            {post.title}
+          </h3>
         </div>
       </div>
 
-      <Editor topicId={topic.id} formId={formId} />
+      <EditPostEditor
+        topicId={post.topicId}
+        formId={params.postId}
+        content={post.content}
+        title={post.title}
+      />
 
       <div className="w-full flex justify-end">
-        <Button type="submit" className="w-full" form={formId}>
-          Post
+        <Button type="submit" className="w-full" form={params.postId}>
+          Update
         </Button>
       </div>
     </div>

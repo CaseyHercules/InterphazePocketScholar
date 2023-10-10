@@ -2,7 +2,7 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { Role } from "@prisma/client";
-import { PostValidator } from "@/lib/validators/post";
+import { UpdateValidator } from "@/lib/validators/post";
 
 export async function POST(req: Request) {
   try {
@@ -20,16 +20,18 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { topicId, title, content } = PostValidator.parse(body);
+    const { topicId, title, content, id } = UpdateValidator.parse(body);
 
-    await db.post.create({
+    await db.post.update({
+      where: { id },
       data: {
         title,
         content,
-        userId: session?.user?.id,
         topicId,
+        userId: session?.user?.id,
       },
     });
+
     return new Response("OK");
   } catch (error) {
     if (error instanceof z.ZodError) {

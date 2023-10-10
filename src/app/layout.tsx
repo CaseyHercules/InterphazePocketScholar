@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
-import { Inter } from "next/font/google";
+import { Inter, Gentium_Book_Plus } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
 import Providers from "@/components/Providers";
@@ -11,6 +11,11 @@ export const metadata = {
 };
 
 const inter = Inter({ subsets: ["latin"] });
+const gbp = Gentium_Book_Plus({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+});
 
 export default function RootLayout({
   children,
@@ -22,7 +27,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("bg-white text-stone-900 antialias", inter.className)}
+      className={cn(
+        "bg-white text-stone-900 antialias",
+        inter.className,
+        gbp.className
+      )}
     >
       <body className="min-h-screen pt-12 bg-background antialiased">
         <Providers>

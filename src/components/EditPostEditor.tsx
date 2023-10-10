@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { PostValidator, UpdateRequest } from "@/lib/validators/post";
+import { UpdateValidator, UpdateRequest } from "@/lib/validators/post";
 import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
 import { uploadFiles } from "@/lib/uploadthing";
@@ -15,7 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FC } from "react";
 import _ from "lodash";
 
-type FormData = z.infer<typeof PostValidator>;
+type FormData = z.infer<typeof UpdateValidator>;
 
 interface EditorProps {
   topicId: string;
@@ -37,7 +37,7 @@ export const EditPostEditor: FC<EditorProps> = ({
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(PostValidator),
+    resolver: zodResolver(UpdateValidator),
     defaultValues: {
       topicId,
       title: "",
@@ -50,7 +50,6 @@ export const EditPostEditor: FC<EditorProps> = ({
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const initBlocks = content["blocks"];
 
   // console.log(initBlocks);
 
@@ -114,7 +113,6 @@ export const EditPostEditor: FC<EditorProps> = ({
     if (typeof window !== "undefined") {
       setIsMounted(true);
     }
-    ref.current?.blocks.insert("text", "asdkjfghaskdfgk");
   }, []);
 
   useEffect(() => {

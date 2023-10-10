@@ -1,10 +1,20 @@
 import EditorOutput from "@/components/EditorOutput";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatTimeToNow } from "@/lib/utils";
 import { Post, Role, User } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+import { DeleteValidator, DeleteRequest } from "@/lib/validators/post";
+import axios from "axios";
+import EditButtonOnPosts from "@/components/EditButtonOnPosts";
 
 interface pageProps {
   params: {
@@ -45,17 +55,11 @@ const page = async ({ params }: pageProps) => {
             {UserObj?.role === Role.ADMIN ||
             UserObj?.role === Role.SUPERADMIN ||
             UserObj?.role === Role.MODERATOR ? (
-              <>
-                Last Updated by {post?.User.username}{" "}
-                {formatTimeToNow(new Date(post?.createdAt))}{" "}
-                <Link
-                  className="float-right"
-                  // @ts-expect-error Topic relation exists
-                  href={`/${post.Topic.title}/${params.postId}/edit`}
-                >
-                  Edit
-                </Link>
-              </>
+              <EditButtonOnPosts
+                //@ts-expect-error
+                topictitle={post.Topic.title}
+                postId={params.postId}
+              />
             ) : null}
           </p>
 

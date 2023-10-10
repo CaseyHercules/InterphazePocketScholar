@@ -22,3 +22,9 @@ export const UpdateValidator = z.object({
 });
 
 export type UpdateRequest = z.infer<typeof UpdateValidator>;
+
+export const DeleteValidator = z.object({
+  id: z.string(),
+});
+
+export type DeleteRequest = z.infer<typeof DeleteValidator>;

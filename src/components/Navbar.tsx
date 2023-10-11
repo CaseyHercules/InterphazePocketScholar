@@ -46,6 +46,7 @@ const NavBar = async () => {
           {/* search bar */}
           {session?.user ? (
             <div className="hidden sm:block">
+              {/* @ts-expect-error user can't be null */}
               <UserAccountNav user={UserObj} />
             </div>
           ) : (

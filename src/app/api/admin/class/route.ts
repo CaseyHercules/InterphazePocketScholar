@@ -2,7 +2,6 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { Role } from "@prisma/client";
-import { PostValidator } from "@/lib/validators/post";
 
 export async function POST(req: Request) {
   try {
@@ -21,16 +20,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { topicId, title, content } = PostValidator.parse(body);
+    //post class to db
 
-    await db.post.create({
-      data: {
-        title,
-        content,
-        userId: session?.user?.id,
-        topicId,
-      },
-    });
     return new Response("OK");
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -38,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     return new Response(
-      "Could not post to this topic, please try again later",
+      "Could process this class request, please try again later",
       { status: 500 }
     );
   }

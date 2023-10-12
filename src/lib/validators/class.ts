@@ -5,7 +5,7 @@ export const ClassValidator = z.object({
     .string()
     .min(3, { message: "Title must be longer than 3 characters" })
     .max(64, { message: "Title must be at most 64 characters" }),
-  description: z.string().nullish(),
+  description: z.string(),
   grantedSkills: z.any(),
   Skills: z.any(),
   SkillTierGains: z.any(),

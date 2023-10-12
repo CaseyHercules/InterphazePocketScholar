@@ -20,14 +20,13 @@ const page = () => {
       </div>
       <div className="py-6">
         <Link
-          href="/createClass"
+          href="/classTool"
           className={cn(
             buttonVariants({ variant: "subtle" }),
             "self-start -mt-20 text-xl"
           )}
         >
-          createClass Tool for adding new classes, pROBable should be super
-          admin only
+          ClassTool
         </Link>
       </div>
       <div className="py-6">

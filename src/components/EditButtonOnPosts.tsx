@@ -67,7 +67,6 @@ const EditButtonOnPosts: FC<EditButtonOnPostsProps> = ({
             className="w-full text-black text-2xl bg-red-600"
             variant={"link"}
             onClick={() => {
-              console.log(postId);
               onDelete();
             }}
           >
@@ -81,9 +80,3 @@ const EditButtonOnPosts: FC<EditButtonOnPostsProps> = ({
 };
 
 export default EditButtonOnPosts;
-
-// onClick={() => {
-//     console.log(postId);
-//     axios.post("/api/admin/post/delete", postId);
-//     router.back();
-//   }}

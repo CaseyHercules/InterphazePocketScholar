@@ -1,7 +1,6 @@
 "use client";
 
 import { ClassForm } from "@/components/ClassForm";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -33,7 +32,7 @@ const page = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ClassForm />
+              <ClassForm data={null} />
             </CardContent>
             <CardFooter className="text-xs justify-center text-stone-500">
               Created and Maintained By Casey Holman

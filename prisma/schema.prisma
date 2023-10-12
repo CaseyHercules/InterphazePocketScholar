@@ -124,7 +124,7 @@ model SkillGroup {
 model Class {
   id                  String      @id @default(cuid())
   Title               String
-  description         String?
+  description         String
   grantedSkills       Json?
   Skills              Json?
   SkillTierGains      Json?

@@ -1,7 +1,8 @@
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { z } from "zod";
+import { any, z } from "zod";
 import { Role } from "@prisma/client";
+import { ClassValidator, UpdateValidator } from "@/lib/validators/class";
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +19,81 @@ export async function POST(req: Request) {
     ) {
       return new Response("Unauthorized", { status: 401 });
     }
+    let id: string;
+    let title: string;
+    let description: string;
+    let HP: any;
+    let EP: any;
+    let Attack: any;
+    let Accuracy: any;
+    let Defense: any;
+    let Resistance: any;
+    let Tough: any;
+    let Quick: any;
+    let Mind: any;
 
     const body = await req.json();
-    //post class to db
+    if (body["id"]) {
+      const {
+        id,
+        title,
+        description,
+        HP,
+        EP,
+        Attack,
+        Accuracy,
+        Defense,
+        Resistance,
+        Tough,
+        Quick,
+        Mind,
+      } = UpdateValidator.parse(body);
+      await db.class.update({
+        where: { id },
+        data: {
+          Title: title,
+          description,
+          HP,
+          EP,
+          Attack,
+          Accuracy,
+          Defense,
+          Resistance,
+          Tough,
+          Quick,
+          Mind,
+        },
+      });
+    } else {
+      const {
+        title,
+        description,
+        HP,
+        EP,
+        Attack,
+        Accuracy,
+        Defense,
+        Resistance,
+        Tough,
+        Quick,
+        Mind,
+      } = ClassValidator.parse(body);
+      await db.class.create({
+        data: {
+          Title: title,
+          description,
+          HP,
+          EP,
+          Attack,
+          Accuracy,
+          Defense,
+          Resistance,
+          Tough,
+          Quick,
+          Mind,
+        },
+      });
+    }
 
     return new Response("OK");
   } catch (error) {

@@ -16,34 +16,58 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ClassValidator } from "@/lib/validators/class";
-import { User } from "lucide-react";
-import { FC } from "react";
+import { ClassValidator, UpdateValidator } from "@/lib/validators/class";
+import axios from "axios";
 
-const FormSchema = ClassValidator;
+const FormSchemaCreate = ClassValidator;
+const FormSchemaUpdate = UpdateValidator;
 
-export function ClassForm() {
+interface data {
+  data: any;
+}
+
+export function ClassForm({ data }: data) {
+  const FormSchema = data ? FormSchemaUpdate : FormSchemaCreate;
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      grantedSkills: [],
-      Skills: [],
-      SkillTierGains: [],
-      HP: [],
-      EP: [],
-      Attack: [],
-      Accuracy: [],
-      Defense: [],
-      Resistance: [],
-      Tough: [],
-      Mind: [],
-      Quick: [],
+      title: "" || data?.title,
+      description: "" || data?.description,
+      grantedSkills: [] || data?.grantedSkills,
+      Skills: [] || data?.Skills,
+      SkillTierGains: [] || data?.SkillTierGains,
+      HP: [] || data?.HP,
+      EP: [] || data?.EP,
+      Attack: [] || data?.Attack,
+      Accuracy: [] || data?.Accuracy,
+      Defense: [] || data?.Defense,
+      Resistance: [] || data?.Resistance,
+      Tough: [] || data?.Tough,
+      Mind: [] || data?.Mind,
+      Quick: [] || data?.Quick,
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    const payload: z.infer<typeof FormSchema> = {
+      title: data.title,
+      description: data.description,
+      grantedSkills: data.grantedSkills,
+      Skills: data.Skills,
+      SkillTierGains: data.SkillTierGains,
+      HP: data.HP,
+      EP: data.EP,
+      Attack: data.Attack,
+      Accuracy: data.Accuracy,
+      Defense: data.Defense,
+      Resistance: data.Resistance,
+      Tough: data.Tough,
+      Mind: data.Mind,
+      Quick: data.Quick,
+    };
+
+    const response = await axios.post("/api/admin/class", payload);
+    const responseData = response.data;
     toast({
       title: "You submitted the following values:",
       description: (
@@ -52,63 +76,76 @@ export function ClassForm() {
         </pre>
       ),
     });
+    console.log(responseData);
   }
-  const levelText: any[] = [];
+
+  const levelText: any[] = [],
+    ItemTierElements: any[] = [],
+    HPElements: any[] = [],
+    EPElements: any[] = [],
+    AttElements: any[] = [],
+    AccElements: any[] = [],
+    DefElements: any[] = [],
+    ResElements: any[] = [],
+    ToughElements: any[] = [],
+    MindElements: any[] = [],
+    QuickElements: any[] = [];
   repeatMakerStarterText(levelText);
-  const ItemTierElements: any[] = [];
   repeatMaker(ItemTierElements, "Skill Tier Gained:", "SkillTierGains");
-  const HPElements: any[] = [];
-  repeatMaker(HPElements, "HP Total at Level:", "HP");
-  const EPElements: any[] = [];
-  repeatMaker(EPElements, "EP Total at Level:", "EP");
-  const AttElements: any[] = [];
-  repeatMaker(AttElements, "Attack Total at Level:", "Attack");
-  const AccElements: any[] = [];
-  repeatMaker(AccElements, "Accuracy Total at Level:", "Accuracy");
-  const DefElements: any[] = [];
-  repeatMaker(DefElements, "Defense Total at Level:", "Defense");
-  const ResElements: any[] = [];
-  repeatMaker(ResElements, "Resistance Total at Level:", "Resistance");
-  const ToughElements: any[] = [];
-  repeatMaker(ToughElements, "Toughness Total at Level:", "Tough");
-  const MindElements: any[] = [];
-  repeatMaker(MindElements, "Mind Total at Level:", "Mind");
-  const QuickElements: any[] = [];
-  repeatMaker(QuickElements, "Quickness Total at Level:", "Quick");
+  repeatMaker(HPElements, "HP Total at LVL:", "HP");
+  repeatMaker(EPElements, "EP Total at LVL:", "EP");
+  repeatMaker(AttElements, "Attack at LVL:", "Attack");
+  repeatMaker(AccElements, "Accuracy at LVL:", "Accuracy");
+  repeatMaker(DefElements, "Defense at LVL:", "Defense");
+  repeatMaker(ResElements, "Resistance at LVL:", "Resistance");
+  repeatMaker(ToughElements, "Tough at LVL:", "Tough");
+  repeatMaker(MindElements, "Mind at LVL:", "Mind");
+  repeatMaker(QuickElements, "Quick at LVL:", "Quick");
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Title */}
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Class Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter Class name..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {/* Description */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Class Description</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter Class name..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {/* {Level Tier Gains} */}
-        <div className="grid grid-cols-23 grid-flow-col-dense">{levelText}</div>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="space-y-4">
+          {/* Title */}
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Class Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter Class name..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Description */}
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Class Description</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter Class name..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
+          Class Skills
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
+          Granted Class Skills
+        </div>
+        {/* Level Tier Gains */}
+        <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
+          {levelText}
+        </div>
+        {/* {Level Stat Gains} */}
         <div className="grid grid-cols-23 grid-flow-col-dense">
           {ItemTierElements}
         </div>
@@ -160,7 +197,13 @@ export function ClassForm() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input className="text-center" placeholder="_" {...field} />
+                  <Input
+                    type="number"
+                    className="text-center"
+                    accept=""
+                    placeholder="_"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

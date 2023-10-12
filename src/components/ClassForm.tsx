@@ -31,7 +31,15 @@ export function ClassForm() {
       grantedSkills: [],
       Skills: [],
       SkillTierGains: [],
-      Attributes: [],
+      HP: [],
+      EP: [],
+      Attack: [],
+      Accuracy: [],
+      Defense: [],
+      Resistance: [],
+      Tough: [],
+      Mind: [],
+      Quick: [],
     },
   });
 
@@ -45,36 +53,28 @@ export function ClassForm() {
       ),
     });
   }
-
-  const items = Array(21);
-
-  const ItemTierElements = [];
-
-  for (let i = 0; i < items.length; i++) {
-    if (i === 0) {
-      ItemTierElements.push(
-        <div className="text-left col-span-3 flex items-center">
-          Skill Tier Gained:
-        </div>
-      );
-    } else {
-      ItemTierElements.push(
-        <FormField
-          control={form.control}
-          //@ts-expect-error
-          name={`SkillTierGains[${i - 1}]`}
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input className="text-center" placeholder="_" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      );
-    }
-  }
+  const levelText: any[] = [];
+  repeatMakerStarterText(levelText);
+  const ItemTierElements: any[] = [];
+  repeatMaker(ItemTierElements, "Skill Tier Gained:", "SkillTierGains");
+  const HPElements: any[] = [];
+  repeatMaker(HPElements, "HP Total at Level:", "HP");
+  const EPElements: any[] = [];
+  repeatMaker(EPElements, "EP Total at Level:", "EP");
+  const AttElements: any[] = [];
+  repeatMaker(AttElements, "Attack Total at Level:", "Attack");
+  const AccElements: any[] = [];
+  repeatMaker(AccElements, "Accuracy Total at Level:", "Accuracy");
+  const DefElements: any[] = [];
+  repeatMaker(DefElements, "Defense Total at Level:", "Defense");
+  const ResElements: any[] = [];
+  repeatMaker(ResElements, "Resistance Total at Level:", "Resistance");
+  const ToughElements: any[] = [];
+  repeatMaker(ToughElements, "Toughness Total at Level:", "Tough");
+  const MindElements: any[] = [];
+  repeatMaker(MindElements, "Mind Total at Level:", "Mind");
+  const QuickElements: any[] = [];
+  repeatMaker(QuickElements, "Quickness Total at Level:", "Quick");
 
   return (
     <Form {...form}>
@@ -108,26 +108,80 @@ export function ClassForm() {
           )}
         />
         {/* {Level Tier Gains} */}
+        <div className="grid grid-cols-23 grid-flow-col-dense">{levelText}</div>
         <div className="grid grid-cols-23 grid-flow-col-dense">
           {ItemTierElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {HPElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {EPElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {AttElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {AccElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {DefElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {ResElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {ToughElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {QuickElements}
+        </div>
+        <div className="grid grid-cols-23 grid-flow-col-dense">
+          {MindElements}
         </div>
 
         <Button type="submit">Submit</Button>
       </form>
     </Form>
   );
-}
 
-// export const ClassValidator = z.object({
-//     title: z
-//       .string()
-//       .min(3, { message: "Title must be longer than 3 characters" })
-//       .max(64, { message: "Title must be at most 64 characters" }),
-//     description: z.string().nullish(),
-//     grantedSkills: z.any(),
-//     Skills: z.any(),
-//     SkillTierGains: z.any(),
-//     Attributes: z.any(),
-//   });
+  function repeatMaker(ElemntArray: any[], title: string, inputObject: string) {
+    for (let i = 0; i < 21; i++) {
+      if (i === 0) {
+        ElemntArray.push(
+          <div className="text-left col-span-3 flex items-center">{title}</div>
+        );
+      } else {
+        ElemntArray.push(
+          <FormField
+            control={form.control}
+            //@ts-expect-error
+            name={`${inputObject}[${i - 1}]`}
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input className="text-center" placeholder="_" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        );
+      }
+    }
+  }
+
+  function repeatMakerStarterText(ElemntArray: any[]) {
+    for (let i = 0; i < 21; i++) {
+      if (i === 0) {
+        ElemntArray.push(
+          <div className="text-left col-span-3 flex items-center"> </div>
+        );
+      } else {
+        ElemntArray.push(<div className="text-center items-center">{i}</div>);
+      }
+    }
+  }
+}
 
 export default ClassForm;

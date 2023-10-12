@@ -128,7 +128,15 @@ model Class {
   grantedSkills       Json?
   Skills              Json?
   SkillTierGains      Json?
-  Attributes          Json?
+  HP                  Json?
+  EP                  Json?
+  Attack              Json?
+  Accuracy            Json?
+  Defense             Json?
+  Resistance          Json?
+  Tough               Json?
+  Quick               Json?
+  Mind                Json?
   primaryCharacters   Character[] @relation("PrimaryClass")
   secondaryCharacters Character[] @relation("SecondaryClass")
 

@@ -89,8 +89,8 @@ model User {
 model Skill {
   id                   String      @id @default(cuid())
   title                String
-  description          String?
-  descriptionShort     String?
+  description          String?     @db.Text
+  descriptionShort     String?     @db.Text
   tier                 Int
   parentSkillId        String?
   skillGroupId         String?
@@ -124,7 +124,7 @@ model SkillGroup {
 model Class {
   id                  String      @id @default(cuid())
   Title               String
-  description         String
+  description         String      @db.Text
   grantedSkills       Json?
   Skills              Json?
   SkillTierGains      Json?

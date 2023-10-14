@@ -35,21 +35,21 @@ export function SkillForm({ data }: data) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      title: data?.title || "",
-      description: data?.description || "",
-      descriptionShort: data?.descriptionShort || "",
-      tier: data?.tier || "",
-      parentSkillId: data?.parentSkillId || "",
-      skillGroupId: data?.skillGroupId || "",
-      prerequisiteSkills: data?.prerequisiteSkills || [],
-      permenentEpReduction: data?.permenentEpReduction || "",
-      epCost: data?.epCost || "",
-      activation: data?.activation || "",
-      duration: data?.duration || "",
-      abilityCheck: data?.abilityCheck || "",
-      canBeTakenMultiple: data?.canBeTakenMultiple || false,
-      playerVisable: data?.playerVisable || true,
-      additionalInfo: data?.additionalInfo || [],
+      title: data ? data?.title : "",
+      description: data ? data?.description : "",
+      descriptionShort: data ? data?.descriptionShort : "",
+      tier: data ? data?.tier : "",
+      parentSkillId: data ? data?.parentSkillId : "",
+      skillGroupId: data ? data?.skillGroupId : "",
+      prerequisiteSkills: data ? data?.prerequisiteSkills : [],
+      permenentEpReduction: data ? data?.permenentEpReduction : "",
+      epCost: data ? data?.epCost : "",
+      activation: data ? data?.activation : "",
+      duration: data ? data?.duration : "",
+      abilityCheck: data ? data?.abilityCheck : "",
+      canBeTakenMultiple: data ? data?.canBeTakenMultiple : "false",
+      playerVisable: data ? data?.playerVisable : "true",
+      additionalInfo: data ? data?.additionalInfo : [],
     },
   });
 
@@ -139,7 +139,7 @@ export function SkillForm({ data }: data) {
             "Permenent EP Reduction",
             "Enter Permenent EP Reduction...",
             "",
-            [1, 5, 10, 15]
+            [0, 1, 5, 10, 15]
           )}
           {formEntry(
             "epCost",
@@ -155,14 +155,16 @@ export function SkillForm({ data }: data) {
             "Can this skill be taken multiple times? - PROBABLY NEEDS GUI or different input",
             "ROBABLY NEEDS GUI or different input",
             "",
-            [true, false]
+            [true, false],
+            "boolean"
           )}
           {formEntry(
             "playerVisable",
             "Player Visable - PROBABLY NEEDS GUI or different input",
             "Enter Player Visable...",
             "",
-            [true, false]
+            [true, false],
+            "boolean"
           )}
           {formEntry(
             "additionalInfo",
@@ -181,7 +183,8 @@ export function SkillForm({ data }: data) {
     title: string,
     placeholder: string,
     description?: string,
-    array?: any[]
+    array?: any[],
+    type?: string
   ) {
     const ret = (
       <FormField
@@ -207,7 +210,12 @@ export function SkillForm({ data }: data) {
                   {array.map((e) => {
                     return (
                       <SelectItem value={e.toString()} key={e}>
-                        {e.toString()}
+                        {e == 0
+                          ? type == "boolean"
+                            ? "False"
+                            : "None"
+                          : e.toString().charAt(0).toUpperCase() +
+                            e.toString().slice(1)}
                       </SelectItem>
                     );
                   })}

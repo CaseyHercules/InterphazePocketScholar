@@ -63,14 +63,14 @@ export async function POST(req: Request) {
           tier: Number(tier),
           parentSkillId,
           skillGroupId,
-          prerequisiteSkills: {},
+          prerequisiteSkills: [],
           permenentEpReduction: Number(permenentEpReduction),
           epCost,
           activation,
           duration,
-          canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
-          playerVisable: playerVisable === "true" ? true : false,
-          additionalInfo: {},
+          canBeTakenMultiple: true,
+          playerVisable: true,
+          additionalInfo: [],
         },
       });
     } else {
@@ -99,20 +99,21 @@ export async function POST(req: Request) {
           tier: Number(tier),
           parentSkillId,
           skillGroupId,
-          prerequisiteSkills: JSON.parse(prerequisiteSkills),
+          prerequisiteSkills: [],
           permenentEpReduction: Number(permenentEpReduction),
           epCost,
           activation,
           duration,
           canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
           playerVisable: playerVisable === "true" ? true : false,
-          additionalInfo: JSON.parse(additionalInfo),
+          additionalInfo: [],
         },
       });
     }
 
     return new Response("OK");
   } catch (error) {
+    console;
     if (error instanceof z.ZodError) {
       return new Response(error.message, { status: 422 });
     }

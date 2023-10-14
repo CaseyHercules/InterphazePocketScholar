@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Control, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -135,12 +135,8 @@ export function ClassForm({ data }: data) {
             )}
           />
         </div>
-        <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
-          Class Skills
-        </div>
-        <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
-          Granted Class Skills
-        </div>
+        <div className="space-y-4">Class Skills</div>
+        <div className="space-y-4">Granted Class Skills</div>
         {/* Level Tier Gains */}
         <div className="grid grid-cols-23 grid-flow-col-dense space-y-4">
           {levelText}
@@ -177,7 +173,7 @@ export function ClassForm({ data }: data) {
           {MindElements}
         </div>
 
-        <Button type="submit">Submit</Button>
+        <Button type="submit">{data ? "Update" : "Submit"}</Button>
       </form>
     </Form>
   );

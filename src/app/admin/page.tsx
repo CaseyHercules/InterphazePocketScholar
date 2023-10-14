@@ -7,119 +7,45 @@ interface pageProps {}
 const page = () => {
   return (
     <div className="w-full py-16">
-      <div className="py-6">
-        <Link
-          href="/createTopic"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          Add New topics for menubar, Not Super Useful, annoying to remove
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/classTool"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          ClassTool
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/updateClass"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          update Class, used for updating base stats of classes
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/dash"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          Dashboard for all things needed for admins and others to do. Review of
-          things Far from being started RN
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/createSkill"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          createSkill, used for making new skills
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/updateSkill"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          UpdateSkill, used for updating skills values and descriptions
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/createSpell"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          CreateSpell, used for updating skills values and descriptions
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/updateSpell"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          UpdateSpell, used for updating skills values and descriptions
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/createItem"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          createItem, used for updating skills values and descriptions
-        </Link>
-      </div>
-      <div className="py-6">
-        <Link
-          href="/updateItem"
-          className={cn(
-            buttonVariants({ variant: "subtle" }),
-            "self-start -mt-20 text-xl"
-          )}
-        >
-          UpdateItem, used for updating skills values and descriptions
-        </Link>
-      </div>
+      {entry(
+        "/admin/dash",
+        "Dashboard for all things needed for admins and others to do. Review of things Far from being started RN"
+      )}
+      {entry("/admin/classTool", "ClassTool for updating and making classes")}
+      {entry(
+        "/admin/skillTool",
+        "SkillTool, used for updating and making skill's values and descriptions"
+      )}
+      {entry(
+        "/admin/spellTool",
+        "Spelltool, used for updating spells values and descriptions"
+      )}
+      {entry(
+        "/admin/itemTool",
+        "ItemTool, used for updating skills values and descriptions"
+      )}
+      {entry(
+        "/admin/createTopic",
+        "Makes a new topic that casey has to setup in the backend"
+      )}
     </div>
   );
 };
+
+function entry(url: string, desc: string) {
+  return (
+    <div className="py-6">
+      <Link
+        href={url}
+        className={cn(
+          buttonVariants({ variant: "subtle" }),
+          "self-start -mt-20 text-xl"
+        )}
+      >
+        {desc}
+      </Link>
+    </div>
+  );
+}
 
 export default page;

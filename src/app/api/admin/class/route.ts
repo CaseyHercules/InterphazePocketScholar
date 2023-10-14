@@ -1,6 +1,6 @@
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { any, z } from "zod";
+import { z } from "zod";
 import { Role } from "@prisma/client";
 import { ClassValidator, UpdateValidator } from "@/lib/validators/class";
 

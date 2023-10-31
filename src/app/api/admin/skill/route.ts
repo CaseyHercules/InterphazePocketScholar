@@ -68,8 +68,8 @@ export async function POST(req: Request) {
           epCost,
           activation,
           duration,
-          canBeTakenMultiple: true,
-          playerVisable: true,
+          canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
+          playerVisable: playerVisable === "true" ? true : false,
           additionalInfo: [],
         },
       });

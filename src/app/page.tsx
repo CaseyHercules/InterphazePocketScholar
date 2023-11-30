@@ -67,10 +67,10 @@ export default function Home() {
               Approachable Combat and Unique Spellcasting
             </h2>
             <p>
-              Experience a one-of-a-kind combat system that's approachable yet
-              strategic. Plus, dive into spellcasting with a customizable
-              system, crafting your own spells to shape your character's magical
-              abilities.
+              Experience a one-of-a-kind combat system that&apos;s approachable
+              yet strategic. Plus, dive into spellcasting with a customizable
+              system, crafting your own spells to shape your character&apos;s
+              magical abilities.
             </p>
           </div>
           <div className="flex flex-col items-center space-y-2 p-4 rounded-lg">
@@ -82,9 +82,9 @@ export default function Home() {
             </h2>
             <p>
               Bring your own costume and props to showcase your creativity, and
-              enhance your character's appearance. For added convenience, select
-              items are available on-site, making the experience accessible to
-              all.
+              enhance your character&apos;s appearance. For added convenience,
+              select items are available on-site, making the experience
+              accessible to all.
             </p>
           </div>
         </div>

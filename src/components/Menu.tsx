@@ -133,28 +133,28 @@ const MenuWide = () => {
         <MenubarMenu>
           <MenubarTrigger>World Info</MenubarTrigger>
           <MenubarContent>
-            <a href="/world/inspiration">
+            <a href="/setting/inspiration">
               <MenubarItem>Inspiration</MenubarItem>
             </a>
-            <a href="/world/geography">
+            <a href="/setting/geography">
               <MenubarItem>Geography</MenubarItem>
             </a>
-            <a href="/world/history">
+            <a href="/setting/history">
               <MenubarItem>History</MenubarItem>
             </a>
-            <a href="/world/economy">
+            <a href="/setting/economy">
               <MenubarItem>Economy</MenubarItem>
             </a>
-            <a href="/world/laws">
+            <a href="/setting/laws">
               <MenubarItem>Laws</MenubarItem>
             </a>
-            <a href="/world/society">
+            <a href="/setting/society">
               <MenubarItem>Society</MenubarItem>
             </a>
-            <a href="/world/religion">
+            <a href="/setting/religion">
               <MenubarItem>Religion</MenubarItem>
             </a>
-            <a href="/world/guilds">
+            <a href="/setting/guilds">
               <MenubarItem>Guilds</MenubarItem>
             </a>
           </MenubarContent>
@@ -308,28 +308,28 @@ const MenuSmall = () => {
             <MenubarSub>
               <MenubarSubTrigger>World Info</MenubarSubTrigger>
               <MenubarSubContent>
-                <a href="/world/inspiration">
+                <a href="/setting/inspiration">
                   <MenubarItem>Inspiration</MenubarItem>
                 </a>
-                <a href="/world/geography">
+                <a href="/setting/geography">
                   <MenubarItem>Geography</MenubarItem>
                 </a>
-                <a href="/world/history">
+                <a href="/setting/history">
                   <MenubarItem>History</MenubarItem>
                 </a>
-                <a href="/world/economy">
+                <a href="/setting/economy">
                   <MenubarItem>Economy</MenubarItem>
                 </a>
-                <a href="/world/laws">
+                <a href="/setting/laws">
                   <MenubarItem>Laws</MenubarItem>
                 </a>
-                <a href="/world/society">
+                <a href="/setting/society">
                   <MenubarItem>Society</MenubarItem>
                 </a>
-                <a href="/world/religion">
+                <a href="/setting/religion">
                   <MenubarItem>Religion</MenubarItem>
                 </a>
-                <a href="/world/guilds">
+                <a href="/setting/guilds">
                   <MenubarItem>Guilds</MenubarItem>
                 </a>
               </MenubarSubContent>

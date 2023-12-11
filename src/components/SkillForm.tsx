@@ -78,11 +78,10 @@ export function SkillForm({ data }: data) {
       console.log(responseData);
       toast({
         title: "Success!",
-        description:
-          "The skill has been successfully posted",
-          // <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          //   <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          // </pre>
+        description: "The skill has been successfully posted",
+        // <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+        //   <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+        // </pre>
       });
     } catch (err: any) {
       console.log(err);
@@ -93,6 +92,9 @@ export function SkillForm({ data }: data) {
       });
     }
   }
+
+  const tierEmun = ["1", "2", "3", "4"];
+  const permenentEpReductionEnum = [0, 1, 5, 10, 15];
 
   return (
     <Form {...form}>
@@ -112,13 +114,7 @@ export function SkillForm({ data }: data) {
             "Short description of skill...",
             "This is the description that will be printed on passports"
           )}
-          {formEntry(
-            "tier",
-            "Skill Tier",
-            "Enter Skill Tier...",
-            "",
-            [1, 2, 3, 4]
-          )}
+          {formEntry("tier", "Skill Tier", "Enter Skill Tier...", "", tierEmun)}
           {formEntry(
             "parentSkillId",
             "parentSkillId - NEEDS GUI",
@@ -139,7 +135,7 @@ export function SkillForm({ data }: data) {
             "Permenent EP Reduction",
             "Enter Permenent EP Reduction...",
             "",
-            [0, 1, 5, 10, 15]
+            permenentEpReductionEnum
           )}
           {formEntry(
             "epCost",

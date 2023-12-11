@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import { SkillValidator, UpdateValidator } from "@/lib/validators/skill";
 
 export async function POST(req: Request) {
+  console.log("POST /api/admin/skill");
   try {
     const session = await getAuthSession();
     const user = session?.user
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
     let epCost: string;
     let activation: string;
     let duration: string;
+    let abilityCheck: string;
     let canBeTakenMultiple: any;
     let playerVisable: any;
     let additionalInfo: string[];
@@ -50,6 +52,7 @@ export async function POST(req: Request) {
         epCost,
         activation,
         duration,
+        abilityCheck,
         canBeTakenMultiple,
         playerVisable,
         additionalInfo,
@@ -68,6 +71,7 @@ export async function POST(req: Request) {
           epCost,
           activation,
           duration,
+          abilityCheck,
           canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
           playerVisable: playerVisable === "true" ? true : false,
           additionalInfo: [],
@@ -86,6 +90,7 @@ export async function POST(req: Request) {
         epCost,
         activation,
         duration,
+        abilityCheck,
         canBeTakenMultiple,
         playerVisable,
         additionalInfo,
@@ -104,6 +109,7 @@ export async function POST(req: Request) {
           epCost,
           activation,
           duration,
+          abilityCheck,
           canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
           playerVisable: playerVisable === "true" ? true : false,
           additionalInfo: [],

@@ -52,9 +52,11 @@ interface ClassFormData {
     Quick?: (number | null)[];
   } | null;
   readOnly?: boolean;
+  onSuccess?: () => void;
 }
 
 interface FormData {
+  id: string | undefined;
   Title: string;
   description: string;
   grantedSkills: string[];
@@ -71,7 +73,62 @@ interface FormData {
   Quick: (number | null)[];
 }
 
-export function ClassForm({ data, readOnly }: ClassFormData) {
+interface UpdateFormData extends FormData {
+  id: string;
+}
+
+const ValidationErrors = ({ errors }: { errors: Record<string, any> }) => {
+  if (Object.keys(errors).length === 0) return null;
+
+  return (
+    <div className="mt-2 text-sm text-red-500">
+      <p className="font-semibold">Please fix the following errors:</p>
+      <ul className="list-disc list-inside">
+        {Object.entries(errors).map(([field, error]) => {
+          // Get a user-friendly field name
+          const baseName = field
+            .replace(/([A-Z])/g, " $1")
+            .trim()
+            .toLowerCase()
+            .replace(/^./, (str) => str.toUpperCase());
+
+          // If error is an array (like stat arrays), handle each error individually
+          if (Array.isArray(error)) {
+            return error
+              .map((err, index) => {
+                if (!err || !err.message) return null;
+                return (
+                  <li key={`${field}-${index}`} className="mb-1">
+                    <span className="font-medium">
+                      {baseName} (Level {index + 1}):
+                    </span>{" "}
+                    {err.message}
+                  </li>
+                );
+              })
+              .filter(Boolean);
+          }
+
+          // Handle regular errors
+          const errorMessage =
+            typeof error === "string"
+              ? error
+              : error?.message
+              ? error.message
+              : JSON.stringify(error);
+
+          return (
+            <li key={field} className="mb-1">
+              <span className="font-medium">{baseName}:</span> {errorMessage}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
+export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
   const queryClient = useQueryClient();
   const FormSchema = data ? UpdateValidator : ClassValidator;
 
@@ -90,43 +147,148 @@ export function ClassForm({ data, readOnly }: ClassFormData) {
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      id: data?.id,
       Title: data?.Title ?? "",
       description: data?.description ?? "",
-      grantedSkills: data?.grantedSkills ?? [],
-      Skills: data?.Skills ?? [],
+      grantedSkills: Array.isArray(data?.grantedSkills)
+        ? data.grantedSkills
+        : typeof data?.grantedSkills === "string"
+        ? JSON.parse(data.grantedSkills)
+        : [],
+      Skills: Array.isArray(data?.Skills)
+        ? data.Skills
+        : typeof data?.Skills === "string"
+        ? JSON.parse(data.Skills)
+        : [],
       SkillTierGains: Array.isArray(data?.SkillTierGains)
         ? data.SkillTierGains.map((tier) =>
             typeof tier === "number" ? tier : 0
           )
+        : typeof data?.SkillTierGains === "string"
+        ? JSON.parse(data.SkillTierGains).map((tier: any) =>
+            typeof tier === "number" ? tier : 0
+          )
         : defaultSkillTiers,
-      HP: data?.HP ?? Array(20).fill(null),
-      EP: data?.EP ?? Array(20).fill(null),
-      Attack: data?.Attack ?? Array(20).fill(null),
-      Accuracy: data?.Accuracy ?? Array(20).fill(null),
-      Defense: data?.Defense ?? Array(20).fill(null),
-      Resistance: data?.Resistance ?? Array(20).fill(null),
-      Tough: data?.Tough ?? Array(20).fill(null),
-      Mind: data?.Mind ?? Array(20).fill(null),
-      Quick: data?.Quick ?? Array(20).fill(null),
+      HP: Array.isArray(data?.HP)
+        ? data.HP.map((v) => (v === null ? 0 : v))
+        : typeof data?.HP === "string"
+        ? JSON.parse(data.HP).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      EP: Array.isArray(data?.EP)
+        ? data.EP.map((v) => (v === null ? 0 : v))
+        : typeof data?.EP === "string"
+        ? JSON.parse(data.EP).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Attack: Array.isArray(data?.Attack)
+        ? data.Attack.map((v) => (v === null ? 0 : v))
+        : typeof data?.Attack === "string"
+        ? JSON.parse(data.Attack).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Accuracy: Array.isArray(data?.Accuracy)
+        ? data.Accuracy.map((v) => (v === null ? 0 : v))
+        : typeof data?.Accuracy === "string"
+        ? JSON.parse(data.Accuracy).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Defense: Array.isArray(data?.Defense)
+        ? data.Defense.map((v) => (v === null ? 0 : v))
+        : typeof data?.Defense === "string"
+        ? JSON.parse(data.Defense).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Resistance: Array.isArray(data?.Resistance)
+        ? data.Resistance.map((v) => (v === null ? 0 : v))
+        : typeof data?.Resistance === "string"
+        ? JSON.parse(data.Resistance).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Tough: Array.isArray(data?.Tough)
+        ? data.Tough.map((v) => (v === null ? 0 : v))
+        : typeof data?.Tough === "string"
+        ? JSON.parse(data.Tough).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Mind: Array.isArray(data?.Mind)
+        ? data.Mind.map((v) => (v === null ? 0 : v))
+        : typeof data?.Mind === "string"
+        ? JSON.parse(data.Mind).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
+      Quick: Array.isArray(data?.Quick)
+        ? data.Quick.map((v) => (v === null ? 0 : v))
+        : typeof data?.Quick === "string"
+        ? JSON.parse(data.Quick).map((v: any) => (v === null ? 0 : v))
+        : Array(20).fill(0),
     },
   });
 
-  async function onSubmit(formData: FormData) {
-    try {
-      console.log("Form submission started with data:", formData);
+  // Subscribe to form state changes
+  const formState = form.formState;
+  console.log("Form state:", {
+    isDirty: formState.isDirty,
+    isSubmitting: formState.isSubmitting,
+    isValid: formState.isValid,
+    errors: formState.errors,
+  });
 
-      // Ensure SkillTierGains is properly formatted
+  // Debug validation errors in detail
+  if (Object.keys(formState.errors).length > 0) {
+    console.log(
+      "Detailed validation errors:",
+      JSON.stringify(formState.errors, null, 2)
+    );
+  }
+
+  const onSubmit = async (formData: FormData) => {
+    console.log("Form submission started");
+    console.log("Form data:", formData);
+    console.log("Original data:", data);
+    console.log("Form validation errors:", form.formState.errors);
+
+    try {
+      // Ensure all arrays are properly formatted
       const skillTiers = formData.SkillTierGains.map((tier) =>
         typeof tier === "number" ? Math.min(Math.max(0, tier), 4) : 0
       );
 
-      const payload = {
+      // Helper function to convert null to 0
+      const convertNullToZero = (val: number | null): number =>
+        val === null ? 0 : Number(val);
+
+      // Create the base payload
+      const basePayload = {
         ...formData,
+        // Ensure all arrays are properly formatted as numbers
         SkillTierGains: skillTiers,
-        ...(data?.id ? { id: data.id } : {}),
+        HP: formData.HP.map(convertNullToZero),
+        EP: formData.EP.map(convertNullToZero),
+        Attack: formData.Attack.map(convertNullToZero),
+        Accuracy: formData.Accuracy.map(convertNullToZero),
+        Defense: formData.Defense.map(convertNullToZero),
+        Resistance: formData.Resistance.map(convertNullToZero),
+        Tough: formData.Tough.map(convertNullToZero),
+        Mind: formData.Mind.map(convertNullToZero),
+        Quick: formData.Quick.map(convertNullToZero),
+        // Ensure arrays are initialized
+        grantedSkills: formData.grantedSkills || [],
+        Skills: formData.Skills || [],
       };
 
-      console.log("Sending payload to server:", payload);
+      // If we're updating, ensure the ID is in the payload
+      const payload = data?.id ? { ...basePayload, id: data.id } : basePayload;
+
+      // Log the validation attempt
+      try {
+        if (data?.id) {
+          console.log("Validating update payload");
+          UpdateValidator.parse(payload);
+        } else {
+          console.log("Validating create payload");
+          ClassValidator.parse(payload);
+        }
+        console.log("Validation successful");
+      } catch (validationError) {
+        console.error("Validation error:", validationError);
+        throw validationError;
+      }
+
+      console.log("Final payload:", payload);
+      console.log("Is update?", !!data?.id);
 
       const response = await axios.post("/api/admin/class", payload);
       console.log("Server response:", response);
@@ -136,14 +298,13 @@ export function ClassForm({ data, readOnly }: ClassFormData) {
 
       toast({
         title: "Success",
-        description: data
+        description: data?.id
           ? "Class updated successfully"
           : "Class created successfully",
       });
 
-      // If we're editing, we should also update the form with the new values
-      if (data?.id) {
-        form.reset(formData);
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (err: any) {
       console.error("Form submission error:", err);
@@ -159,7 +320,9 @@ export function ClassForm({ data, readOnly }: ClassFormData) {
         variant: "destructive",
       });
     }
-  }
+  };
+
+  console.log("Form mounted with data:", data);
 
   const statCategories = [
     { name: "HP" as const, label: "Health Points" },
@@ -175,7 +338,20 @@ export function ClassForm({ data, readOnly }: ClassFormData) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Form submit event triggered");
+          console.log("Current form values:", form.getValues());
+          console.log("Form is valid:", form.formState.isValid);
+          await form.handleSubmit(onSubmit)(e);
+        }}
+        className="space-y-4"
+      >
+        {data?.id && (
+          <input type="hidden" {...form.register("id")} value={data.id} />
+        )}
         <div className="relative">
           <Card className="p-4">
             <CardHeader className="p-0 pb-4">
@@ -350,8 +526,9 @@ export function ClassForm({ data, readOnly }: ClassFormData) {
         </Tabs>
 
         <Button type="submit" className="w-full" disabled={readOnly}>
-          {data ? "Update Class" : "Create Class"}
+          {data?.id ? "Update Class" : "Create Class"}
         </Button>
+        <ValidationErrors errors={formState.errors} />
       </form>
     </Form>
   );

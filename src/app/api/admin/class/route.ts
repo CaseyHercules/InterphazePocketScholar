@@ -23,6 +23,8 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     console.log("API received request body:", body);
+    console.log("Request body ID:", body.id);
+    console.log("Is update operation:", !!body.id);
 
     // Ensure SkillTierGains is properly formatted
     if (Array.isArray(body.SkillTierGains)) {
@@ -60,16 +62,24 @@ export async function POST(req: Request) {
         };
 
         console.log("Prisma update data:", prismaData);
+        console.log("Updating with ID:", id);
 
-        const updated = await db.class.update({
-          where: { id },
-          data: prismaData,
-        });
+        try {
+          const updated = await db.class.update({
+            where: { id },
+            data: prismaData,
+          });
 
-        console.log("Update successful:", updated);
-        return new Response(JSON.stringify(updated), {
-          headers: { "Content-Type": "application/json" },
-        });
+          console.log("Update successful:", updated);
+          return new Response(JSON.stringify(updated), {
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (dbError) {
+          console.error("Database update error:", dbError);
+          return new Response("Failed to update class in database", {
+            status: 500,
+          });
+        }
       } else {
         console.log("Creating new class");
 

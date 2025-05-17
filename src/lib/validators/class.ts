@@ -25,25 +25,8 @@ export const ClassValidator = z.object({
 
 export type ClassRequest = z.infer<typeof ClassValidator>;
 
-export const UpdateValidator = z.object({
+export const UpdateValidator = ClassValidator.extend({
   id: z.string(),
-  Title: z
-    .string()
-    .min(3, { message: "Title must be longer than 3 characters" })
-    .max(64, { message: "Title must be at most 64 characters" }),
-  description: z.string(),
-  grantedSkills: z.array(z.string()),
-  Skills: z.array(z.string()),
-  SkillTierGains: skillTierValidator,
-  HP: statArrayValidator,
-  EP: statArrayValidator,
-  Attack: statArrayValidator,
-  Accuracy: statArrayValidator,
-  Defense: statArrayValidator,
-  Resistance: statArrayValidator,
-  Tough: statArrayValidator,
-  Mind: statArrayValidator,
-  Quick: statArrayValidator,
 });
 
 export type UpdateRequest = z.infer<typeof UpdateValidator>;

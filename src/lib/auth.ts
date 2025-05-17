@@ -1,75 +1,257 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import {db} from "./db";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { db } from "@/lib/db";
 import { Role } from "@prisma/client";
-import { NextAuthOptions, getServerSession } from "next-auth";
+import { NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import Wordpress from "next-auth/providers/wordpress";
 import { nanoid } from "nanoid";
-
+import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(db),
-    session: {
-        strategy: "jwt",    // Use JWTs instead of database sessions
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-    },
-    pages: {
-        signIn: "/login",
-    },
-    providers: [
-        GoogleProvider({    // Use Google OAuth for sign-in
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        }),
-        Wordpress({  // Use Wordpress OAuth for sign-in
-            clientId: process.env.WORDPRESS_CLIENT_ID!,
-            clientSecret: process.env.WORDPRESS_CLIENT_SECRET!,
-        }),
-    ],
-    callbacks: {
-        async session({ token, session }) {
-            if (token) {
-                session.user.id = token.id;
-                session.user.name = token.name;
-                session.user.email = token.email;
-                session.user.image = token.picture;
-                session.user.username = token.username;
-            }
-            return session;
+  adapter: PrismaAdapter(db),
+  debug: process.env.NODE_ENV === "development",
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: "/login",
+    error: "/auth/error",
+    signOut: "/login",
+  },
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    {
+      id: "wordpress",
+      name: "WordPress",
+      type: "oauth",
+      token: `${process.env.WORDPRESS_API_URL!.replace(
+        "/wp-json",
+        ""
+      )}/oauth/token`,
+      userinfo: `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
+      clientId: process.env.WORDPRESS_CLIENT_ID,
+      clientSecret: process.env.WORDPRESS_CLIENT_SECRET,
+      authorization: {
+        url: `${process.env.WORDPRESS_API_URL!.replace(
+          "/wp-json",
+          ""
+        )}/oauth/authorize`,
+        params: {
+          scope: "basic email",
         },
-        async jwt({ token, user }) {
-            const dbUser = await db.user.findFirst({
-                where: { email: token.email, },
-            })
-            if (!dbUser) {
-                token.id = user!.id;
-                return token;
-            }
-            if(!dbUser.username){
-                await db.user.update({
-                    where: { id: dbUser.id },
-                    data: { username: nanoid(10) },
-                })
-            }
-            
-            return {
-                id: dbUser.id,
-                name: dbUser.name,
-                email: dbUser.email,
-                image: dbUser.image,
-                username: dbUser.username,
-                role: dbUser.role,
-                isAdmin: dbUser.role === Role.ADMIN,
-                isRoot: dbUser.role === Role.SUPERADMIN,
-                isSpellWright: dbUser.role === Role.SPELLWRIGHT,
-                isModerator: dbUser.role === Role.MODERATOR
-            };
-        },
-        redirect() {
-            return '/'
+      },
+      async profile(profile: any) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("WordPress profile:", profile);
         }
-    },
-        
-}
+        return {
+          id: profile.id.toString(),
+          name: profile.name || profile.slug,
+          email: profile.email,
+          image: profile.avatar_urls?.["96"] || null,
+        };
+      },
+      client: {
+        token_endpoint_auth_method: "client_secret_basic",
+      },
+      checks: ["none"],
+      // @ts-ignore - NextAuth types don't include authorize in OAuthConfig but it's supported
+      async authorize(credentials: any, req: any) {
+        try {
+          const tokenResponse = await fetch(
+            `${process.env.WORDPRESS_API_URL!.replace(
+              "/wp-json",
+              ""
+            )}/oauth/token`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization:
+                  "Basic " +
+                  Buffer.from(
+                    `${process.env.WORDPRESS_CLIENT_ID}:${process.env.WORDPRESS_CLIENT_SECRET}`
+                  ).toString("base64"),
+              },
+              body: new URLSearchParams({
+                grant_type: "client_credentials",
+              }),
+            }
+          );
 
-export const getAuthSession = () => getServerSession(authOptions)
+          const tokens = await tokenResponse.json();
+
+          if (!tokens.access_token) {
+            console.error("No access token received:", tokens);
+            return null;
+          }
+
+          const userResponse = await fetch(
+            `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
+            {
+              headers: {
+                Authorization: `Bearer ${tokens.access_token}`,
+              },
+            }
+          );
+
+          const user = await userResponse.json();
+
+          if (!user.id) {
+            console.error("No user data received:", user);
+            return null;
+          }
+
+          return {
+            id: user.id.toString(),
+            name: user.name || user.slug,
+            email: user.email,
+            image: user.avatar_urls?.["96"] || null,
+          };
+        } catch (error) {
+          console.error("WordPress auth error:", error);
+          return null;
+        }
+      },
+    } as OAuthConfig<any>,
+  ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      if (!user.email || !account) return false;
+
+      try {
+        // Check if user exists with this email
+        const existingUser = await db.user.findFirst({
+          where: { email: user.email },
+          include: {
+            accounts: true,
+          },
+        });
+
+        if (!existingUser) {
+          // Create new user if doesn't exist
+          await db.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              username: nanoid(10),
+              role: Role.USER,
+              accounts: {
+                create: {
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  refresh_token: account.refresh_token,
+                },
+              },
+            },
+          });
+          return true;
+        }
+
+        // If user exists but no account with this provider
+        const existingAccount = existingUser.accounts.find(
+          (acc) => acc.provider === account.provider
+        );
+
+        if (!existingAccount) {
+          // Link new provider to existing account
+          await db.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              refresh_token: account.refresh_token,
+            },
+          });
+        }
+
+        // Update user information
+        await db.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: user.name,
+            image: user.image,
+          },
+        });
+
+        return true;
+      } catch (error) {
+        console.error("Error in signIn callback:", error);
+        return false;
+      }
+    },
+    async session({ token, session }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
+        session.user.username = token.username;
+        session.user.role = token.role;
+        session.user.isAdmin = token.isAdmin;
+        session.user.isRoot = token.isRoot;
+        session.user.isSpellWright = token.isSpellWright;
+        session.user.isModerator = token.isModerator;
+      }
+      return session;
+    },
+    async jwt({ token, user, account }) {
+      if (!token.email) return token;
+
+      const dbUser = await db.user.findFirst({
+        where: { email: token.email },
+      });
+
+      if (!dbUser) {
+        if (user) {
+          token.id = user.id;
+        }
+        return token;
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        picture: dbUser.image,
+        username: dbUser.username,
+        role: dbUser.role,
+        isAdmin: dbUser.role === Role.ADMIN,
+        isRoot: dbUser.role === Role.SUPERADMIN,
+        isSpellWright: dbUser.role === Role.SPELLWRIGHT,
+        isModerator: dbUser.role === Role.MODERATOR,
+      };
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
+  },
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Sign in success:", { user, account, isNewUser });
+      }
+    },
+  },
+};
+
+export const getAuthSession = () => getServerSession(authOptions);

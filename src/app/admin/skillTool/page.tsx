@@ -12,11 +12,10 @@ import {
 } from "@/components/ui/card";
 import { SetStateAction, useState } from "react";
 
-const page = () => {
+const Page = () => {
   const [data, setData] = useState(null);
 
   const handleSearch = (searchResult: SetStateAction<null>) => {
-    console.log(searchResult);
     setData(searchResult);
   };
 
@@ -54,4 +53,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

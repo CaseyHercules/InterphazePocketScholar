@@ -1,46 +1,49 @@
 import { z } from "zod";
 
+const statArrayValidator = z.array(z.number().min(0).nullable()).length(20);
+const skillTierValidator = z.array(z.number().min(0).max(4)).length(20);
+
 export const ClassValidator = z.object({
-  title: z
+  Title: z
     .string()
     .min(3, { message: "Title must be longer than 3 characters" })
     .max(64, { message: "Title must be at most 64 characters" }),
   description: z.string(),
-  grantedSkills: z.any(),
-  Skills: z.any(),
-  SkillTierGains: z.any(),
-  HP: z.any(),
-  EP: z.any(),
-  Attack: z.any(),
-  Accuracy: z.any(),
-  Defense: z.any(),
-  Resistance: z.any(),
-  Tough: z.any(),
-  Mind: z.any(),
-  Quick: z.any(),
+  grantedSkills: z.array(z.string()),
+  Skills: z.array(z.string()),
+  SkillTierGains: skillTierValidator,
+  HP: statArrayValidator,
+  EP: statArrayValidator,
+  Attack: statArrayValidator,
+  Accuracy: statArrayValidator,
+  Defense: statArrayValidator,
+  Resistance: statArrayValidator,
+  Tough: statArrayValidator,
+  Mind: statArrayValidator,
+  Quick: statArrayValidator,
 });
 
 export type ClassRequest = z.infer<typeof ClassValidator>;
 
 export const UpdateValidator = z.object({
   id: z.string(),
-  title: z
+  Title: z
     .string()
     .min(3, { message: "Title must be longer than 3 characters" })
     .max(64, { message: "Title must be at most 64 characters" }),
   description: z.string(),
-  grantedSkills: z.any(),
-  Skills: z.any(),
-  SkillTierGains: z.any(),
-  HP: z.any(),
-  EP: z.any(),
-  Attack: z.any(),
-  Accuracy: z.any(),
-  Defense: z.any(),
-  Resistance: z.any(),
-  Tough: z.any(),
-  Mind: z.any(),
-  Quick: z.any(),
+  grantedSkills: z.array(z.string()),
+  Skills: z.array(z.string()),
+  SkillTierGains: skillTierValidator,
+  HP: statArrayValidator,
+  EP: statArrayValidator,
+  Attack: statArrayValidator,
+  Accuracy: statArrayValidator,
+  Defense: statArrayValidator,
+  Resistance: statArrayValidator,
+  Tough: statArrayValidator,
+  Mind: statArrayValidator,
+  Quick: statArrayValidator,
 });
 
 export type UpdateRequest = z.infer<typeof UpdateValidator>;

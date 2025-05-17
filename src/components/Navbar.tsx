@@ -15,7 +15,7 @@ const NavBar = async () => {
     : null;
 
   return (
-    <div className="fixed top-0 inset-x-0 h-fit bg-zinc-100 border-b border-zinc-300 z-[10] py-2">
+    <div className="w-full h-fit bg-zinc-100 border-b border-zinc-300 py-2">
       <div className="sm:hidden container h-full mx-auto flex items-center justify-between gap-2">
         <MenuSmall />
         <div className="flex items-center">
@@ -24,8 +24,7 @@ const NavBar = async () => {
           </Link>
         </div>
         {session?.user ? (
-          //@ts-expect-error user can't be null
-          <UserAccountNav user={UserObj} />
+          <UserAccountNav user={UserObj!} />
         ) : (
           <Link href="/login" className={buttonVariants()}>
             Login
@@ -46,8 +45,7 @@ const NavBar = async () => {
           {/* search bar */}
           {session?.user ? (
             <div className="hidden sm:block">
-              {/* @ts-expect-error user can't be null */}
-              <UserAccountNav user={UserObj} />
+              <UserAccountNav user={UserObj!} />
             </div>
           ) : (
             <div className="hidden sm:block">

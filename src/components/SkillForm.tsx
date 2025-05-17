@@ -74,21 +74,16 @@ export function SkillForm({ data }: data) {
 
     try {
       const response = await axios.post("/api/admin/skill", payload);
-      const responseData = response.data;
-      console.log(responseData);
       toast({
         title: "Success!",
         description: "The skill has been successfully posted",
-        // <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-        //   <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        // </pre>
       });
     } catch (err: any) {
-      console.log(err);
       toast({
-        title: "Error! Status code:" + err.response.status,
+        title: "Error! Status code:" + err.response?.status,
         variant: "destructive",
-        description: err.response.data,
+        description:
+          err.response?.data || "An error occurred while creating the skill",
       });
     }
   }

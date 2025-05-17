@@ -4,7 +4,7 @@ import Link from "next/link";
 
 interface pageProps {}
 
-const page = () => {
+const Page = () => {
   return (
     <div className="w-full py-16">
       {entry(
@@ -48,4 +48,4 @@ function entry(url: string, desc: string) {
   );
 }
 
-export default page;
+export default Page;

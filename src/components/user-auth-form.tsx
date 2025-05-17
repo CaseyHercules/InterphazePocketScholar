@@ -6,18 +6,24 @@ import { Icons } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 import { useToast } from "../hooks/use-toast";
+import { useSearchParams } from "next/navigation";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const loginWith = async (authProvider: string) => {
     setIsLoading(true);
 
     try {
-      await signIn(authProvider);
+      await signIn(authProvider, {
+        callbackUrl,
+        redirect: true,
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -57,7 +63,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         {"\u00A0"}
         Wordpress
       </Button>
-      <Button
+      {/* <Button
         variant="outline"
         type="button"
         disabled={isLoading}
@@ -71,7 +77,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           <Icons.google className="mr-2 h-4 w-4" />
         )}{" "}
         Google
-      </Button>
+      </Button> */}
     </div>
   );
 }

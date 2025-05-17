@@ -15,7 +15,8 @@ const Page = () => {
   const [title, setTitle] = useState<string>("");
   const { loginToast } = useCustomToast();
 
-  const { mutate: createTopic, isLoading } = useMutation({
+  const { mutate: createTopic, isPending } = useMutation({
+    mutationKey: ["createTopic"],
     mutationFn: async () => {
       const payload: TopicValidatorPayload = {
         title: title,
@@ -99,18 +100,16 @@ const Page = () => {
 
         <div className="flex justify-center sm:justify-end gap-4">
           <Button
-            disabled={isLoading}
+            disabled={isPending}
             variant="subtle"
             onClick={() => router.back()}
           >
             Cancel
           </Button>
           <Button
-            isLoading={isLoading}
+            isLoading={isPending}
             disabled={title.length === 0}
-            onClick={() => {
-              createTopic();
-            }}
+            onClick={() => createTopic()}
           >
             Submit
           </Button>

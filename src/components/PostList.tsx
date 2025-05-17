@@ -23,23 +23,22 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
     threshold: 1,
   });
 
-  const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery(
-    ["useInfiniteQuery"],
-    async ({ pageParam = 1 }) => {
+  const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["useInfiniteQuery"],
+    queryFn: async ({ pageParam = 1 }) => {
       const query = `/api/posts?limit=${INFINITE_SCROLL_PAGINATION_RESULTS}&page=${pageParam}&topic=${topicName}`;
       const { data } = await axios.get(query);
       return data as ExtenededPost[];
     },
-    {
-      getNextPageParam: (_, pages) => {
-        return pages.length + 1;
-      },
-      initialData: {
-        pages: [initialPosts],
-        pageParams: [INFINITE_SCROLL_PAGINATION_RESULTS],
-      },
-    }
-  );
+    initialPageParam: 1,
+    getNextPageParam: (_, pages) => {
+      return pages.length + 1;
+    },
+    initialData: {
+      pages: [initialPosts],
+      pageParams: [1],
+    },
+  });
 
   useEffect(() => {
     if (entry?.isIntersecting) {

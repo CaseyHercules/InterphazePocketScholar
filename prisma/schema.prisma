@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("PocketScholar_DATABASE_URL")
   relationMode = "prisma"
 }
 
@@ -104,10 +104,10 @@ model Skill {
   playerVisable        Boolean     @default(true)
   additionalInfo       Json?
   chararacterId        String?
-  parentSkill          Skill?      @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentSkill          Skill?      @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   childSkills          Skill[]     @relation("RelatedSkills")
   skillGrouping        SkillGroup? @relation(fields: [skillGroupId], references: [id])
-  characterSkills      Character?  @relation(fields: [chararacterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  characterSkills      Character?  @relation(fields: [chararacterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([skillGroupId])
   @@index([parentSkillId])
@@ -156,9 +156,9 @@ model Character {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   phazians          Int
-  user              User?    @relation(fields: [userId], references: [id])
-  primaryClass      Class?   @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  secondaryClass    Class?   @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user              User?    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  primaryClass      Class?   @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  secondaryClass    Class?   @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   skills            Skill[]
   inventory         Item[]
   spells            Spell[]
@@ -185,7 +185,7 @@ model Item {
   type        ItemType?
   quantity    Int
   characterId String?
-  character   Character? @relation(fields: [characterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
 }
@@ -197,7 +197,7 @@ model Spell {
   description String?
   level       Int
   characterId String?
-  character   Character? @relation(fields: [characterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
 }
@@ -208,7 +208,7 @@ model Request {
   description String?
   userId      String?
   type        RequestType?
-  User        User?        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User        User?        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([userId])
 }

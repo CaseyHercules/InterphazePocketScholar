@@ -7,7 +7,8 @@ import { useForm } from "react-hook-form";
 import { PostRequest, PostValidator } from "@/lib/validators/post";
 import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
-import { uploadFiles } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
+import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { toast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -41,6 +42,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { startUpload } = useUploadThing("imageUploader");
 
   const initializeEditor = useCallback(async () => {
     const EditorJS = (await import("@editorjs/editorjs")).default;
@@ -76,12 +78,18 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
               uploader: {
                 async uploadByFile(file: File) {
                   // upload to uploadthing
-                  const [res] = await uploadFiles([file], "imageUploader");
+                  const res = await startUpload([file]);
+
+                  if (!res?.[0]) {
+                    return {
+                      success: 0,
+                    };
+                  }
 
                   return {
                     success: 1,
                     file: {
-                      url: res.fileUrl,
+                      url: res[0].url,
                     },
                   };
                 },
@@ -96,7 +104,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
         },
       });
     }
-  }, []);
+  }, [startUpload]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -133,13 +141,14 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   }, [isMounted, initializeEditor]);
 
   const { mutate: createPost } = useMutation({
+    mutationKey: ["createPost"],
     mutationFn: async ({ title, content, topicId }: PostRequest) => {
-      const playload: PostRequest = {
+      const payload: PostRequest = {
         title,
         content,
         topicId,
       };
-      const { data } = await axios.post("/api/admin/post/create", playload);
+      const { data } = await axios.post("/api/admin/post/create", payload);
       return data;
     },
     onError: (err) => {

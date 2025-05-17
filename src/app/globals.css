@@ -1,0 +1,4 @@
+/* Prevent scrollbar layout shifts */
+html {
+  scrollbar-gutter: stable;
+} 

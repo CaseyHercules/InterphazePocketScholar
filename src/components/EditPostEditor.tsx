@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { UpdateValidator, UpdateRequest } from "@/lib/validators/post";
 import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
-import { uploadFiles } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -51,6 +51,7 @@ export const EditPostEditor: FC<EditorProps> = ({
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { startUpload } = useUploadThing("imageUploader");
 
   const initializeEditor = useCallback(async () => {
     const EditorJS = (await import("@editorjs/editorjs")).default;
@@ -86,12 +87,18 @@ export const EditPostEditor: FC<EditorProps> = ({
               uploader: {
                 async uploadByFile(file: File) {
                   // upload to uploadthing
-                  const [res] = await uploadFiles([file], "imageUploader");
+                  const res = await startUpload([file]);
+
+                  if (!res?.[0]) {
+                    return {
+                      success: 0,
+                    };
+                  }
 
                   return {
                     success: 1,
                     file: {
-                      url: res.fileUrl,
+                      url: res[0].url,
                     },
                   };
                 },
@@ -106,7 +113,7 @@ export const EditPostEditor: FC<EditorProps> = ({
         },
       });
     }
-  }, []);
+  }, [startUpload]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

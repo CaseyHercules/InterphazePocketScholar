@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 
-interface pageProps {
+interface PageProps {
   params: {
     postId: string;
+    slug: string;
   };
 }
 
-const page = async ({ params }: pageProps) => {
+const Page = async ({ params }: PageProps) => {
   const post = await db.post.findFirst({
     where: {
       id: params.postId,
@@ -48,4 +49,4 @@ const page = async ({ params }: pageProps) => {
   );
 };
 
-export default page;
+export default Page;

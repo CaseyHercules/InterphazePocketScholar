@@ -5,7 +5,6 @@ import { Role } from "@prisma/client";
 import { SkillValidator, UpdateValidator } from "@/lib/validators/skill";
 
 export async function POST(req: Request) {
-  console.log("POST /api/admin/skill");
   try {
     const session = await getAuthSession();
     const user = session?.user
@@ -119,7 +118,6 @@ export async function POST(req: Request) {
 
     return new Response("OK");
   } catch (error) {
-    console;
     if (error instanceof z.ZodError) {
       return new Response(error.message, { status: 422 });
     }

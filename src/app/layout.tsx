@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import { Inter, Gentium_Book_Plus } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
-import Providers from "@/components/Providers";
+import Providers from "./providers";
 
 export const metadata = {
   title: "Interphaze Pocket Scholar",
@@ -28,19 +28,27 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "bg-white text-stone-900 antialias",
+        "bg-white text-stone-900 antialias light",
         inter.className,
         gbp.className
       )}
     >
-      <body className="min-h-screen pt-12 bg-background antialiased">
+      <body className="min-h-screen bg-background antialiased flex flex-col">
         <Providers>
-          {/* @ts-expect-error server compenent */}
-          <Navbar />
-          {authModal}
-          <div className="container max-w-7xl mx-auto h-full pt-4 md:pt-2">
-            {children}
+          {/* Fixed navbar at the top */}
+          <div className="fixed top-0 left-0 right-0 z-50">
+            <Navbar />
           </div>
+
+          {/* Auth modal */}
+          {authModal}
+
+          {/* Main content area with proper padding for fixed header */}
+          <main className="flex-1 container max-w-7xl mx-auto pt-16 pb-8 px-4">
+            <div className="h-full">{children}</div>
+          </main>
+
+          {/* Toast notifications */}
           <Toaster />
         </Providers>
       </body>

@@ -44,21 +44,21 @@ export async function POST(req: Request) {
 
         const { id, ...updateData } = validatedData;
 
-        // Convert arrays to JSONB for Prisma
+        // Convert arrays to JSONB for Prisma - no need to stringify as Prisma handles this
         const prismaData = {
           ...updateData,
-          SkillTierGains: JSON.stringify(updateData.SkillTierGains),
-          HP: JSON.stringify(updateData.HP),
-          EP: JSON.stringify(updateData.EP),
-          Attack: JSON.stringify(updateData.Attack),
-          Accuracy: JSON.stringify(updateData.Accuracy),
-          Defense: JSON.stringify(updateData.Defense),
-          Resistance: JSON.stringify(updateData.Resistance),
-          Tough: JSON.stringify(updateData.Tough),
-          Mind: JSON.stringify(updateData.Mind),
-          Quick: JSON.stringify(updateData.Quick),
-          Skills: JSON.stringify(updateData.Skills),
-          grantedSkills: JSON.stringify(updateData.grantedSkills),
+          SkillTierGains: updateData.SkillTierGains,
+          HP: updateData.HP,
+          EP: updateData.EP,
+          Attack: updateData.Attack,
+          Accuracy: updateData.Accuracy,
+          Defense: updateData.Defense,
+          Resistance: updateData.Resistance,
+          Tough: updateData.Tough,
+          Mind: updateData.Mind,
+          Quick: updateData.Quick,
+          Skills: updateData.Skills,
+          grantedSkills: updateData.grantedSkills,
         };
 
         console.log("Prisma update data:", prismaData);
@@ -87,21 +87,21 @@ export async function POST(req: Request) {
         const validatedData = ClassValidator.parse(body);
         console.log("Validated create data:", validatedData);
 
-        // Convert arrays to JSONB for Prisma
+        // Convert arrays to JSONB for Prisma - no need to stringify as Prisma handles this
         const prismaData = {
           ...validatedData,
-          SkillTierGains: JSON.stringify(validatedData.SkillTierGains),
-          HP: JSON.stringify(validatedData.HP),
-          EP: JSON.stringify(validatedData.EP),
-          Attack: JSON.stringify(validatedData.Attack),
-          Accuracy: JSON.stringify(validatedData.Accuracy),
-          Defense: JSON.stringify(validatedData.Defense),
-          Resistance: JSON.stringify(validatedData.Resistance),
-          Tough: JSON.stringify(validatedData.Tough),
-          Mind: JSON.stringify(validatedData.Mind),
-          Quick: JSON.stringify(validatedData.Quick),
-          Skills: JSON.stringify(validatedData.Skills),
-          grantedSkills: JSON.stringify(validatedData.grantedSkills),
+          SkillTierGains: validatedData.SkillTierGains,
+          HP: validatedData.HP,
+          EP: validatedData.EP,
+          Attack: validatedData.Attack,
+          Accuracy: validatedData.Accuracy,
+          Defense: validatedData.Defense,
+          Resistance: validatedData.Resistance,
+          Tough: validatedData.Tough,
+          Mind: validatedData.Mind,
+          Quick: validatedData.Quick,
+          Skills: validatedData.Skills,
+          grantedSkills: validatedData.grantedSkills,
         };
 
         console.log("Prisma create data:", prismaData);

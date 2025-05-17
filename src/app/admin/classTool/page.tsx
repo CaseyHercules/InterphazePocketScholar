@@ -237,7 +237,10 @@ const Page = () => {
     queryKey: ["classes"],
     queryFn: async () => {
       const response = await axios.get("/api/admin/class");
-      return response.data;
+      // Sort classes alphabetically by title
+      return response.data.sort((a: Class, b: Class) =>
+        a.Title.localeCompare(b.Title, undefined, { sensitivity: "base" })
+      );
     },
   });
 

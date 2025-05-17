@@ -38,7 +38,7 @@ function entry(url: string, desc: string) {
       <Link
         href={url}
         className={cn(
-          buttonVariants({ variant: "subtle" }),
+          buttonVariants({ variant: "outline" }),
           "self-start -mt-20 text-xl"
         )}
       >

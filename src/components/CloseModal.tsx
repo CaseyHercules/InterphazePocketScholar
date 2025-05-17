@@ -8,7 +8,7 @@ const CloseModal = () => {
   const router = useRouter();
   return (
     <Button
-      variant="subtle"
+      variant="outline"
       className="h-6 w-6 p-0 rounded-md"
       aria-label="Close modal"
       onClick={() => router.back()}

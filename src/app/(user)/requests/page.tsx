@@ -110,16 +110,12 @@ const Page = () => {
         <div className="flex justify-center sm:justify-end gap-4">
           <Button
             disabled={isPending}
-            variant="subtle"
+            variant="outline"
             onClick={() => router.back()}
           >
             Cancel
           </Button>
-          <Button
-            isLoading={isPending}
-            disabled={title.length === 0 || description.length === 0}
-            onClick={() => createRequest()}
-          >
+          <Button disabled={isPending} onClick={() => createRequest()}>
             Submit
           </Button>
         </div>

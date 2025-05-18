@@ -1,0 +1,201 @@
+/* Reset Quill's default styles */
+.ql-container,
+.ql-toolbar,
+.ql-editor {
+  all: revert;
+  font-family: var(--font-sans) !important;
+}
+
+/* Editor Container */
+.quill {
+  @apply flex flex-col gap-0 rounded-lg border border-input bg-background text-foreground overflow-hidden transition-colors w-full max-w-[1200px] mx-auto;
+}
+
+/* Toolbar */
+.ql-toolbar.ql-snow {
+  @apply flex flex-wrap items-center gap-2 rounded-t-lg border-0 border-b border-input bg-muted/40 px-4 py-2.5 m-0;
+  font-family: var(--font-sans) !important;
+}
+
+/* Toolbar Buttons */
+.ql-toolbar.ql-snow .ql-formats {
+  @apply mr-0 flex gap-1;
+}
+
+.ql-snow.ql-toolbar button {
+  @apply h-9 w-9 rounded-md border border-input bg-background p-2 text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+}
+
+.ql-snow.ql-toolbar button.ql-active {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+/* Toolbar Dropdowns */
+.ql-snow .ql-picker {
+  @apply h-9;
+}
+
+.ql-snow .ql-picker-label {
+  @apply flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-none transition-colors hover:bg-accent hover:text-accent-foreground;
+}
+
+.ql-snow .ql-picker-options {
+  @apply rounded-md border border-input bg-popover text-popover-foreground shadow-md;
+  padding: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.ql-snow .ql-picker-item {
+  @apply rounded px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground;
+}
+
+/* Editor Area */
+.ql-container.ql-snow {
+  @apply rounded-b-lg border-0 bg-background w-full;
+}
+
+.ql-editor {
+  @apply min-h-[350px] px-6 py-4 text-[18px] leading-[1.6] focus:outline-none relative;
+  caret-color: hsl(var(--primary));
+}
+
+.ql-editor.ql-blank::before {
+  @apply text-muted-foreground not-italic;
+  font-family: var(--font-sans) !important;
+  font-size: 18px;
+  left: 1.5rem !important;
+  top: 1rem !important;
+  right: 1.5rem !important;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Typography */
+.ql-editor p {
+  @apply text-lg leading-[1.6] text-foreground [&:not(:first-child)]:mt-5;
+}
+
+.ql-editor h1 {
+  @apply scroll-m-20 text-[3rem] font-bold tracking-tight text-foreground mt-10 mb-4;
+}
+
+.ql-editor h2 {
+  @apply scroll-m-20 text-[2.25rem] font-semibold tracking-tight text-foreground mt-8 mb-3;
+}
+
+.ql-editor h3 {
+  @apply scroll-m-20 text-[1.75rem] font-semibold tracking-tight text-foreground mt-6 mb-2;
+}
+
+.ql-editor ul {
+  @apply my-5 ml-6 list-disc [&>li]:mt-2;
+}
+
+.ql-editor ol {
+  @apply my-5 ml-6 list-decimal [&>li]:mt-2;
+}
+
+.ql-editor li {
+  @apply text-lg leading-[1.6] text-foreground;
+}
+
+.ql-editor blockquote {
+  @apply mt-6 border-l-4 border-border pl-6 italic text-foreground/80 text-lg;
+}
+
+.ql-editor img {
+  @apply my-8 rounded-lg border border-input shadow-sm;
+}
+
+/* Code Blocks */
+.ql-editor pre {
+  @apply my-6 overflow-x-auto rounded-lg bg-muted py-4 px-4;
+}
+
+.ql-editor pre code {
+  @apply relative rounded bg-transparent p-0 font-mono text-sm;
+}
+
+.ql-editor code {
+  @apply relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm;
+}
+
+/* Links */
+.ql-editor a {
+  @apply font-medium text-primary underline underline-offset-4 hover:text-primary/80;
+}
+
+/* Selection */
+.ql-editor ::selection {
+  @apply bg-primary/20;
+}
+
+/* Read-only mode */
+.quill.read-only {
+  @apply border-0 bg-transparent;
+}
+
+.quill.read-only .ql-editor {
+  @apply p-0 min-h-0;
+}
+
+/* Icons */
+.ql-snow .ql-stroke {
+  stroke: hsl(var(--foreground));
+  stroke-width: 1.5;
+}
+
+.ql-snow .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: hsl(var(--accent-foreground));
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: hsl(var(--accent-foreground));
+}
+
+/* Dark mode adjustments */
+.dark .ql-snow .ql-stroke {
+  stroke: hsl(var(--foreground));
+}
+
+.dark .ql-snow .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+/* Focus states */
+.ql-container.ql-snow:focus-within {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .ql-toolbar.ql-snow {
+    @apply px-4 py-2 gap-1;
+  }
+
+  .ql-snow.ql-toolbar button {
+    @apply h-8 w-8 p-1.5;
+  }
+
+  .ql-editor {
+    @apply px-4 py-3 text-base;
+  }
+
+  .ql-editor h1 {
+    @apply text-[2.5rem];
+  }
+
+  .ql-editor h2 {
+    @apply text-[1.75rem];
+  }
+
+  .ql-editor h3 {
+    @apply text-[1.5rem];
+  }
+} 

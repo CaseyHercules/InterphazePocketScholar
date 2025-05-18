@@ -17,6 +17,7 @@ interface PostListProps {
 }
 
 const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
+  console.log("Initial Posts:", initialPosts);
   const lastPostRef = useRef<HTMLElement>(null);
   const { ref, entry } = useIntersection({
     root: lastPostRef.current,
@@ -62,7 +63,7 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
           return (
             <li key={post.id} ref={ref}>
               <Post
-                topicName={post.Topic?.title}
+                topicName={post.Topic?.title || ""}
                 post={post}
                 viewExtraParams={vxp}
               />
@@ -72,7 +73,7 @@ const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
           return (
             <Post
               key={post.id}
-              topicName={post.Topic?.title}
+              topicName={post.Topic?.title || ""}
               post={post}
               viewExtraParams={vxp}
             />

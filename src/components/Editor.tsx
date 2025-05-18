@@ -5,15 +5,16 @@ import TextareaAutosize from "react-textarea-autosize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { PostRequest, PostValidator } from "@/lib/validators/post";
-import type EditorJS from "@editorjs/editorjs";
 import { z } from "zod";
 import { useUploadThing } from "@/lib/uploadthing";
-import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { toast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { FC } from "react";
+import "quill/dist/quill.snow.css";
+import "@/styles/quill.css";
+import type Quill from "quill";
 
 type FormData = z.infer<typeof PostValidator>;
 
@@ -23,7 +24,7 @@ interface EditorProps {
   content?: any;
 }
 
-export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
+export const Editor: FC<EditorProps> = ({ topicId, formId, content }) => {
   const {
     register,
     handleSubmit,
@@ -37,7 +38,8 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
     },
   });
 
-  const ref = useRef<EditorJS>();
+  const quillRef = useRef<Quill>();
+  const editorRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const _titleRef = useRef<HTMLTextAreaElement>(null);
   const pathname = usePathname();
@@ -45,65 +47,60 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   const { startUpload } = useUploadThing("imageUploader");
 
   const initializeEditor = useCallback(async () => {
-    const EditorJS = (await import("@editorjs/editorjs")).default;
-    const Header = (await import("@editorjs/header")).default;
-    const Embed = (await import("@editorjs/embed")).default;
-    const Table = (await import("@editorjs/table")).default;
-    const List = (await import("@editorjs/list")).default;
-    const Code = (await import("@editorjs/code")).default;
-    const LinkTool = (await import("@editorjs/link")).default;
-    const InlineCode = (await import("@editorjs/inline-code")).default;
-    const ImageTool = (await import("@editorjs/image")).default;
+    if (!editorRef.current) return;
 
-    if (!ref.current) {
-      const editor = new EditorJS({
-        holder: "editor",
-        onReady() {
-          ref.current = editor;
-        },
-        placeholder: "Type here to write your post...",
-        inlineToolbar: true,
-        data: { blocks: [] },
-        tools: {
-          header: Header,
-          linkTool: {
-            class: LinkTool,
-            config: {
-              endpoint: "/api/link",
-            },
-          },
-          image: {
-            class: ImageTool,
-            config: {
-              uploader: {
-                async uploadByFile(file: File) {
-                  // upload to uploadthing
-                  const res = await startUpload([file]);
+    const { default: Quill } = await import("quill");
 
-                  if (!res?.[0]) {
-                    return {
-                      success: 0,
-                    };
-                  }
+    const toolbarOptions = [
+      ["bold", "italic", "underline", "strike"],
+      ["blockquote", "code-block"],
+      [{ header: 1 }, { header: 2 }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ script: "sub" }, { script: "super" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      ["link", "image"],
+      ["clean"],
+    ];
 
-                  return {
-                    success: 1,
-                    file: {
-                      url: res[0].url,
-                    },
-                  };
-                },
-              },
-            },
-          },
-          list: List,
-          code: Code,
-          inlineCode: InlineCode,
-          table: Table,
-          embed: Embed,
-        },
-      });
-    }
+    const quill = new Quill(editorRef.current, {
+      modules: {
+        toolbar: toolbarOptions,
+      },
+      placeholder: "Type here to write your post...",
+      theme: "snow",
+    });
+
+    // Handle image upload
+    const toolbar = quill.getModule("toolbar") as {
+      addHandler: (type: string, handler: () => void) => void;
+    };
+    toolbar.addHandler("image", async () => {
+      const input = document.createElement("input");
+      input.setAttribute("type", "file");
+      input.setAttribute("accept", "image/*");
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (file) {
+          try {
+            const res = await startUpload([file]);
+            if (res?.[0]?.url) {
+              const range = quill.getSelection(true);
+              quill.insertEmbed(range.index, "image", res[0].url);
+            }
+          } catch (error) {
+            toast({
+              title: "Error uploading image",
+              description: "Please try again later",
+              variant: "destructive",
+            });
+          }
+        }
+      };
+    });
+
+    quillRef.current = quill;
   }, [startUpload]);
 
   useEffect(() => {
@@ -125,17 +122,16 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   }, [errors]);
 
   useEffect(() => {
-    const init = async () => {
-      await initializeEditor();
+    if (isMounted) {
+      initializeEditor();
       setTimeout(() => {
         _titleRef?.current?.focus();
       }, 0);
-    };
-    if (isMounted) {
-      init();
+
       return () => {
-        ref.current?.destroy();
-        ref.current = undefined;
+        if (quillRef.current) {
+          quillRef.current = undefined;
+        }
       };
     }
   }, [isMounted, initializeEditor]);
@@ -151,14 +147,14 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
       const { data } = await axios.post("/api/admin/post/create", payload);
       return data;
     },
-    onError: (err) => {
+    onError: () => {
       return toast({
         title: "Error",
         description: "Post was not created. Please try again later.",
         variant: "destructive",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       const newPath = pathname.split("/").slice(0, -1).join("/");
       router.push(newPath);
       router.refresh();
@@ -170,10 +166,16 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   });
 
   async function onSubmit(data: FormData) {
-    const blocks = await ref.current?.save();
+    if (!quillRef.current) return;
+
+    const content = {
+      type: "doc",
+      content: quillRef.current.getContents(),
+    };
+
     const payload: PostRequest = {
       title: data.title,
-      content: blocks,
+      content,
       topicId,
     };
     createPost(payload);
@@ -186,9 +188,9 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
   const { ref: titleRef, ...titleProps } = register("title");
 
   return (
-    <div className="w-full p-4 bg-stone-50 rounded-lg border border-stone-100">
-      <form id={formId} className="w-git" onSubmit={handleSubmit(onSubmit)}>
-        <div className="prose prose-stone dark:prose-invert">
+    <div className="w-full p-4 bg-card rounded-lg border border-border">
+      <form id={formId} className="w-full" onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-4">
           <TextareaAutosize
             ref={(e) => {
               titleRef(e);
@@ -197,9 +199,11 @@ export const Editor: FC<EditorProps> = ({ topicId, formId }) => {
             }}
             {...titleProps}
             placeholder="Title"
-            className="w-full resize-none appearance-none overflow-hidden bg-transparent text-5xl font-bold focus:outline-none"
+            className="w-full resize-none appearance-none overflow-hidden bg-transparent text-4xl font-bold focus:outline-none"
           />
-          <div id="editor" className="min-h-[100px]" />
+          <div className="quill">
+            <div ref={editorRef} className="min-h-[350px]" />
+          </div>
         </div>
       </form>
     </div>

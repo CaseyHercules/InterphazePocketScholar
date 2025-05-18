@@ -50,7 +50,7 @@ const MenuWide = () => {
               <MenubarItem>Character Advancement</MenubarItem>
             </a>
             <MenubarSub>
-              <a href="/class">
+              <a href="/class/class">
                 <MenubarSubTrigger>Classes</MenubarSubTrigger>
               </a>
               <MenubarSubContent>
@@ -59,6 +59,9 @@ const MenuWide = () => {
                 </a>
                 <a href="/class/druid">
                   <MenubarItem>Druid</MenubarItem>
+                </a>
+                <a href="/class/mage">
+                  <MenubarItem>Mage</MenubarItem>
                 </a>
                 <a href="/class/fighter">
                   <MenubarItem>Fighter</MenubarItem>
@@ -87,7 +90,7 @@ const MenuWide = () => {
               </MenubarSubContent>
             </MenubarSub>
             <MenubarSub>
-              <a href="/race">
+              <a href="/race/race">
                 <MenubarSubTrigger>Races</MenubarSubTrigger>
               </a>
               <MenubarSubContent>

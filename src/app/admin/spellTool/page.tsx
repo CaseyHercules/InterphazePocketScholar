@@ -28,12 +28,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { SpellView } from "@/components/SpellView";
 
 export default function AdminSpellTool() {
   const queryClient = useQueryClient();
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
+  const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === Role.SUPERADMIN;
 
@@ -84,6 +86,7 @@ export default function AdminSpellTool() {
         title: "Success",
         description: "Spell deleted successfully",
       });
+      setSpellToDelete(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -112,81 +115,65 @@ export default function AdminSpellTool() {
       <hr className="bg-foreground h-px" />
 
       {!isCreating && !selectedSpell ? (
-        <SpellTable
-          spells={spells || []}
-          onEdit={isSuperAdmin ? handleEdit : undefined}
-          onView={handleView}
-          onDelete={
-            isSuperAdmin
-              ? (id) => {
-                  const spell = spells?.find((s) => s.id === id);
-                  if (!spell) return;
-                  return new Promise((resolve) => {
-                    const dialog = document.createElement("div");
-                    document.body.appendChild(dialog);
-                    const cleanup = () => {
-                      document.body.removeChild(dialog);
-                    };
-                    const onConfirm = async () => {
-                      await handleDelete(id);
-                      cleanup();
-                      resolve(true);
-                    };
-                    const onCancel = () => {
-                      cleanup();
-                      resolve(false);
-                    };
-                    const alert = (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete the spell &ldquo;
-                              {spell.title}&rdquo;? This action cannot be
-                              undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={onCancel}>
-                              Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={onConfirm}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete Spell
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    );
-                  });
-                }
-              : undefined
-          }
-          isLoading={isLoading}
-        />
+        <>
+          <SpellTable
+            spells={spells || []}
+            onEdit={isSuperAdmin ? handleEdit : undefined}
+            onView={handleView}
+            onDelete={
+              isSuperAdmin
+                ? (id) => {
+                    const spell = spells?.find((s) => s.id === id);
+                    if (spell) {
+                      setSpellToDelete(spell);
+                    }
+                  }
+                : undefined
+            }
+            isLoading={isLoading}
+          />
+
+          <AlertDialog
+            open={spellToDelete !== null}
+            onOpenChange={(open) => !open && setSpellToDelete(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the spell &ldquo;
+                  {spellToDelete?.title}&rdquo;? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setSpellToDelete(null)}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    spellToDelete?.id && handleDelete(spellToDelete.id)
+                  }
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete Spell
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      ) : isViewing && selectedSpell ? (
+        <SpellView spell={selectedSpell} />
       ) : (
         <Card>
           <CardHeader>
             <CardTitle>
               {isCreating
                 ? "Create New Spell"
-                : isViewing
-                ? `Spell Details: ${selectedSpell?.title}`
                 : `Edit Spell: ${selectedSpell?.title}`}
             </CardTitle>
             <CardDescription>
               {isCreating
                 ? "Create a new spell with the form below"
-                : isViewing
-                ? selectedSpell?.description
                 : "Edit the selected spell properties"}
             </CardDescription>
           </CardHeader>

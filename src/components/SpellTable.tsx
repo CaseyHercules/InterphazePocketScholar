@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spell, SPELL_TYPES } from "@/types/spell";
+import { Spell, SPELL_TYPES, SPELL_DESCRIPTORS } from "@/types/spell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface SpellTableProps {
   spells: Spell[];
@@ -39,10 +40,17 @@ export function SpellTable({
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [descriptorFilter, setDescriptorFilter] = useState<string>("all");
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Spell | "castingTime";
+    key: keyof Spell | "descriptor";
     direction: "asc" | "desc";
   } | null>(null);
+
+  // Helper function to truncate text
+  const truncateText = (text: string, maxLength: number = 50) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength).trim() + "...";
+  };
 
   // Helper function to get tier from level
   const getTier = (level: number): string => {
@@ -53,7 +61,7 @@ export function SpellTable({
     return "Unknown";
   };
 
-  // Filter spells based on search, type, and level
+  // Filter spells based on search, type, level, and descriptor
   const filteredSpells = spells.filter((spell) => {
     const matchesSearch = spell.title
       .toLowerCase()
@@ -63,14 +71,17 @@ export function SpellTable({
       spell.type?.toLowerCase() === typeFilter.toLowerCase();
     const matchesLevel =
       levelFilter === "all" || getTier(spell.level) === levelFilter;
-    return matchesSearch && matchesType && matchesLevel;
+    const matchesDescriptor =
+      descriptorFilter === "all" ||
+      spell.data?.descriptor?.includes(descriptorFilter);
+    return matchesSearch && matchesType && matchesLevel && matchesDescriptor;
   });
 
   // Define tiers for the filter dropdown
   const TIERS = ["Tier 1", "Tier 2", "Tier 3", "Tier 4"];
 
   // Helper function to handle sorting
-  const onSort = (key: keyof Spell | "castingTime") => {
+  const onSort = (key: keyof Spell | "descriptor") => {
     setSortConfig((currentSort) => {
       if (currentSort?.key === key) {
         return {
@@ -87,12 +98,12 @@ export function SpellTable({
     if (!sortConfig) return 0;
 
     let aValue =
-      sortConfig.key === "castingTime"
-        ? a.data?.castingTime
+      sortConfig.key === "descriptor"
+        ? a.data?.descriptor?.join(", ")
         : a[sortConfig.key];
     let bValue =
-      sortConfig.key === "castingTime"
-        ? b.data?.castingTime
+      sortConfig.key === "descriptor"
+        ? b.data?.descriptor?.join(", ")
         : b[sortConfig.key];
 
     // Handle undefined/null values
@@ -116,47 +127,65 @@ export function SpellTable({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle>Spells</CardTitle>
-        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+        <div className="flex flex-col sm:flex-row gap-4 mt-4 items-center">
           <Input
             placeholder="Search spells..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="sm:max-w-[200px]"
+            className="w-full sm:w-[400px]"
           />
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="sm:max-w-[200px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {SPELL_TYPES.map((type) => (
-                <SelectItem key={type} value={type.toLowerCase()}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="sm:max-w-[200px]">
-              <SelectValue placeholder="Filter by tier" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Tiers</SelectItem>
-              {TIERS.map((tier) => (
-                <SelectItem key={tier} value={tier}>
-                  {tier} (
-                  {tier === "Tier 1"
-                    ? "Levels 1-5"
-                    : tier === "Tier 2"
-                    ? "Levels 6-12"
-                    : tier === "Tier 3"
-                    ? "Levels 13-19"
-                    : "Level 20"}
-                  )
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-4 ml-auto">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {SPELL_TYPES.map((type) => (
+                  <SelectItem key={type} value={type.toLowerCase()}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tiers</SelectItem>
+                {TIERS.map((tier) => (
+                  <SelectItem key={tier} value={tier}>
+                    {tier} (
+                    {tier === "Tier 1"
+                      ? "Levels 1-5"
+                      : tier === "Tier 2"
+                      ? "Levels 6-12"
+                      : tier === "Tier 3"
+                      ? "Levels 13-19"
+                      : "Level 20"}
+                    )
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={descriptorFilter}
+              onValueChange={setDescriptorFilter}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by descriptor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Descriptors</SelectItem>
+                {SPELL_DESCRIPTORS.map((descriptor) => (
+                  <SelectItem key={descriptor} value={descriptor}>
+                    {descriptor}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
@@ -167,7 +196,7 @@ export function SpellTable({
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className="cursor-pointer"
+                  className="cursor-pointer w-[300px]"
                   onClick={() => onSort("title")}
                 >
                   Name{" "}
@@ -176,7 +205,7 @@ export function SpellTable({
                   )}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer"
+                  className="cursor-pointer w-[100px]"
                   onClick={() => onSort("type")}
                 >
                   Type{" "}
@@ -185,7 +214,7 @@ export function SpellTable({
                   )}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer"
+                  className="cursor-pointer w-[80px]"
                   onClick={() => onSort("level")}
                 >
                   Level{" "}
@@ -194,32 +223,46 @@ export function SpellTable({
                   )}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer"
-                  onClick={() => onSort("castingTime")}
+                  className="cursor-pointer w-[200px]"
+                  onClick={() => onSort("descriptor")}
                 >
-                  Casting Time{" "}
-                  {sortConfig?.key === "castingTime" && (
+                  Descriptors{" "}
+                  {sortConfig?.key === "descriptor" && (
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedAndFilteredSpells.map((spell) => (
                 <TableRow key={spell.id}>
-                  <TableCell>
-                    <div className="font-medium">{spell.title}</div>
+                  <TableCell className="max-w-[300px]">
+                    <div className="font-medium truncate">{spell.title}</div>
                     {spell.description && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {spell.description}
+                      <div className="text-sm text-muted-foreground mt-1 truncate">
+                        {truncateText(spell.description)}
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{spell.type}</TableCell>
-                  <TableCell>{spell.level}</TableCell>
-                  <TableCell>{spell.data?.castingTime || "-"}</TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="max-w-[100px] truncate">
+                    {spell.type}
+                  </TableCell>
+                  <TableCell className="max-w-[80px]">{spell.level}</TableCell>
+                  <TableCell className="max-w-[200px]">
+                    <div className="flex flex-wrap gap-1">
+                      {spell.data?.descriptor?.map((desc) => (
+                        <Badge
+                          key={desc}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {desc}
+                        </Badge>
+                      )) || "-"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right max-w-[150px]">
                     {onView && (
                       <Button
                         variant="outline"

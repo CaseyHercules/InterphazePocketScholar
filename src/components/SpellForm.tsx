@@ -200,51 +200,22 @@ export function SpellForm({
                     <Input
                       type="number"
                       min={1}
+                      max={20}
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value > 20) {
+                          field.onChange(20);
+                        } else {
+                          field.onChange(value);
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Spell Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                "castingTime",
-                "range",
-                "areaOfEffect",
-                "duration",
-                "save",
-                "effect",
-              ].map((fieldName) => (
-                <FormField
-                  key={fieldName}
-                  control={form.control}
-                  name={`data.${fieldName}` as any}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {fieldName
-                          .replace(/([A-Z])/g, " $1")
-                          .replace(/^./, (str) => str.toUpperCase())}
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
 
             <FormField
               control={form.control}
@@ -280,12 +251,15 @@ export function SpellForm({
 
             <FormField
               control={form.control}
-              name="data.method"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Method</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea
+                      {...field}
+                      placeholder="Enter spell description..."
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -296,19 +270,47 @@ export function SpellForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>Description</CardTitle>
+            <CardTitle>Spell Details</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                "castingTime",
+                "effect",
+                "range",
+                "areaOfEffect",
+                "duration",
+                "save",
+              ].map((fieldName) => (
+                <FormField
+                  key={fieldName}
+                  control={form.control}
+                  name={`data.${fieldName}` as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {fieldName
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())}
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+
             <FormField
               control={form.control}
-              name="description"
+              name="data.method"
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel>Method</FormLabel>
                   <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Enter spell description..."
-                    />
+                    <Textarea {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -4,6 +4,7 @@ import { Inter, Gentium_Book_Plus } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
 import Providers from "./providers";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "Interphaze Pocket Scholar",
@@ -66,6 +67,7 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-screen antialiased flex flex-col aesthetic-bg">
+        <Analytics />
         <Providers>
           {/* Fixed navbar at the top */}
           <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">

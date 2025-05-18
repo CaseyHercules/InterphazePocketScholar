@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
         "/wp-json",
         ""
       )}/oauth/token`,
-      userinfo: `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
+      userinfo: `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me?context=edit`,
       clientId: process.env.WORDPRESS_CLIENT_ID,
       clientSecret: process.env.WORDPRESS_CLIENT_SECRET,
       authorization: {
@@ -41,87 +41,101 @@ export const authOptions: NextAuthOptions = {
           ""
         )}/oauth/authorize`,
         params: {
-          scope: "basic email",
+          scope: "basic email profile",
         },
       },
       async profile(profile: any) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("WordPress profile:", profile);
-        }
-        return {
+        console.log("=== WordPress OAuth Debug ===");
+        console.log("Initial Profile Data:", JSON.stringify(profile, null, 2));
+
+        // Extract email from OAuthProfile
+        const email = profile.OAuthProfile?.email || profile.email;
+
+        const result = {
           id: profile.id.toString(),
           name: profile.name || profile.slug,
-          email: profile.email,
+          email: email || `${profile.slug}@interphaze.org`,
           image: profile.avatar_urls?.["96"] || null,
         };
+
+        console.log("Final Profile Result:", JSON.stringify(result, null, 2));
+        console.log("=== End WordPress OAuth Debug ===");
+
+        return result;
       },
       client: {
         token_endpoint_auth_method: "client_secret_basic",
       },
       checks: ["none"],
       // @ts-ignore - NextAuth types don't include authorize in OAuthConfig but it's supported
-      async authorize(credentials: any, req: any) {
-        try {
-          const tokenResponse = await fetch(
-            `${process.env.WORDPRESS_API_URL!.replace(
-              "/wp-json",
-              ""
-            )}/oauth/token`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                Authorization:
-                  "Basic " +
-                  Buffer.from(
-                    `${process.env.WORDPRESS_CLIENT_ID}:${process.env.WORDPRESS_CLIENT_SECRET}`
-                  ).toString("base64"),
-              },
-              body: new URLSearchParams({
-                grant_type: "client_credentials",
-              }),
-            }
-          );
+      // async authorize(credentials: any, req: any) {
+      //   try {
+      //     const tokenResponse = await fetch(
+      //       `${process.env.WORDPRESS_API_URL!.replace(
+      //         "/wp-json",
+      //         ""
+      //       )}/oauth/token`,
+      //       {
+      //         method: "POST",
+      //         headers: {
+      //           "Content-Type": "application/x-www-form-urlencoded",
+      //           Authorization:
+      //             "Basic " +
+      //             Buffer.from(
+      //               `${process.env.WORDPRESS_CLIENT_ID}:${process.env.WORDPRESS_CLIENT_SECRET}`
+      //             ).toString("base64"),
+      //         },
+      //         body: new URLSearchParams({
+      //           grant_type: "client_credentials",
+      //         }),
+      //       }
+      //     );
 
-          const tokens = await tokenResponse.json();
+      //     const tokens = await tokenResponse.json();
 
-          if (!tokens.access_token) {
-            console.error("No access token received:", tokens);
-            return null;
-          }
+      //     if (!tokens.access_token) {
+      //       console.error("No access token received:", tokens);
+      //       return null;
+      //     }
 
-          const userResponse = await fetch(
-            `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
-            {
-              headers: {
-                Authorization: `Bearer ${tokens.access_token}`,
-              },
-            }
-          );
+      //     const userResponse = await fetch(
+      //       `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
+      //       {
+      //         headers: {
+      //           Authorization: `Bearer ${tokens.access_token}`,
+      //         },
+      //       }
+      //     );
 
-          const user = await userResponse.json();
+      //     const user = await userResponse.json();
 
-          if (!user.id) {
-            console.error("No user data received:", user);
-            return null;
-          }
+      //     if (!user.id) {
+      //       console.error("No user data received:", user);
+      //       return null;
+      //     }
 
-          return {
-            id: user.id.toString(),
-            name: user.name || user.slug,
-            email: user.email,
-            image: user.avatar_urls?.["96"] || null,
-          };
-        } catch (error) {
-          console.error("WordPress auth error:", error);
-          return null;
-        }
-      },
+      //     return {
+      //       id: user.id.toString(),
+      //       name: user.name || user.slug,
+      //       email: user.email,
+      //       image: user.avatar_urls?.["96"] || null,
+      //     };
+      //   } catch (error) {
+      //     console.error("WordPress auth error:", error);
+      //     return null;
+      //   }
+      // },
     } as OAuthConfig<any>,
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (!user.email || !account) return false;
+      if (!user.email || !account) {
+        console.error("SignIn failed: Missing email or account", {
+          user,
+          account,
+        });
+        return false;
+      }
 
       try {
         // Check if user exists with this email
@@ -134,28 +148,42 @@ export const authOptions: NextAuthOptions = {
 
         if (!existingUser) {
           // Create new user if doesn't exist
-          await db.user.create({
-            data: {
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              username: nanoid(10),
-              role: Role.USER,
-              accounts: {
-                create: {
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                  refresh_token: account.refresh_token,
+          console.log("Creating new user:", {
+            email: user.email,
+            provider: account.provider,
+          });
+          try {
+            const newUser = await db.user.create({
+              data: {
+                email: user.email,
+                name: user.name ?? user.email.split("@")[0],
+                image: user.image,
+                username: nanoid(10),
+                role: Role.USER,
+                UnallocatedLevels: 0,
+                UnrequestedSkills: 0,
+                accounts: {
+                  create: {
+                    type: account.type,
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    access_token: account.access_token,
+                    token_type: account.token_type,
+                    scope: account.scope,
+                    id_token: account.id_token,
+                    refresh_token: account.refresh_token,
+                  },
                 },
               },
-            },
-          });
-          return true;
+            });
+            console.log("New user created successfully:", {
+              userId: newUser.id,
+            });
+            return true;
+          } catch (error) {
+            console.error("Failed to create new user:", error);
+            return false;
+          }
         }
 
         // If user exists but no account with this provider

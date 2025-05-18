@@ -8,6 +8,38 @@ import Providers from "./providers";
 export const metadata = {
   title: "Interphaze Pocket Scholar",
   description: "Tutorial for project, soon to be a web app.",
+  metadataBase: new URL("https://interphaze-pocket-scholar.vercel.app"),
+  openGraph: {
+    title: "Interphaze Pocket Scholar",
+    description: "Tutorial for project, soon to be a web app.",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/logo.svg",
+        width: 262,
+        height: 184,
+        alt: "Interphaze Pocket Scholar",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Interphaze Pocket Scholar",
+    description: "Tutorial for project, soon to be a web app.",
+    images: ["/logo.svg"],
+  },
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+  },
 };
 
 const inter = Inter({ subsets: ["latin"] });

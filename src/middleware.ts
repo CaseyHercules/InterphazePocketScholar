@@ -22,6 +22,8 @@ const PUBLIC_PATHS = [
   "/public",
   "/terms",
   "/privacy",
+  "/assets",
+  "/images",
 ];
 
 export async function middleware(req: NextRequest) {
@@ -115,8 +117,13 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all paths except static files and images
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - static assets (images, icons, etc)
      */
-    "/((?!_next/static|_next/image).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|apple-touch-icon\\.png|favicon-\\d+x\\d+\\.png|logo\\.svg|public).*)",
   ],
 };

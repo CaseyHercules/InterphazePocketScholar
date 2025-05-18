@@ -217,29 +217,10 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
     },
   });
 
-  // Subscribe to form state changes
+  // Remove console.log statements for form state
   const formState = form.formState;
-  console.log("Form state:", {
-    isDirty: formState.isDirty,
-    isSubmitting: formState.isSubmitting,
-    isValid: formState.isValid,
-    errors: formState.errors,
-  });
-
-  // Debug validation errors in detail
-  if (Object.keys(formState.errors).length > 0) {
-    console.log(
-      "Detailed validation errors:",
-      JSON.stringify(formState.errors, null, 2)
-    );
-  }
 
   const onSubmit = async (formData: FormData) => {
-    console.log("Form submission started");
-    console.log("Form data:", formData);
-    console.log("Original data:", data);
-    console.log("Form validation errors:", form.formState.errors);
-
     try {
       // Ensure all arrays are properly formatted
       const skillTiers = formData.SkillTierGains.map((tier) =>
@@ -272,26 +253,14 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
       // If we're updating, ensure the ID is in the payload
       const payload = data?.id ? { ...basePayload, id: data.id } : basePayload;
 
-      // Log the validation attempt
-      try {
-        if (data?.id) {
-          console.log("Validating update payload");
-          UpdateValidator.parse(payload);
-        } else {
-          console.log("Validating create payload");
-          ClassValidator.parse(payload);
-        }
-        console.log("Validation successful");
-      } catch (validationError) {
-        console.error("Validation error:", validationError);
-        throw validationError;
+      // Validate the payload
+      if (data?.id) {
+        UpdateValidator.parse(payload);
+      } else {
+        ClassValidator.parse(payload);
       }
 
-      console.log("Final payload:", payload);
-      console.log("Is update?", !!data?.id);
-
       const response = await axios.post("/api/admin/class", payload);
-      console.log("Server response:", response);
 
       // Invalidate and refetch classes after successful update
       await queryClient.invalidateQueries({ queryKey: ["classes"] });
@@ -307,13 +276,6 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
         onSuccess();
       }
     } catch (err: any) {
-      console.error("Form submission error:", err);
-      console.error("Error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-      });
-
       toast({
         title: "Error",
         description: err.response?.data || err.message || "An error occurred",
@@ -321,8 +283,6 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
       });
     }
   };
-
-  console.log("Form mounted with data:", data);
 
   const statCategories = [
     { name: "HP" as const, label: "Health Points" },
@@ -342,9 +302,6 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
         onSubmit={async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log("Form submit event triggered");
-          console.log("Current form values:", form.getValues());
-          console.log("Form is valid:", form.formState.isValid);
           await form.handleSubmit(onSubmit)(e);
         }}
         className="space-y-4"

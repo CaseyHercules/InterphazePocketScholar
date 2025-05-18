@@ -22,9 +22,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log("API received request body:", body);
-    console.log("Request body ID:", body.id);
-    console.log("Is update operation:", !!body.id);
 
     // Ensure SkillTierGains is properly formatted
     if (Array.isArray(body.SkillTierGains)) {
@@ -36,11 +33,8 @@ export async function POST(req: Request) {
 
     try {
       if (body.id) {
-        console.log("Updating class with ID:", body.id);
-
         // Validate the update data
         const validatedData = UpdateValidator.parse(body);
-        console.log("Validated update data:", validatedData);
 
         const { id, ...updateData } = validatedData;
 
@@ -61,31 +55,23 @@ export async function POST(req: Request) {
           grantedSkills: updateData.grantedSkills,
         };
 
-        console.log("Prisma update data:", prismaData);
-        console.log("Updating with ID:", id);
-
         try {
           const updated = await db.class.update({
             where: { id },
             data: prismaData,
           });
 
-          console.log("Update successful:", updated);
           return new Response(JSON.stringify(updated), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (dbError) {
-          console.error("Database update error:", dbError);
           return new Response("Failed to update class in database", {
             status: 500,
           });
         }
       } else {
-        console.log("Creating new class");
-
         // Validate the create data
         const validatedData = ClassValidator.parse(body);
-        console.log("Validated create data:", validatedData);
 
         // Convert arrays to JSONB for Prisma - no need to stringify as Prisma handles this
         const prismaData = {
@@ -104,27 +90,21 @@ export async function POST(req: Request) {
           grantedSkills: validatedData.grantedSkills,
         };
 
-        console.log("Prisma create data:", prismaData);
-
         const created = await db.class.create({
           data: prismaData,
         });
 
-        console.log("Creation successful:", created);
         return new Response(JSON.stringify(created), {
           headers: { "Content-Type": "application/json" },
         });
       }
     } catch (error) {
-      console.error("Database operation failed:", error);
       if (error instanceof z.ZodError) {
         return new Response(error.message, { status: 422 });
       }
       throw error;
     }
   } catch (error) {
-    console.error("Request processing failed:", error);
-
     if (error instanceof z.ZodError) {
       return new Response(error.message, { status: 422 });
     }
@@ -160,7 +140,6 @@ export async function GET() {
 
     return NextResponse.json(classes);
   } catch (error) {
-    console.error("Error fetching classes:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -194,7 +173,6 @@ export async function DELETE(req: Request) {
 
     return new Response("OK");
   } catch (error) {
-    console.error("Error deleting class:", error);
     return new Response("Could not delete this class", { status: 500 });
   }
 }

@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider     = "postgresql"
-  url          = env("PocketScholar_DATABASE_URL")
-  relationMode = "prisma"
+  provider          = "postgresql"
+  url               = env("PocketScholar_DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  relationMode      = "prisma"
 }
 
 model Account {
@@ -14,12 +15,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -53,20 +54,12 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   topicId   String
+  userId    String
   Topic     Topic    @relation(fields: [topicId], references: [id])
   User      User     @relation(fields: [userId], references: [id])
-  userId    String
 
   @@index([topicId])
   @@index([userId])
-}
-
-enum Role {
-  USER
-  ADMIN //Can Edit Characters and Content
-  SUPERADMIN // Can View and Edit all content
-  SPELLWRIGHT // Can Edit Spells and other items
-  MODERATOR // Can Edit Posts and Topics
 }
 
 model User {
@@ -89,8 +82,8 @@ model User {
 model Skill {
   id                   String      @id @default(cuid())
   title                String
-  description          String?     @db.Text
-  descriptionShort     String?     @db.Text
+  description          String?
+  descriptionShort     String?
   tier                 Int
   parentSkillId        String?
   skillGroupId         String?
@@ -124,7 +117,7 @@ model SkillGroup {
 model Class {
   id                  String      @id @default(cuid())
   Title               String
-  description         String      @db.Text
+  description         String
   grantedSkills       Json?
   Skills              Json?
   SkillTierGains      Json?
@@ -170,12 +163,23 @@ model Character {
 }
 
 model Event {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  date        DateTime
-  location    String?
-  characters  Character[]
+  id              String      @id @default(cuid())
+  title           String
+  date            DateTime
+  location        String?
+  address         String?
+  capacity        Int?
+  coordinates     Json?
+  createdAt       DateTime    @default(now())
+  price           Float?
+  registrationEnd DateTime?
+  status          EventStatus @default(DRAFT)
+  stripePriceId   String?
+  stripeProductId String?
+  updatedAt       DateTime
+  description     Json?
+  endDate         DateTime?
+  characters      Character[]
 }
 
 model Item {
@@ -193,7 +197,8 @@ model Item {
 model Spell {
   id          String     @id @default(cuid())
   title       String
-  type        SpellType?
+  type        String?
+  data        Json?
   description String?
   level       Int
   characterId String?
@@ -217,9 +222,71 @@ model CharacterToEvent {
   A String
   B String
 
-  @@unique([A, B], map: "_CharacterToEvent_AB_unique")
+  @@id([A, B], map: "_CharacterToEvent_AB_pkey")
   @@index([B], map: "_CharacterToEvent_B_index")
   @@map("_CharacterToEvent")
+}
+
+model Attendee {
+  id             String   @id
+  name           String
+  email          String?
+  registrationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+
+  @@index([registrationId])
+}
+
+model EventFAQ {
+  id        String   @id
+  question  String
+  answer    Json
+  eventId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([eventId])
+}
+
+model EventRegistration {
+  id              String         @id
+  eventId         String
+  userId          String
+  status          RegisterStatus @default(WAITLIST)
+  promoCode       String?
+  stripePaymentId String?        @unique
+  totalAmount     Float?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+
+  @@index([eventId])
+  @@index([userId])
+}
+
+model PromoCode {
+  id           String    @id
+  code         String    @unique
+  discount     Float
+  isPercentage Boolean   @default(true)
+  maxUses      Int?
+  usedCount    Int       @default(0)
+  validFrom    DateTime  @default(now())
+  validUntil   DateTime?
+  eventId      String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+
+  @@index([code])
+  @@index([eventId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+  SPELLWRIGHT
+  MODERATOR
 }
 
 enum ItemType {
@@ -231,16 +298,22 @@ enum ItemType {
   INCARNATE_ITEM
 }
 
-enum SpellType {
-  PSION
-  DRUID
-  WIZARD
-  CLERIC
-}
-
 enum RequestType {
   SKILL
   SPELL
   CHARACTER
   OTHER
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum RegisterStatus {
+  REGISTERED
+  WAITLIST
+  CANCELLED
 }

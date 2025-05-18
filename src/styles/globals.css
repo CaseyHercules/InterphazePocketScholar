@@ -74,3 +74,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Aesthetic enhancements */
+  .aesthetic-bg {
+    background: linear-gradient(to bottom, #fcfcfc, #fff6f0);
+    background-image: url("data:image/svg+xml,%3Csvg width='1440' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='hillGradient' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23f0f0f0;stop-opacity:0.5'/%3E%3Cstop offset='50%25' style='stop-color:%23f0f0f0;stop-opacity:0.65'/%3E%3Cstop offset='100%25' style='stop-color:%23ffe4d4;stop-opacity:0.7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0,96L60,106.7C120,117,240,139,360,154.7C480,171,600,181,720,165.3C840,149,960,107,1080,90.7C1200,75,1320,85,1380,90.7L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z' fill='url(%23hillGradient)'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 100% auto;
+    min-height: 100vh;
+  }
+
+  .glass-container {
+    @apply bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg;
+  }
+
+  .content-container {
+    @apply max-w-[90%] mx-auto p-6 rounded-lg;
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .enhanced-text {
+    @apply tracking-wide leading-relaxed;
+  }
+
+  .focus-ring {
+    @apply focus:ring-2 focus:ring-primary/20 focus:outline-none;
+  }
+}

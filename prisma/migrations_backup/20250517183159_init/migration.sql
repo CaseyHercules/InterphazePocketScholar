@@ -175,7 +175,7 @@ CREATE TABLE "Item" (
 CREATE TABLE "Spell" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "type" TEXT,
+    "type" "SpellType",
     "description" TEXT,
     "level" INTEGER NOT NULL,
     "characterId" TEXT,

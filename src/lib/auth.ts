@@ -23,6 +23,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     {
       id: "wordpress",
@@ -45,9 +46,6 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async profile(profile: any) {
-        console.log("=== WordPress OAuth Debug ===");
-        console.log("Initial Profile Data:", JSON.stringify(profile, null, 2));
-
         // Extract email from OAuthProfile
         const email = profile.OAuthProfile?.email || profile.email;
 
@@ -58,73 +56,12 @@ export const authOptions: NextAuthOptions = {
           image: profile.avatar_urls?.["96"] || null,
         };
 
-        console.log("Final Profile Result:", JSON.stringify(result, null, 2));
-        console.log("=== End WordPress OAuth Debug ===");
-
         return result;
       },
       client: {
         token_endpoint_auth_method: "client_secret_basic",
       },
       checks: ["none"],
-      // @ts-ignore - NextAuth types don't include authorize in OAuthConfig but it's supported
-      // async authorize(credentials: any, req: any) {
-      //   try {
-      //     const tokenResponse = await fetch(
-      //       `${process.env.WORDPRESS_API_URL!.replace(
-      //         "/wp-json",
-      //         ""
-      //       )}/oauth/token`,
-      //       {
-      //         method: "POST",
-      //         headers: {
-      //           "Content-Type": "application/x-www-form-urlencoded",
-      //           Authorization:
-      //             "Basic " +
-      //             Buffer.from(
-      //               `${process.env.WORDPRESS_CLIENT_ID}:${process.env.WORDPRESS_CLIENT_SECRET}`
-      //             ).toString("base64"),
-      //         },
-      //         body: new URLSearchParams({
-      //           grant_type: "client_credentials",
-      //         }),
-      //       }
-      //     );
-
-      //     const tokens = await tokenResponse.json();
-
-      //     if (!tokens.access_token) {
-      //       console.error("No access token received:", tokens);
-      //       return null;
-      //     }
-
-      //     const userResponse = await fetch(
-      //       `${process.env.WORDPRESS_API_URL!}/wp/v2/users/me`,
-      //       {
-      //         headers: {
-      //           Authorization: `Bearer ${tokens.access_token}`,
-      //         },
-      //       }
-      //     );
-
-      //     const user = await userResponse.json();
-
-      //     if (!user.id) {
-      //       console.error("No user data received:", user);
-      //       return null;
-      //     }
-
-      //     return {
-      //       id: user.id.toString(),
-      //       name: user.name || user.slug,
-      //       email: user.email,
-      //       image: user.avatar_urls?.["96"] || null,
-      //     };
-      //   } catch (error) {
-      //     console.error("WordPress auth error:", error);
-      //     return null;
-      //   }
-      // },
     } as OAuthConfig<any>,
   ],
   callbacks: {
@@ -148,10 +85,6 @@ export const authOptions: NextAuthOptions = {
 
         if (!existingUser) {
           // Create new user if doesn't exist
-          console.log("Creating new user:", {
-            email: user.email,
-            provider: account.provider,
-          });
           try {
             const newUser = await db.user.create({
               data: {
@@ -176,12 +109,8 @@ export const authOptions: NextAuthOptions = {
                 },
               },
             });
-            console.log("New user created successfully:", {
-              userId: newUser.id,
-            });
             return true;
           } catch (error) {
-            console.error("Failed to create new user:", error);
             return false;
           }
         }
@@ -219,7 +148,6 @@ export const authOptions: NextAuthOptions = {
 
         return true;
       } catch (error) {
-        console.error("Error in signIn callback:", error);
         return false;
       }
     },

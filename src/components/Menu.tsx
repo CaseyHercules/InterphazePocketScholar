@@ -11,359 +11,177 @@ import {
 
 import { Menu } from "lucide-react";
 
-const MenuWide = () => {
+// Menu configuration
+const MENU_ITEMS = [
+  {
+    label: "Events",
+    items: [
+      { label: "Registration", href: "/events/registration" },
+      { label: "Upcoming Events", href: "/events/upcoming" },
+    ],
+  },
+  {
+    label: "New to Phaze",
+    items: [
+      { label: "Intro to Interphaze", href: "/intro/new" },
+      { label: "Code of conduct", href: "/intro/conduct" },
+      { label: "Character Creation", href: "/intro/character" },
+    ],
+  },
+  {
+    label: "Rules",
+    items: [
+      { label: "Summary", href: "/rules/summary" },
+      { label: "Character Advancement", href: "/rules/advancement" },
+      {
+        label: "Classes",
+        href: "/class/class",
+        subItems: [
+          { label: "Cleric", href: "/class/cleric" },
+          { label: "Druid", href: "/class/druid" },
+          { label: "Mage", href: "/class/mage" },
+          { label: "Fighter", href: "/class/fighter" },
+          { label: "Monk", href: "/class/monk" },
+          { label: "Performer", href: "/class/performer" },
+          { label: "Psion", href: "/class/psion" },
+          { label: "Ranger", href: "/class/ranger" },
+          { label: "Rogue", href: "/class/rogue" },
+          { label: "Scholar", href: "/class/scholar" },
+          { label: "Shaman", href: "/class/shaman" },
+        ],
+      },
+      {
+        label: "Races",
+        href: "/race/race",
+        subItems: [
+          { label: "Dwarf", href: "/race/dwarf" },
+          { label: "Elf", href: "/race/elf" },
+          { label: "Gnome", href: "/race/gnome" },
+          { label: "Half Elf", href: "/race/half-elf" },
+          { label: "Half Orc", href: "/race/half-orc" },
+          { label: "Halfling", href: "/race/halfling" },
+          { label: "Human", href: "/race/human" },
+          { label: "Kenogre", href: "/race/kenogre" },
+          { label: "Pumerre", href: "/race/pumerre" },
+        ],
+      },
+      { label: "STEP Combat", href: "/rules/combat" },
+      { label: "Character Abilities", href: "/rules/abilities" },
+      { label: "Items", href: "/rules/items" },
+      { label: "Spellcasting", href: "/rules/spellcasting" },
+    ],
+  },
+  {
+    label: "World Info",
+    items: [
+      { label: "Inspiration", href: "/setting/inspiration" },
+      { label: "Geography", href: "/setting/geography" },
+      { label: "History", href: "/setting/history" },
+      { label: "Economy", href: "/setting/economy" },
+      { label: "Laws", href: "/setting/laws" },
+      { label: "Society", href: "/setting/society" },
+      { label: "Religion", href: "/setting/religion" },
+      { label: "Guilds", href: "/setting/guilds" },
+    ],
+  },
+  {
+    label: "About",
+    items: [
+      { label: "Why Us", href: "/about/us" },
+      { label: "Our Team", href: "/about/team" },
+      { label: "Contact us", href: "/about/contact" },
+      { label: "Join our Team", href: "/about/join" },
+    ],
+  },
+];
+
+// Reusable menu item component
+const MenuItem = ({ item }: { item: any }) => {
+  if (item.subItems) {
+    return (
+      <MenubarSub>
+        <a href={item.href}>
+          <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
+        </a>
+        <MenubarSubContent>
+          {item.subItems.map((subItem: any) => (
+            <a key={subItem.href} href={subItem.href}>
+              <MenubarItem>{subItem.label}</MenubarItem>
+            </a>
+          ))}
+        </MenubarSubContent>
+      </MenubarSub>
+    );
+  }
+
   return (
-    <div className="hidden sm:block">
-      <Menubar>
-        <MenubarMenu>
-          <MenubarTrigger>Events</MenubarTrigger>
-          <MenubarContent>
-            <a href="/events/registration">
-              <MenubarItem>Registration</MenubarItem>
-            </a>
-            <a href="/events/upcoming">
-              <MenubarItem>Upcoming Events</MenubarItem>
-            </a>
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger>New to Phaze</MenubarTrigger>
-          <MenubarContent>
-            <a href="/intro/new">
-              <MenubarItem>Intro to Interphaze</MenubarItem>
-            </a>
-            <a href="/intro/conduct">
-              <MenubarItem>Code of conduct</MenubarItem>
-            </a>
-            <a href="/intro/character">
-              <MenubarItem>Character Creation</MenubarItem>
-            </a>
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger>Rules</MenubarTrigger>
-          <MenubarContent>
-            <a href="/rules/summary">
-              <MenubarItem>Summary</MenubarItem>
-            </a>
-            <a href="/rules/advancement">
-              <MenubarItem>Character Advancement</MenubarItem>
-            </a>
-            <MenubarSub>
-              <a href="/class/class">
-                <MenubarSubTrigger>Classes</MenubarSubTrigger>
-              </a>
-              <MenubarSubContent>
-                <a href="/class/cleric">
-                  <MenubarItem>Cleric</MenubarItem>
-                </a>
-                <a href="/class/druid">
-                  <MenubarItem>Druid</MenubarItem>
-                </a>
-                <a href="/class/mage">
-                  <MenubarItem>Mage</MenubarItem>
-                </a>
-                <a href="/class/fighter">
-                  <MenubarItem>Fighter</MenubarItem>
-                </a>
-                <a href="/class/monk">
-                  <MenubarItem>Monk</MenubarItem>
-                </a>
-                <a href="/class/performer">
-                  <MenubarItem>Performer</MenubarItem>
-                </a>
-                <a href="/class/psion">
-                  <MenubarItem>Psion</MenubarItem>
-                </a>
-                <a href="/class/ranger">
-                  <MenubarItem>Ranger</MenubarItem>
-                </a>
-                <a href="/class/rogue">
-                  <MenubarItem>Rogue</MenubarItem>
-                </a>
-                <a href="/class/scholar">
-                  <MenubarItem>Scholar</MenubarItem>
-                </a>
-                <a href="/class/shaman">
-                  <MenubarItem>Shaman</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarSub>
-              <a href="/race/race">
-                <MenubarSubTrigger>Races</MenubarSubTrigger>
-              </a>
-              <MenubarSubContent>
-                <a href="/race/dwarf">
-                  <MenubarItem>Dwarf</MenubarItem>
-                </a>
-                <a href="/race/elf">
-                  <MenubarItem>Elf</MenubarItem>
-                </a>
-                <a href="/race/gnome">
-                  <MenubarItem>Gnome</MenubarItem>
-                </a>
-                <a href="/race/half-elf">
-                  <MenubarItem>Half Elf</MenubarItem>
-                </a>
-                <a href="/race/half-orc">
-                  <MenubarItem>Half Orc</MenubarItem>
-                </a>
-                <a href="/race/halfling">
-                  <MenubarItem>Halfling</MenubarItem>
-                </a>
-                <a href="/race/human">
-                  <MenubarItem>Human</MenubarItem>
-                </a>
-                <a href="/race/kenogre">
-                  <MenubarItem>Kenogre</MenubarItem>
-                </a>
-                <a href="/race/pumerre">
-                  <MenubarItem>Pumerre</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-            <a href="/rules/combat">
-              <MenubarItem>STEP Combat</MenubarItem>
-            </a>
-            <a href="/rules/abilities">
-              <MenubarItem>Character Abilities</MenubarItem>
-            </a>
-            <a href="/rules/items">
-              <MenubarItem>Items</MenubarItem>
-            </a>
-            <a href="/rules/spellcasting">
-              <MenubarItem>Spellcasting</MenubarItem>
-            </a>
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger>World Info</MenubarTrigger>
-          <MenubarContent>
-            <a href="/setting/inspiration">
-              <MenubarItem>Inspiration</MenubarItem>
-            </a>
-            <a href="/setting/geography">
-              <MenubarItem>Geography</MenubarItem>
-            </a>
-            <a href="/setting/history">
-              <MenubarItem>History</MenubarItem>
-            </a>
-            <a href="/setting/economy">
-              <MenubarItem>Economy</MenubarItem>
-            </a>
-            <a href="/setting/laws">
-              <MenubarItem>Laws</MenubarItem>
-            </a>
-            <a href="/setting/society">
-              <MenubarItem>Society</MenubarItem>
-            </a>
-            <a href="/setting/religion">
-              <MenubarItem>Religion</MenubarItem>
-            </a>
-            <a href="/setting/guilds">
-              <MenubarItem>Guilds</MenubarItem>
-            </a>
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger>About</MenubarTrigger>
-          <MenubarContent>
-            <a href="/about/us">
-              <MenubarItem>Why Us</MenubarItem>
-            </a>
-            <a href="/about/team">
-              <MenubarItem>Our Team</MenubarItem>
-            </a>
-            <a href="/about/contact">
-              <MenubarItem>Contact us</MenubarItem>
-            </a>
-            <a href="/about/join">
-              <MenubarItem>Join our Team</MenubarItem>
-            </a>
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>
-    </div>
+    <a href={item.href}>
+      <MenubarItem>{item.label}</MenubarItem>
+    </a>
   );
 };
 
-const MenuSmall = () => {
+// Menu content component
+const MenuContent = ({
+  items,
+  isNested = false,
+}: {
+  items: any[];
+  isNested?: boolean;
+}) => {
+  const Component = isNested ? MenubarSubContent : MenubarContent;
+
   return (
-    <div className="sm:hidden">
-      <Menubar>
-        <MenubarMenu>
-          <MenubarTrigger>
-            <Menu size={24} />
-          </MenubarTrigger>
-          <MenubarContent>
-            <MenubarSub>
-              <MenubarSubTrigger>Events</MenubarSubTrigger>
-              <MenubarSubContent>
-                <a href="/events/registration">
-                  <MenubarItem>Registation</MenubarItem>
-                </a>
-                <a href="/events/upcoming">
-                  <MenubarItem>Upcoming Events</MenubarItem>
-                </a>
-              </MenubarSubContent>
+    <Component>
+      {items.map((item) => {
+        if (Array.isArray(item.items)) {
+          return isNested ? (
+            <MenubarSub key={item.label}>
+              <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
+              <MenuContent items={item.items} isNested />
             </MenubarSub>
-            <MenubarSub>
-              <MenubarSubTrigger>New to Phaze</MenubarSubTrigger>
-              <MenubarSubContent>
-                <a href="/intro/new">
-                  <MenubarItem>Intro to Interphaze</MenubarItem>
-                </a>
-                <a href="/intro/conduct">
-                  <MenubarItem>Code of conduct</MenubarItem>
-                </a>
-                <a href="/intro/character">
-                  <MenubarItem>Character Creation</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarSub>
-              <MenubarSubTrigger>Rules</MenubarSubTrigger>
-              <MenubarSubContent>
-                <a href="/rules/summary">
-                  <MenubarItem>Summary</MenubarItem>
-                </a>
-                <a href="/rules/advancement">
-                  <MenubarItem>Character Advancement</MenubarItem>
-                </a>
-                <MenubarSub>
-                  <MenubarSubTrigger>Classes</MenubarSubTrigger>
-                  <MenubarSubContent>
-                    <a href="/class/cleric">
-                      <MenubarItem>Cleric</MenubarItem>
-                    </a>
-                    <a href="/class/druid">
-                      <MenubarItem>Druid</MenubarItem>
-                    </a>
-                    <a href="/class/fighter">
-                      <MenubarItem>Fighter</MenubarItem>
-                    </a>
-                    <a href="/class/monk">
-                      <MenubarItem>Monk</MenubarItem>
-                    </a>
-                    <a href="/class/performer">
-                      <MenubarItem>Performer</MenubarItem>
-                    </a>
-                    <a href="/class/psion">
-                      <MenubarItem>Psion</MenubarItem>
-                    </a>
-                    <a href="/class/ranger">
-                      <MenubarItem>Ranger</MenubarItem>
-                    </a>
-                    <a href="/class/rogue">
-                      <MenubarItem>Rogue</MenubarItem>
-                    </a>
-                    <a href="/class/scholar">
-                      <MenubarItem>Scholar</MenubarItem>
-                    </a>
-                    <a href="/class/shaman">
-                      <MenubarItem>Shaman</MenubarItem>
-                    </a>
-                  </MenubarSubContent>
-                </MenubarSub>
-                <MenubarSub>
-                  <MenubarSubTrigger>Races</MenubarSubTrigger>
-                  <MenubarSubContent>
-                    <a href="/race/dwarf">
-                      <MenubarItem>Dwarf</MenubarItem>
-                    </a>
-                    <a href="/race/elf">
-                      <MenubarItem>Elf</MenubarItem>
-                    </a>
-                    <a href="/race/gnome">
-                      <MenubarItem>Gnome</MenubarItem>
-                    </a>
-                    <a href="/race/half-elf">
-                      <MenubarItem>Half Elf</MenubarItem>
-                    </a>
-                    <a href="/race/half-orc">
-                      <MenubarItem>Half Orc</MenubarItem>
-                    </a>
-                    <a href="/race/halfling">
-                      <MenubarItem>Halfling</MenubarItem>
-                    </a>
-                    <a href="/race/human">
-                      <MenubarItem>Human</MenubarItem>
-                    </a>
-                    <a href="/race/kenogre">
-                      <MenubarItem>Kenogre</MenubarItem>
-                    </a>
-                    <a href="/race/pumerre">
-                      <MenubarItem>Pumerre</MenubarItem>
-                    </a>
-                  </MenubarSubContent>
-                </MenubarSub>
-                <a href="/rules/combat">
-                  <MenubarItem>STEP Combat</MenubarItem>
-                </a>
-                <a href="/rules/abilities">
-                  <MenubarItem>Character Abilities</MenubarItem>
-                </a>
-                <a href="/rules/items">
-                  <MenubarItem>Items</MenubarItem>
-                </a>
-                <a href="/rules/spellcasting">
-                  <MenubarItem>Spellcasting</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarSub>
-              <MenubarSubTrigger>World Info</MenubarSubTrigger>
-              <MenubarSubContent>
-                <a href="/setting/inspiration">
-                  <MenubarItem>Inspiration</MenubarItem>
-                </a>
-                <a href="/setting/geography">
-                  <MenubarItem>Geography</MenubarItem>
-                </a>
-                <a href="/setting/history">
-                  <MenubarItem>History</MenubarItem>
-                </a>
-                <a href="/setting/economy">
-                  <MenubarItem>Economy</MenubarItem>
-                </a>
-                <a href="/setting/laws">
-                  <MenubarItem>Laws</MenubarItem>
-                </a>
-                <a href="/setting/society">
-                  <MenubarItem>Society</MenubarItem>
-                </a>
-                <a href="/setting/religion">
-                  <MenubarItem>Religion</MenubarItem>
-                </a>
-                <a href="/setting/guilds">
-                  <MenubarItem>Guilds</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarSub>
-              <MenubarSubTrigger>About</MenubarSubTrigger>
-              <MenubarSubContent>
-                <a href="/about/us">
-                  <MenubarItem>Why Us</MenubarItem>
-                </a>
-                <a href="/about/team">
-                  <MenubarItem>Our Team</MenubarItem>
-                </a>
-                <a href="/about/contact">
-                  <MenubarItem>Contact us</MenubarItem>
-                </a>
-                <a href="/about/join">
-                  <MenubarItem>Join our Team</MenubarItem>
-                </a>
-              </MenubarSubContent>
-            </MenubarSub>
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>
-    </div>
+          ) : (
+            <MenuItem key={item.label} item={item} />
+          );
+        }
+        return <MenuItem key={item.href} item={item} />;
+      })}
+    </Component>
   );
 };
+
+const MenuWide = () => (
+  <div className="hidden sm:block">
+    <Menubar>
+      {MENU_ITEMS.map((item) => (
+        <MenubarMenu key={item.label}>
+          <MenubarTrigger>{item.label}</MenubarTrigger>
+          <MenuContent items={item.items} />
+        </MenubarMenu>
+      ))}
+    </Menubar>
+  </div>
+);
+
+const MenuSmall = () => (
+  <div className="sm:hidden">
+    <Menubar>
+      <MenubarMenu>
+        <MenubarTrigger>
+          <Menu size={24} />
+        </MenubarTrigger>
+        <MenubarContent>
+          {MENU_ITEMS.map((item) => (
+            <MenubarSub key={item.label}>
+              <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
+              <MenuContent items={item.items} isNested />
+            </MenubarSub>
+          ))}
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
+  </div>
+);
 
 export default MenuSmall;
 

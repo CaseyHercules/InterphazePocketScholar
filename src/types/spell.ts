@@ -36,6 +36,7 @@ export interface SpellData {
   save?: string;
   method?: string;
   descriptor?: string[]; // Array of label strings
+  isInSpellLibrary?: boolean;
 }
 
 export interface Spell {

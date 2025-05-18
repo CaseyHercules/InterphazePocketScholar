@@ -14,6 +14,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,12 +29,16 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 const SpellFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.string().min(1, "Spell type is required"),
   description: z.string().default(""),
-  level: z.coerce.number().min(1, "Level must be 1 or higher"),
+  level: z.coerce
+    .number()
+    .min(1, "Level must be 1 or higher")
+    .max(20, "Level must be 20 or lower"),
   data: z.object({
     castingTime: z.string().default(""),
     effect: z.string().default(""),
@@ -43,8 +48,11 @@ const SpellFormSchema = z.object({
     save: z.string().default(""),
     method: z.string().default(""),
     descriptor: z.array(z.string()).default([]),
+    isInSpellLibrary: z.boolean().default(false),
   }),
 });
+
+type SpellFormValues = z.infer<typeof SpellFormSchema>;
 
 interface SpellFormProps {
   initialSpell?: Spell;
@@ -57,7 +65,7 @@ export function SpellForm({
   onSubmit,
   onCancel,
 }: SpellFormProps) {
-  const form = useForm<z.infer<typeof SpellFormSchema>>({
+  const form = useForm<SpellFormValues>({
     resolver: zodResolver(SpellFormSchema),
     defaultValues: {
       title: initialSpell?.title || "",
@@ -73,11 +81,12 @@ export function SpellForm({
         save: initialSpell?.data?.save || "",
         method: initialSpell?.data?.method || "",
         descriptor: initialSpell?.data?.descriptor || [],
+        isInSpellLibrary: initialSpell?.data?.isInSpellLibrary || false,
       },
     },
   });
 
-  const handleSubmit = async (values: z.infer<typeof SpellFormSchema>) => {
+  const handleSubmit = async (values: SpellFormValues) => {
     try {
       console.log("Submitting form values:", values);
 
@@ -98,9 +107,7 @@ export function SpellForm({
       };
 
       console.log("Sending to API:", formattedValues);
-
-      const response = await onSubmit(formattedValues);
-      console.log("API Response:", response);
+      await onSubmit(formattedValues);
 
       toast({
         title: "Success",
@@ -190,32 +197,52 @@ export function SpellForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="level"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Level</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      {...field}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        if (value > 20) {
-                          field.onChange(20);
-                        } else {
-                          field.onChange(value);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex items-center space-x-4">
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Level</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={20}
+                        {...field}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value > 20) {
+                            field.onChange(20);
+                          } else {
+                            field.onChange(value);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="data.isInSpellLibrary"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-end space-x-2 mt-6">
+                    <FormLabel className="font-normal">
+                      Is In Spell Library
+                    </FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

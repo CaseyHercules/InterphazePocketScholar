@@ -44,7 +44,7 @@ export function SpellTable({
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Spell | "descriptor";
     direction: "asc" | "desc";
-  } | null>(null);
+  }>({ key: "title", direction: "asc" });
 
   // Helper function to truncate text
   const truncateText = (text: string, maxLength: number = 50) => {
@@ -80,23 +80,8 @@ export function SpellTable({
   // Define tiers for the filter dropdown
   const TIERS = ["Tier 1", "Tier 2", "Tier 3", "Tier 4"];
 
-  // Helper function to handle sorting
-  const onSort = (key: keyof Spell | "descriptor") => {
-    setSortConfig((currentSort) => {
-      if (currentSort?.key === key) {
-        return {
-          key,
-          direction: currentSort.direction === "asc" ? "desc" : "asc",
-        };
-      }
-      return { key, direction: "asc" };
-    });
-  };
-
   // Sort and filter spells
   const sortedAndFilteredSpells = [...filteredSpells].sort((a, b) => {
-    if (!sortConfig) return 0;
-
     let aValue =
       sortConfig.key === "descriptor"
         ? a.data?.descriptor?.join(", ")
@@ -122,6 +107,17 @@ export function SpellTable({
       ? String(aValue).localeCompare(String(bValue))
       : String(bValue).localeCompare(String(aValue));
   });
+
+  // Helper function to handle sorting
+  const onSort = (key: keyof Spell | "descriptor") => {
+    setSortConfig((currentSort) => ({
+      key,
+      direction:
+        currentSort.key === key && currentSort.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+  };
 
   return (
     <Card>

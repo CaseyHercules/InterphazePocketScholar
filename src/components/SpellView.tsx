@@ -13,7 +13,17 @@ export function SpellView({ spell }: SpellViewProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl">{spell.title}</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl">{spell.title}</CardTitle>
+              {spell.data?.isInSpellLibrary && (
+                <Badge
+                  variant="outline"
+                  className="bg-green-100 dark:bg-green-900/20"
+                >
+                  Public
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-1 font-semibold">
               {spell.type} Level {toRomanNumeral(spell.level)}
             </p>

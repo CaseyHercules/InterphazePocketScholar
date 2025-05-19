@@ -36,6 +36,7 @@ const characterFormSchema = z.object({
   name: z.string().min(1, "Character name is required").max(100),
   race: z.string().min(1, "Race is required"),
   primaryClassId: z.string().min(1, "Primary class is required"),
+  secondaryClassId: z.string().default("cmaufwsx600004x0vo5v8afxu"),
   backstory: z.any().optional(),
 });
 
@@ -58,6 +59,7 @@ export function CharacterForm({ classes, races }: CharacterFormProps) {
     name: "",
     race: "",
     primaryClassId: "",
+    secondaryClassId: "cmaufwsx600004x0vo5v8afxu",
     backstory: null,
   };
 
@@ -122,7 +124,7 @@ export function CharacterForm({ classes, races }: CharacterFormProps) {
         race: data.race,
         primaryClassId: data.primaryClassId,
         primaryClassLvl: 1, // Default to level 1
-        secondaryClassId: null,
+        secondaryClassId: data.secondaryClassId,
         secondaryClassLvl: 0, // Default to level 0
         notes: {
           backstory: backstoryContent ? backstoryContent : "",

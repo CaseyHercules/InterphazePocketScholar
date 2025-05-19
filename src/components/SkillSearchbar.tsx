@@ -79,7 +79,7 @@ const SkillSearchbar = ({ onSearch }: any) => {
       </Command>
       <Button
         onClick={() => {
-          onSearch("null");
+          onSearch(null);
         }}
         variant="outline"
       >

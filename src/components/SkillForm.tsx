@@ -25,75 +25,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { Skill } from "@prisma/client";
 
-interface data {
-  data: any;
+interface SkillFormProps {
+  data: Skill | null;
+  onSubmit: (data: Partial<Skill>) => Promise<void>;
+  onCancel: () => void;
 }
 
-export function SkillForm({ data }: data) {
+export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
   const FormSchema = data ? UpdateValidator : SkillValidator;
-  const form = useForm<z.infer<typeof FormSchema>>({
+  type FormData = z.infer<typeof FormSchema>;
+
+  const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      title: data ? data?.title : "",
-      description: data ? data?.description : "",
-      descriptionShort: data ? data?.descriptionShort : "",
-      tier: data ? data?.tier : "",
-      parentSkillId: data ? data?.parentSkillId : "",
-      skillGroupId: data ? data?.skillGroupId : "",
-      prerequisiteSkills: data ? data?.prerequisiteSkills : [],
-      permenentEpReduction: data ? data?.permenentEpReduction : "",
-      epCost: data ? data?.epCost : "",
-      activation: data ? data?.activation : "",
-      duration: data ? data?.duration : "",
-      abilityCheck: data ? data?.abilityCheck : "",
-      canBeTakenMultiple: data ? data?.canBeTakenMultiple : "false",
-      playerVisable: data ? data?.playerVisable : "true",
-      additionalInfo: data ? data?.additionalInfo : [],
+      ...(data ? { id: data.id } : {}),
+      title: data?.title ?? "",
+      description: data?.description ?? "",
+      descriptionShort: data?.descriptionShort ?? "",
+      tier: data?.tier ?? 1,
+      parentSkillId: data?.parentSkillId ?? "",
+      skillGroupId: data?.skillGroupId ?? "",
+      prerequisiteSkills: data?.prerequisiteSkills ?? [],
+      permenentEpReduction: data?.permenentEpReduction ?? 0,
+      epCost: data?.epCost ?? "0",
+      activation: data?.activation ?? "None",
+      duration: data?.duration ?? "None",
+      abilityCheck: data?.abilityCheck ?? "",
+      canBeTakenMultiple: data?.canBeTakenMultiple ?? false,
+      playerVisable: data?.playerVisable ?? true,
+      additionalInfo: data?.additionalInfo ?? [],
     },
   });
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
-    const payload: z.infer<typeof FormSchema> = {
-      title: data.title,
-      description: data.description,
-      descriptionShort: data.descriptionShort,
-      tier: data.tier,
-      parentSkillId: data.parentSkillId,
-      skillGroupId: data.skillGroupId,
-      prerequisiteSkills: data.prerequisiteSkills,
-      permenentEpReduction: data.permenentEpReduction,
-      epCost: data.epCost,
-      activation: data.activation,
-      duration: data.duration,
-      abilityCheck: data.abilityCheck,
-      canBeTakenMultiple: data.canBeTakenMultiple,
-      playerVisable: data.playerVisable,
-      additionalInfo: data.additionalInfo,
-    };
-
+  async function handleSubmit(formData: FormData) {
     try {
-      const response = await axios.post("/api/admin/skill", payload);
-      toast({
-        title: "Success!",
-        description: "The skill has been successfully posted",
-      });
+      console.log("Submitting form data:", formData); // Debug log
+      await onSubmit(formData);
     } catch (err: any) {
-      toast({
-        title: "Error! Status code:" + err.response?.status,
-        variant: "destructive",
-        description:
-          err.response?.data || "An error occurred while creating the skill",
-      });
+      console.error("Form submission error:", err); // Debug log
+      if (err.response?.data?.details) {
+        // Handle validation errors from the API
+        const validationErrors = err.response.data.details;
+        validationErrors.forEach((error: any) => {
+          form.setError(error.path[0], {
+            type: "server",
+            message: error.message,
+          });
+        });
+      } else {
+        const errorMessage =
+          err.response?.data?.error ||
+          err.message ||
+          "An error occurred while processing the skill";
+        toast({
+          title: "Error!",
+          variant: "destructive",
+          description: errorMessage,
+        });
+      }
     }
   }
 
-  const tierEmun = ["1", "2", "3", "4"];
+  const tierEmun = [1, 2, 3, 4];
   const permenentEpReductionEnum = [0, 1, 5, 10, 15];
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="space-y-4 pb-4">
           {/* Title */}
           {formEntry("title", "Skill Title", "Enter Skill title...")}
@@ -109,26 +109,32 @@ export function SkillForm({ data }: data) {
             "Short description of skill...",
             "This is the description that will be printed on passports"
           )}
-          {formEntry("tier", "Skill Tier", "Enter Skill Tier...", "", tierEmun)}
+          {formEntry(
+            "tier",
+            "Skill Tier",
+            "Select Skill Tier...",
+            "",
+            tierEmun
+          )}
           {formEntry(
             "parentSkillId",
-            "parentSkillId - NEEDS GUI",
-            "parentSkillId"
+            "Parent Skill ID",
+            "Enter Parent Skill ID..."
           )}
           {formEntry(
             "skillGroupId",
-            "skillGroupId - NEEDS GUI",
-            "skillGroupId"
+            "Skill Group ID",
+            "Enter Skill Group ID..."
           )}
           {formEntry(
             "prerequisiteSkills",
-            "prerequisiteSkills - NEEDS GUI",
-            "prerequisiteSkills"
+            "Prerequisite Skills",
+            "Enter Prerequisite Skills..."
           )}
           {formEntry(
             "permenentEpReduction",
-            "Permenent EP Reduction",
-            "Enter Permenent EP Reduction...",
+            "Permanent EP Reduction",
+            "Select Permanent EP Reduction...",
             "",
             permenentEpReductionEnum
           )}
@@ -143,28 +149,43 @@ export function SkillForm({ data }: data) {
           {formEntry("abilityCheck", "Ability Check", "Enter Ability Check...")}
           {formEntry(
             "canBeTakenMultiple",
-            "Can this skill be taken multiple times? - PROBABLY NEEDS GUI or different input",
-            "ROBABLY NEEDS GUI or different input",
+            "Can be taken multiple times?",
+            "Select if this skill can be taken multiple times",
             "",
             [true, false],
             "boolean"
           )}
           {formEntry(
             "playerVisable",
-            "Player Visable - PROBABLY NEEDS GUI or different input",
-            "Enter Player Visable...",
+            "Player Visible",
+            "Select if this skill should be visible to players",
             "",
             [true, false],
             "boolean"
           )}
           {formEntry(
             "additionalInfo",
-            "Additional Info - NEEDS GUI",
-            "Enter Additional Info...",
-            "This is the Additional Info of the skill."
+            "Additional Info",
+            "Enter Additional Info..."
           )}
         </div>
-        <Button type="submit">{data ? "Update" : "Submit"}</Button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button type="submit">{data ? "Update" : "Submit"}</Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          </div>
+          {Object.keys(form.formState.errors).length > 0 && (
+            <div className="text-sm text-red-500 text-right">
+              {Object.entries(form.formState.errors).map(([field, error]) => (
+                <div key={field} className="whitespace-nowrap">
+                  {field}: {error.message?.toString()}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </form>
     </Form>
   );
@@ -177,11 +198,10 @@ export function SkillForm({ data }: data) {
     array?: any[],
     type?: string
   ) {
-    const ret = (
+    return (
       <FormField
         control={form.control}
-        //@ts-expect-error
-        name={entryName}
+        name={entryName as any}
         render={({ field }) => (
           <FormItem>
             <FormLabel>{title}</FormLabel>
@@ -191,7 +211,16 @@ export function SkillForm({ data }: data) {
               </FormControl>
             )}
             {array && (
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  if (type === "boolean") {
+                    field.onChange(value === "true");
+                  } else {
+                    field.onChange(Number(value));
+                  }
+                }}
+                defaultValue={field.value?.toString()}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={placeholder} />
@@ -201,8 +230,8 @@ export function SkillForm({ data }: data) {
                   {array.map((e) => {
                     return (
                       <SelectItem value={e.toString()} key={e}>
-                        {e == 0
-                          ? type == "boolean"
+                        {e === 0
+                          ? type === "boolean"
                             ? "False"
                             : "None"
                           : e.toString().charAt(0).toUpperCase() +
@@ -219,8 +248,6 @@ export function SkillForm({ data }: data) {
         )}
       />
     );
-
-    return ret;
   }
 }
 

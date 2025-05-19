@@ -1,8 +1,45 @@
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { Role } from "@prisma/client";
-import { SkillValidator, UpdateValidator } from "@/lib/validators/skill";
+import { Role, Prisma } from "@prisma/client";
+import {
+  SkillValidator,
+  UpdateValidator,
+  DeleteValidator,
+} from "@/lib/validators/skill";
+
+export async function GET() {
+  try {
+    const session = await getAuthSession();
+    const user = session?.user
+      ? await db.user.findFirst({
+          where: { id: session?.user?.id },
+        })
+      : null;
+
+    const skills = await db.skill.findMany({
+      orderBy: {
+        title: "asc",
+      },
+    });
+
+    return new Response(JSON.stringify(skills), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error fetching skills:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch skills",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -19,112 +56,197 @@ export async function POST(req: Request) {
     ) {
       return new Response("Unauthorized", { status: 401 });
     }
-    let id: string;
-    let title: string;
-    let description: string;
-    let descriptionShort: string;
-    let tier: number;
-    let parentSkillId: string;
-    let skillGroupId: string;
-    let prerequisiteSkills: string[];
-    let permenentEpReduction: number;
-    let epCost: string;
-    let activation: string;
-    let duration: string;
-    let abilityCheck: string;
-    let canBeTakenMultiple: any;
-    let playerVisable: any;
-    let additionalInfo: string[];
 
     const body = await req.json();
-    if (body["id"]) {
-      const {
-        id,
-        title,
-        description,
-        descriptionShort,
-        tier,
-        parentSkillId,
-        skillGroupId,
-        prerequisiteSkills,
-        permenentEpReduction,
-        epCost,
-        activation,
-        duration,
-        abilityCheck,
-        canBeTakenMultiple,
-        playerVisable,
-        additionalInfo,
-      } = UpdateValidator.parse(body);
-      await db.skill.update({
-        where: { id },
-        data: {
-          title,
-          description,
-          descriptionShort,
-          tier: Number(tier),
-          parentSkillId,
-          skillGroupId,
-          prerequisiteSkills: [],
-          permenentEpReduction: Number(permenentEpReduction),
-          epCost,
-          activation,
-          duration,
-          abilityCheck,
-          canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
-          playerVisable: playerVisable === "true" ? true : false,
-          additionalInfo: [],
-        },
-      });
+    console.log("Received body:", body); // Debug log
+
+    // Check if this is an update request (has id)
+    if (body.id) {
+      try {
+        const validatedData = UpdateValidator.parse(body);
+        console.log("Validated update data:", validatedData); // Debug log
+        const { id, ...updateData } = validatedData;
+
+        const cleanUpdateData: Partial<Prisma.SkillUpdateInput> = {
+          title: updateData.title,
+          description: updateData.description || undefined,
+          descriptionShort: updateData.descriptionShort || undefined,
+          tier: updateData.tier ? Number(updateData.tier) : undefined,
+          parentSkill: updateData.parentSkillId
+            ? { connect: { id: updateData.parentSkillId } }
+            : undefined,
+          skillGrouping: updateData.skillGroupId
+            ? { connect: { id: updateData.skillGroupId } }
+            : undefined,
+          prerequisiteSkills: updateData.prerequisiteSkills || undefined,
+          permenentEpReduction: updateData.permenentEpReduction
+            ? Number(updateData.permenentEpReduction)
+            : undefined,
+          epCost: updateData.epCost || undefined,
+          activation: updateData.activation || undefined,
+          duration: updateData.duration || undefined,
+          abilityCheck: updateData.abilityCheck || undefined,
+          canBeTakenMultiple: updateData.canBeTakenMultiple,
+          playerVisable: updateData.playerVisable,
+          additionalInfo: updateData.additionalInfo || undefined,
+        };
+
+        // Remove undefined values
+        const finalUpdateData = Object.fromEntries(
+          Object.entries(cleanUpdateData).filter(
+            ([_, value]) => value !== undefined
+          )
+        ) as Prisma.SkillUpdateInput;
+
+        console.log("Final update data:", finalUpdateData); // Debug log
+
+        const updatedSkill = await db.skill.update({
+          where: { id },
+          data: finalUpdateData,
+        });
+
+        return new Response(JSON.stringify(updatedSkill), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (validationError) {
+        console.error("Validation error:", validationError); // Debug log
+        if (validationError instanceof z.ZodError) {
+          return new Response(
+            JSON.stringify({
+              error: "Validation failed",
+              details: validationError.errors,
+            }),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        throw validationError;
+      }
     } else {
-      const {
-        title,
-        description,
-        descriptionShort,
-        tier,
-        parentSkillId,
-        skillGroupId,
-        prerequisiteSkills,
-        permenentEpReduction,
-        epCost,
-        activation,
-        duration,
-        abilityCheck,
-        canBeTakenMultiple,
-        playerVisable,
-        additionalInfo,
-      } = SkillValidator.parse(body);
+      // This is a create request
+      try {
+        const validatedData = SkillValidator.parse(body);
+        console.log("Validated create data:", validatedData); // Debug log
 
-      await db.skill.create({
-        data: {
-          title,
-          description,
-          descriptionShort,
-          tier: Number(tier),
-          parentSkillId,
-          skillGroupId,
-          prerequisiteSkills: [],
-          permenentEpReduction: Number(permenentEpReduction),
-          epCost,
-          activation,
-          duration,
-          abilityCheck,
-          canBeTakenMultiple: canBeTakenMultiple === "true" ? true : false,
-          playerVisable: playerVisable === "true" ? true : false,
-          additionalInfo: [],
-        },
-      });
+        const createData: Prisma.SkillCreateInput = {
+          title: validatedData.title,
+          tier: validatedData.tier ? Number(validatedData.tier) : 1, // Default to 1 if not provided
+          permenentEpReduction: validatedData.permenentEpReduction
+            ? Number(validatedData.permenentEpReduction)
+            : 0, // Default to 0
+          epCost: validatedData.epCost, // Don't default to "0"
+          activation: validatedData.activation || "None", // Default to "None"
+          duration: validatedData.duration || "None", // Default to "None"
+          description: validatedData.description || undefined,
+          descriptionShort: validatedData.descriptionShort || undefined,
+          parentSkill: validatedData.parentSkillId
+            ? { connect: { id: validatedData.parentSkillId } }
+            : undefined,
+          skillGrouping: validatedData.skillGroupId
+            ? { connect: { id: validatedData.skillGroupId } }
+            : undefined,
+          prerequisiteSkills: validatedData.prerequisiteSkills || undefined,
+          abilityCheck: validatedData.abilityCheck || undefined,
+          canBeTakenMultiple: validatedData.canBeTakenMultiple,
+          playerVisable: validatedData.playerVisable,
+          additionalInfo: validatedData.additionalInfo || undefined,
+        };
+
+        console.log("Final create data:", createData); // Debug log
+
+        const createdSkill = await db.skill.create({
+          data: createData,
+        });
+
+        return new Response(JSON.stringify(createdSkill), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (validationError) {
+        console.error("Validation error:", validationError); // Debug log
+        if (validationError instanceof z.ZodError) {
+          return new Response(
+            JSON.stringify({
+              error: "Validation failed",
+              details: validationError.errors,
+            }),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        throw validationError;
+      }
     }
-
-    return new Response("OK");
   } catch (error) {
+    console.error("Server error:", error); // Debug log
     if (error instanceof z.ZodError) {
-      return new Response(error.message, { status: 422 });
+      return new Response(
+        JSON.stringify({
+          error: "Validation failed",
+          details: error.errors,
+        }),
+        {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(
-      "Couldn't process this skill request, please try again later",
-      { status: 500 }
+      JSON.stringify({
+        error: "Couldn't process this skill request, please try again later",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await getAuthSession();
+    const user = session?.user
+      ? await db.user.findFirst({
+          where: { id: session?.user?.id },
+        })
+      : null;
+
+    if (
+      !session?.user ||
+      !(user?.role === Role.ADMIN || user?.role === Role.SUPERADMIN)
+    ) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return new Response("Skill ID is required", { status: 400 });
+    }
+
+    await db.skill.delete({
+      where: { id },
+    });
+
+    return new Response("OK");
+  } catch (error) {
+    console.error("Error deleting skill:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Could not delete this skill",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 }

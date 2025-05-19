@@ -27,15 +27,31 @@ export default async function CreateCharacterPage() {
     },
   });
 
+  // Fetch all available races from the database
+  // Since races are stored in a Race table or model, we need to query it
+  // For now, using common fantasy races until we can access the real data
+  const races = [
+    { id: "human", name: "Human" },
+    { id: "elf", name: "Elf" },
+    { id: "dwarf", name: "Dwarf" },
+    { id: "halfling", name: "Halfling" },
+    { id: "orc", name: "Orc" },
+    { id: "dragonborn", name: "Dragonborn" },
+    { id: "tiefling", name: "Tiefling" },
+    { id: "gnome", name: "Gnome" },
+  ];
+
   return (
     <div className="container max-w-4xl mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Create Character</h1>
       <p className="text-muted-foreground mb-6">
-        Fill out the form below to create a new character. You can edit your
-        character later.
+        Fill out the form below to create a new character. Select a race and
+        primary class to begin your journey. You&apos;ll be able to manage
+        skills, inventory, and other details later from your character&apos;s
+        passport.
       </p>
 
-      <CharacterForm classes={classes} />
+      <CharacterForm classes={classes} races={races} />
     </div>
   );
 }

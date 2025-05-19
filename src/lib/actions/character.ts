@@ -8,9 +8,10 @@ import { redirect } from "next/navigation";
 
 export type CharacterFormData = {
   name: string;
+  race: string;
   primaryClassId?: string;
   primaryClassLvl: number;
-  secondaryClassId?: string;
+  secondaryClassId?: string | null;
   secondaryClassLvl: number;
   attributes?: Record<string, any>;
   notes?: Record<string, any>;
@@ -34,7 +35,10 @@ export async function createCharacter(formData: CharacterFormData) {
           ? null
           : formData.secondaryClassId || null,
       secondaryClassLvl: formData.secondaryClassLvl || 0,
-      Attributes: formData.attributes || {},
+      Attributes: {
+        ...(formData.attributes || {}),
+        race: formData.race,
+      },
       notes: formData.notes || {},
       phazians: formData.phazians || 0,
       userId: session.user.id,

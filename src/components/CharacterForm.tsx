@@ -1,16 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
-import {
-  createCharacter,
-  updateCharacter,
-  CharacterFormData,
-} from "@/lib/actions/character";
+import { createCharacter, CharacterFormData } from "@/lib/actions/character";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,45 +26,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Check, Loader2 } from "lucide-react";
+import "quill/dist/quill.snow.css";
+import "@/styles/quill.css";
+import type Quill from "quill";
 
 // Define form schema
 const characterFormSchema = z.object({
   name: z.string().min(1, "Character name is required").max(100),
-  primaryClassId: z.string().optional(),
-  primaryClassLvl: z.coerce.number().int().min(1).default(1),
-  secondaryClassId: z.string().optional(),
-  secondaryClassLvl: z.coerce.number().int().min(0).default(0),
-  notes: z.string().optional(),
-  phazians: z.coerce.number().int().min(0).default(0),
+  race: z.string().min(1, "Race is required"),
+  primaryClassId: z.string().min(1, "Primary class is required"),
+  backstory: z.any().optional(),
 });
 
 type CharacterFormValues = z.infer<typeof characterFormSchema>;
 
 type CharacterFormProps = {
-  character?: any;
   classes: { id: string; Title: string }[];
-  isEditing?: boolean;
+  races: { id: string; name: string }[];
 };
 
-export function CharacterForm({
-  character,
-  classes,
-  isEditing = false,
-}: CharacterFormProps) {
+export function CharacterForm({ classes, races }: CharacterFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const quillRef = useRef<Quill>();
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Default values for the form
   const defaultValues: Partial<CharacterFormValues> = {
-    name: character?.name || "",
-    primaryClassId: character?.primaryClassId || "",
-    primaryClassLvl: character?.primaryClassLvl || 1,
-    secondaryClassId: character?.secondaryClassId || "",
-    secondaryClassLvl: character?.secondaryClassLvl || 0,
-    notes: character?.notes ? JSON.stringify(character.notes) : "",
-    phazians: character?.phazians || 0,
+    name: "",
+    race: "",
+    primaryClassId: "",
+    backstory: null,
   };
 
   const form = useForm<CharacterFormValues>({
@@ -77,40 +67,78 @@ export function CharacterForm({
     mode: "onChange",
   });
 
+  // Initialize Quill editor
+  const initializeEditor = useCallback(async () => {
+    if (!editorRef.current) return;
+
+    const { default: Quill } = await import("quill");
+
+    const toolbarOptions = [
+      ["bold", "italic", "underline", "strike"],
+      ["blockquote", "code-block"],
+      [{ header: 1 }, { header: 2 }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      ["link"],
+      ["clean"],
+    ];
+
+    const quill = new Quill(editorRef.current, {
+      modules: {
+        toolbar: toolbarOptions,
+      },
+      placeholder: "Write your character's backstory...",
+      theme: "snow",
+    });
+
+    quillRef.current = quill;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMounted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      initializeEditor();
+    }
+  }, [isMounted, initializeEditor]);
+
   const onSubmit = async (data: CharacterFormValues) => {
     setIsPending(true);
     try {
+      // Get content from Quill editor and serialize it properly
+      let backstoryContent = null;
+      if (quillRef.current) {
+        const quillContent = quillRef.current.getContents();
+        backstoryContent = JSON.stringify(quillContent);
+      }
+
       // Convert form data to the expected format for the server action
       const formData: CharacterFormData = {
         name: data.name,
+        race: data.race,
         primaryClassId: data.primaryClassId,
-        primaryClassLvl: data.primaryClassLvl,
-        secondaryClassId: data.secondaryClassId,
-        secondaryClassLvl: data.secondaryClassLvl,
-        notes: data.notes ? JSON.parse(data.notes) : {},
-        phazians: data.phazians,
+        primaryClassLvl: 1, // Default to level 1
+        secondaryClassId: null,
+        secondaryClassLvl: 0, // Default to level 0
+        notes: {
+          backstory: backstoryContent ? backstoryContent : "",
+        },
+        phazians: 0, // Default to 0
       };
 
-      let result;
-      if (isEditing && character?.id) {
-        result = await updateCharacter(character.id, formData);
-      } else {
-        result = await createCharacter(formData);
-      }
+      const result = await createCharacter(formData);
 
       if (result.success) {
         toast({
-          title: isEditing ? "Character updated" : "Character created",
-          description: isEditing
-            ? "Your character has been updated successfully."
-            : "Your character has been created successfully.",
+          title: "Character created",
+          description: "Your character has been created successfully.",
         });
 
-        if (isEditing) {
-          router.push(`/passport/${character.id}`);
-        } else {
-          router.push(`/passport/${result.characterId}`);
-        }
+        router.push(`/passport/${result.characterId}`);
       }
     } catch (error) {
       toast({
@@ -142,107 +170,29 @@ export function CharacterForm({
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <FormField
-                control={form.control}
-                name="primaryClassId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Class</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a primary class" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {classes.map((classItem) => (
-                          <SelectItem key={classItem.id} value={classItem.id}>
-                            {classItem.Title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="primaryClassLvl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Class Level</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <FormField
-                control={form.control}
-                name="secondaryClassId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secondary Class (Optional)</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a secondary class" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {classes.map((classItem) => (
-                          <SelectItem key={classItem.id} value={classItem.id}>
-                            {classItem.Title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="secondaryClassLvl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secondary Class Level</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
           <FormField
             control={form.control}
-            name="phazians"
+            name="race"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phazians</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" {...field} />
-                </FormControl>
-                <FormDescription>Currency of the game</FormDescription>
+                <FormLabel>Race</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a race" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {races?.map((race) => (
+                      <SelectItem key={race.id} value={race.id}>
+                        {race.name}
+                      </SelectItem>
+                    )) || <SelectItem value="human">Human</SelectItem>}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -250,21 +200,46 @@ export function CharacterForm({
 
           <FormField
             control={form.control}
-            name="notes"
+            name="primaryClassId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Notes (JSON format)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder='{"key": "value"}'
-                    className="font-mono"
-                    rows={5}
-                    {...field}
-                  />
-                </FormControl>
+                <FormLabel>Primary Class</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a primary class" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {classes.map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        {classItem.Title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>You&apos;ll start at Level 1</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="backstory"
+            render={() => (
+              <FormItem>
+                <FormLabel>Backstory</FormLabel>
                 <FormDescription>
-                  Enter any additional notes in JSON format
+                  Tell the story of your character&apos;s origins and
+                  motivations
                 </FormDescription>
+                <div className="quill mt-2">
+                  <div ref={editorRef} className="min-h-[200px]" />
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -283,12 +258,12 @@ export function CharacterForm({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditing ? "Updating..." : "Creating..."}
+                  Creating...
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  {isEditing ? "Update Character" : "Create Character"}
+                  Create Character
                 </>
               )}
             </Button>

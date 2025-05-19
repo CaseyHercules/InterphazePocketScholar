@@ -24,6 +24,7 @@ import {
   Backpack,
   CreditCard,
 } from "lucide-react";
+import { BackstoryRenderer } from "@/components/BackstoryRenderer";
 
 interface PassportPageProps {
   params: {
@@ -107,12 +108,6 @@ export default async function PassportPage({ params }: PassportPageProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="outline" asChild>
-            <Link href={`/characters/${character.id}/edit`}>
-              <PenSquare className="mr-2 h-4 w-4" />
-              Edit Character
-            </Link>
-          </Button>
           <Button asChild>
             <Link href="/characters">Back to Characters</Link>
           </Button>
@@ -125,7 +120,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
           <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="spells">Spells</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="notes">Backstory</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -263,7 +258,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
                 </ScrollArea>
               ) : (
                 <p className="text-muted-foreground">
-                  This character hasn't learned any skills yet.
+                  This character hasn&apos;t learned any skills yet.
                 </p>
               )}
             </CardContent>
@@ -313,7 +308,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
                 </ScrollArea>
               ) : (
                 <p className="text-muted-foreground">
-                  This character doesn't know any spells yet.
+                  This character doesn&apos;t know any spells yet.
                 </p>
               )}
             </CardContent>
@@ -371,7 +366,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  This character doesn't have any items yet.
+                  This character doesn&apos;t have any items yet.
                 </p>
               )}
             </CardContent>
@@ -388,45 +383,35 @@ export default async function PassportPage({ params }: PassportPageProps) {
 
         <TabsContent value="notes" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Character Notes</CardTitle>
-              <CardDescription>
-                Additional information and notes about your character
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Backstory</CardTitle>
+                <CardDescription>
+                  Write some fun stories about your character
+                </CardDescription>
+              </div>
+
+              <Button variant="outline" asChild>
+                <Link href={`/characters/${character.id}/backstory`}>
+                  <PenSquare className="mr-2 h-4 w-4" />
+                  Edit Backstory
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent>
               {character.notes &&
-              Object.keys(character.notes as Record<string, any>).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(character.notes as Record<string, any>).map(
-                    ([key, value], index) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <h3 className="text-lg font-semibold capitalize mb-2">
-                          {key}
-                        </h3>
-                        <p className="text-sm">
-                          {typeof value === "string"
-                            ? value
-                            : JSON.stringify(value, null, 2)}
-                        </p>
-                      </div>
-                    )
-                  )}
+              (character.notes as Record<string, any>).backstory ? (
+                <div className="border rounded-lg p-4">
+                  <BackstoryRenderer
+                    content={(character.notes as Record<string, any>).backstory}
+                  />
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  No notes have been added for this character.
+                  No backstory has been added for this character.
                 </p>
               )}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" asChild>
-                <Link href={`/characters/${character.id}/edit`}>
-                  <PenSquare className="mr-2 h-4 w-4" />
-                  Edit Notes
-                </Link>
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

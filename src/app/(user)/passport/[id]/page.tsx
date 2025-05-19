@@ -27,6 +27,7 @@ import { BackstoryRenderer } from "@/components/BackstoryRenderer";
 import { Badge } from "@/components/ui/badge";
 import { ClassLevelUpButton } from "@/components/ClassLevelUpButton";
 import { SecondaryClassPrompt } from "@/components/SecondaryClassPrompt";
+import { SpellsTab } from "@/components/SpellsTab";
 
 interface PassportPageProps {
   params: {
@@ -320,7 +321,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </div>
           <p className="text-base sm:text-lg text-muted-foreground mt-1">
             {character.primaryClass
-              ? character.primaryClass.Title
+              ? character.primaryClass.Title + " "
               : "No Primary Class"}
             (Level {character.primaryClassLvl})
             {character.secondaryClass &&
@@ -352,26 +353,22 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <TabsContent value="overview" className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <Card className="shadow-sm">
-              <CardHeader className="p-3 sm:p-4">
-                <CardTitle className="flex items-center text-base sm:text-lg">
-                  <Sword className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Primary Class
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg mb-1">
-                      {character.primaryClass
-                        ? character.primaryClass.Title
-                        : "None"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Level {character.primaryClassLvl}
-                    </p>
+              <CardHeader className="p-1 sm:p-2">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <div className="flex items-center">
+                    <Sword className="mr-2 h-4 w-4" />
+                    Primary Class
+                    {character.primaryClass && (
+                      <span className="ml-2 font-normal">
+                        - {character.primaryClass.Title}
+                      </span>
+                    )}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (Level {character.primaryClassLvl})
+                    </span>
                   </div>
 
                   {unallocatedLevels > 0 && (
@@ -381,29 +378,27 @@ export default async function PassportPage({ params }: PassportPageProps) {
                       currentLevel={character.primaryClassLvl}
                     />
                   )}
-                </div>
-              </CardContent>
+                </CardTitle>
+              </CardHeader>
             </Card>
 
             {character.secondaryClass &&
             !character.secondaryClass.Title.toLowerCase().includes("none") &&
             character.secondaryClassLvl > 0 ? (
               <Card className="shadow-sm">
-                <CardHeader className="p-3 sm:p-4">
-                  <CardTitle className="flex items-center text-base sm:text-lg">
-                    <ShieldCheck className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Secondary Class
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-4 pt-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-lg mb-1">
-                        {character.secondaryClass.Title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Level {character.secondaryClassLvl}
-                      </p>
+                <CardHeader className="p-1 sm:p-2">
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <div className="flex items-center">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Secondary Class
+                      {character.secondaryClass && (
+                        <span className="ml-2 font-normal">
+                          - {character.secondaryClass.Title}
+                        </span>
+                      )}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (Level {character.secondaryClassLvl})
+                      </span>
                     </div>
 
                     {unallocatedLevels > 0 && (
@@ -413,19 +408,21 @@ export default async function PassportPage({ params }: PassportPageProps) {
                         currentLevel={character.secondaryClassLvl}
                       />
                     )}
-                  </div>
-                </CardContent>
+                  </CardTitle>
+                </CardHeader>
               </Card>
             ) : (
               <Card className="shadow-sm">
-                <CardHeader className="p-3 sm:p-4">
-                  <CardTitle className="flex items-center text-base sm:text-lg">
-                    <ShieldCheck className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Secondary Class
+                <CardHeader className="p-1 sm:p-2">
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <div className="flex items-center">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Secondary Class
+                    </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-4 pt-0">
-                  <p className="text-sm text-muted-foreground mb-3">
+                <CardContent className="p-1 sm:p-2">
+                  <p className="text-sm text-muted-foreground mb-2">
                     {character.secondaryClass?.Title.toLowerCase().includes(
                       "none"
                     )
@@ -456,14 +453,14 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </div>
 
           <Card className="shadow-sm">
-            <CardHeader className="p-3 sm:p-4 pb-0">
-              <CardTitle className="text-base sm:text-lg">
+            <CardHeader className="p-1 sm:p-4 sm:pb-2">
+              <CardTitle className="text-base sm:text-lg pb-0">
                 Character Stats
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4">
+            <CardContent className="p-1 sm:p-4 sm:pt-0">
               {/* HP and EP in first row */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 {/* HP Stat Card */}
                 <div className="bg-background border rounded-lg p-3">
                   <h4 className="font-medium text-sm mb-1">Hit Points</h4>
@@ -477,12 +474,12 @@ export default async function PassportPage({ params }: PassportPageProps) {
                   <h4 className="font-medium text-sm mb-1">Energy Points</h4>
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">
+                      <span className="text-lg font-semibold">
                         {character.primaryClass
                           ? character.primaryClass.Title
                           : "Primary"}
                       </span>
-                      <span className="text-2xl font-bold">
+                      <span className="text-lg">
                         {getEPValues(character).primary}
                       </span>
                     </div>
@@ -491,11 +488,11 @@ export default async function PassportPage({ params }: PassportPageProps) {
                       !character.secondaryClass.Title.toLowerCase().includes(
                         "none"
                       ) && (
-                        <div className="flex items-center justify-between mt-1 text-muted-foreground">
-                          <span className="text-sm">
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-lg font-semibold">
                             {character.secondaryClass.Title}
                           </span>
-                          <span className="text-lg font-semibold">
+                          <span className="text-lg">
                             {getEPValues(character).secondary}
                           </span>
                         </div>
@@ -572,12 +569,12 @@ export default async function PassportPage({ params }: PassportPageProps) {
               ([key]) => key.toLowerCase() !== "race"
             ).length > 0 && (
               <Card className="shadow-sm mt-4">
-                <CardHeader className="p-3 sm:p-4 pb-0">
-                  <CardTitle className="text-base sm:text-lg">
+                <CardHeader className="p-1 sm:p-2">
+                  <CardTitle className="text-base">
                     Additional Attributes
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-4">
+                <CardContent className="p-1 sm:p-2">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {Object.entries(character.Attributes as Record<string, any>)
                       .filter(([key]) => key.toLowerCase() !== "race")
@@ -656,55 +653,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
         </TabsContent>
 
         <TabsContent value="spells" className="space-y-4">
-          <Card className="shadow-sm">
-            <CardHeader className="p-3 sm:p-4">
-              <CardTitle className="flex items-center text-base sm:text-lg">
-                <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Spells
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Spells known by this character
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              {character.spells.length > 0 ? (
-                <ScrollArea className="h-[300px] sm:h-[400px]">
-                  <div className="space-y-3">
-                    {character.spells.map((spell) => (
-                      <div key={spell.id} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <h3 className="text-base font-semibold">
-                            {spell.title}
-                          </h3>
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                            Level {spell.level}
-                          </span>
-                        </div>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                          {spell.description}
-                        </p>
-                        {spell.type && (
-                          <p className="text-xs sm:text-sm mt-2">
-                            <span className="font-medium">Type:</span>{" "}
-                            {spell.type}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  This character doesn&apos;t know any spells yet.
-                </p>
-              )}
-            </CardContent>
-            <CardFooter className="p-3 sm:p-4 pt-0">
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Total Spells: {character.spells.length}
-              </p>
-            </CardFooter>
-          </Card>
+          <SpellsTab character={character} />
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-4">

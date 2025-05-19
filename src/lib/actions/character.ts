@@ -313,3 +313,111 @@ export async function levelUpCharacterClass(
   revalidatePath(`/passport/${characterId}`);
   return { success: true };
 }
+
+export async function addSpellToCharacter(
+  characterId: string,
+  spellId: string
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    throw new Error("You must be logged in to add a spell to a character");
+  }
+
+  // First verify the character belongs to the user
+  const character = await db.character.findUnique({
+    where: { id: characterId },
+    select: { userId: true },
+  });
+
+  if (!character) {
+    throw new Error("Character not found");
+  }
+
+  if (character.userId !== session.user.id) {
+    throw new Error("You don't have permission to update this character");
+  }
+
+  // Verify the spell exists
+  const spell = await db.spell.findUnique({
+    where: { id: spellId },
+  });
+
+  if (!spell) {
+    throw new Error("Spell not found");
+  }
+
+  // Update the spell to be associated with this character
+  // If the spell is already associated with another character, create a copy
+  let updatedSpell;
+
+  if (spell.characterId && spell.characterId !== characterId) {
+    // Create a copy of the spell for this character
+    updatedSpell = await db.spell.create({
+      data: {
+        title: spell.title,
+        type: spell.type,
+        description: spell.description,
+        level: spell.level,
+        data: spell.data as any,
+        characterId: characterId,
+      },
+    });
+  } else {
+    // Update the existing spell to be associated with this character
+    updatedSpell = await db.spell.update({
+      where: { id: spellId },
+      data: { characterId },
+    });
+  }
+
+  revalidatePath(`/passport/${characterId}`);
+  return { success: true, spell: updatedSpell };
+}
+
+export async function removeSpellFromCharacter(
+  characterId: string,
+  spellId: string
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    throw new Error("You must be logged in to remove a spell from a character");
+  }
+
+  // First verify the character belongs to the user
+  const character = await db.character.findUnique({
+    where: { id: characterId },
+    select: { userId: true },
+  });
+
+  if (!character) {
+    throw new Error("Character not found");
+  }
+
+  if (character.userId !== session.user.id) {
+    throw new Error("You don't have permission to update this character");
+  }
+
+  // Verify the spell exists and belongs to this character
+  const spell = await db.spell.findUnique({
+    where: { id: spellId },
+  });
+
+  if (!spell) {
+    throw new Error("Spell not found");
+  }
+
+  if (spell.characterId !== characterId) {
+    throw new Error("This spell doesn't belong to the character");
+  }
+
+  // Instead of deleting, just remove the association with the character
+  await db.spell.update({
+    where: { id: spellId },
+    data: { characterId: null },
+  });
+
+  revalidatePath(`/passport/${characterId}`);
+  return { success: true };
+}

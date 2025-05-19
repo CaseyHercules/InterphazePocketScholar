@@ -8,11 +8,11 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "Interphaze Pocket Scholar",
-  description: "Tutorial for project, soon to be a web app.",
+  description: "Learn, Register, and Adapt to the lands of Interphaze.",
   metadataBase: new URL("https://interphaze-pocket-scholar.vercel.app"),
   openGraph: {
     title: "Interphaze Pocket Scholar",
-    description: "Tutorial for project, soon to be a web app.",
+    description: "Learn, Register, and Adapt to the lands of Interphaze.",
     type: "website",
     locale: "en_US",
     images: [
@@ -27,7 +27,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Interphaze Pocket Scholar",
-    description: "Tutorial for project, soon to be a web app.",
+    description: "Learn, Register, and Adapt to the lands of Interphaze.",
     images: ["/logo.svg"],
   },
   icons: {

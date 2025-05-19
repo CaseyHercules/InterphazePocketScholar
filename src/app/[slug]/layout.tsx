@@ -81,7 +81,7 @@ const Layout = async ({
                     variant: "outline",
                     className: "w-full",
                   })}
-                  href={`/${slug}/create`}
+                  href={`/${slug.toLowerCase()}/create`}
                 >
                   Create Post
                 </Link>

@@ -35,7 +35,7 @@ const MENU_ITEMS = [
       { label: "Character Advancement", href: "/rules/advancement" },
       {
         label: "Classes",
-        href: "/class/class",
+        href: "/class",
         subItems: [
           { label: "Cleric", href: "/class/cleric" },
           { label: "Druid", href: "/class/druid" },
@@ -52,7 +52,7 @@ const MENU_ITEMS = [
       },
       {
         label: "Races",
-        href: "/race/race",
+        href: "/race",
         subItems: [
           { label: "Dwarf", href: "/race/dwarf" },
           { label: "Elf", href: "/race/elf" },

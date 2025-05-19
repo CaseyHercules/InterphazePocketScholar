@@ -42,7 +42,7 @@ const EditButtonOnPosts: FC<EditButtonOnPostsProps> = ({
       });
     },
     onSuccess: () => {
-      router.push(`/${topictitle}`);
+      router.push(`/${topictitle.toLowerCase()}`);
       return toast({
         description: "Post has been deleted!",
         variant: "default",
@@ -57,7 +57,10 @@ const EditButtonOnPosts: FC<EditButtonOnPostsProps> = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <Link className="float-right" href={`/${topictitle}/${postId}/edit`}>
+        <Link
+          className="float-right"
+          href={`/${topictitle.toLowerCase()}/${postId}/edit`}
+        >
           Edit
         </Link>
       </ContextMenuTrigger>

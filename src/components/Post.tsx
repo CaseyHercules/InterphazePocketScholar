@@ -1,5 +1,5 @@
 import { FC, useRef } from "react";
-import { Post, User } from "@prisma/client";
+import type { Post, User } from "@prisma/client";
 import { formatTimeToNow } from "@/lib/utils";
 import EditorOutput from "./EditorOutput";
 
@@ -22,7 +22,7 @@ const Post: FC<PostProps> = ({ topicName, post, viewExtraParams }) => {
               <>
                 <a
                   className="underline text-zinc-900 text-sm underline-offset-2"
-                  href={`/${topicName}`}
+                  href={`/${topicName.toLowerCase()}`}
                 >
                   {topicName}
                 </a>
@@ -33,7 +33,7 @@ const Post: FC<PostProps> = ({ topicName, post, viewExtraParams }) => {
             ) : null}
           </div>
 
-          <a href={`/${topicName}/${post.id}`}>
+          <a href={`/${topicName.toLowerCase()}/${post.id}`}>
             <h1 className="text-lg font-semibold py-2 leading-6 text-zinc-900">
               {post.title}
             </h1>

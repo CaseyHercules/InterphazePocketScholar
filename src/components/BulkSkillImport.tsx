@@ -38,6 +38,11 @@ export function BulkSkillImport() {
   const [progress, setProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
 
+  // If not in development mode, don't render the component
+  if (process.env.NODE_ENV !== "development") {
+    return null;
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);

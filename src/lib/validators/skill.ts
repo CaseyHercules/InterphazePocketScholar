@@ -4,7 +4,7 @@ export const SkillValidator = z.object({
   title: z
     .string()
     .min(3, { message: "Title must be longer than 3 characters" })
-    .max(64, { message: "Title must be at most 64 characters" }),
+    .max(128, { message: "Title must be at most 128 characters" }),
   description: z.string().optional(),
   descriptionShort: z.string().optional(),
   tier: z.number().min(1).max(4),
@@ -28,7 +28,7 @@ export const UpdateValidator = z.object({
   title: z
     .string()
     .min(3, { message: "Title must be longer than 3 characters" })
-    .max(64, { message: "Title must be at most 64 characters" }),
+    .max(128, { message: "Title must be at most 128 characters" }),
   description: z.string().optional(),
   descriptionShort: z.string().optional(),
   tier: z.number().min(1).max(4),

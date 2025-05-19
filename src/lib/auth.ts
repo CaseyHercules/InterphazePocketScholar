@@ -8,7 +8,7 @@ import { nanoid } from "nanoid";
 import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db) as any,
   debug: process.env.NODE_ENV === "development",
   session: {
     strategy: "jwt",
@@ -49,14 +49,13 @@ export const authOptions: NextAuthOptions = {
         // Extract email from OAuthProfile
         const email = profile.OAuthProfile?.email || profile.email;
 
-        const result = {
+        return {
           id: profile.id.toString(),
           name: profile.name || profile.slug,
           email: email || `${profile.slug}@interphaze.org`,
           image: profile.avatar_urls?.["96"] || null,
+          role: Role.USER, // Set default role
         };
-
-        return result;
       },
       client: {
         token_endpoint_auth_method: "client_secret_basic",
@@ -158,7 +157,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.image = token.picture;
         session.user.username = token.username;
-        session.user.role = token.role;
+        session.user.role = token.role || Role.USER; // Provide default role
         session.user.isAdmin = token.isAdmin;
         session.user.isRoot = token.isRoot;
         session.user.isSpellWright = token.isSpellWright;
@@ -186,7 +185,7 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         username: dbUser.username,
-        role: dbUser.role,
+        role: dbUser.role || Role.USER, // Provide default role
         isAdmin: dbUser.role === Role.ADMIN,
         isRoot: dbUser.role === Role.SUPERADMIN,
         isSpellWright: dbUser.role === Role.SPELLWRIGHT,
@@ -204,7 +203,7 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account, profile, isNewUser }) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Sign in success:", { user, account, isNewUser });
+        // console.log("Sign in success:", { user, account, isNewUser });
       }
     },
   },

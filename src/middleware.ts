@@ -24,12 +24,28 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/assets",
   "/images",
+  "/api/posts", // Allow access to posts API
 ];
+
+// Function to check if a path is a content viewing route
+function isContentViewingRoute(pathname: string): boolean {
+  // First segment after / should be the topic name or API route
+  const segments = pathname.split("/").filter(Boolean);
+
+  // Allow direct topic/post routes (e.g., /topic-name or /topic-name/post-id)
+  if (segments.length <= 2) {
+    return !PUBLIC_PATHS.some(
+      (path) => path !== "/" && pathname.startsWith(path)
+    );
+  }
+
+  return false;
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Check if the path is public
+  // Check if the path is public or a content viewing route
   if (
     PUBLIC_PATHS.some((path) => {
       // Exact match for root path
@@ -37,7 +53,8 @@ export async function middleware(req: NextRequest) {
       // Prefix match for other paths
       if (path !== "/" && pathname.startsWith(path)) return true;
       return false;
-    })
+    }) ||
+    isContentViewingRoute(pathname)
   ) {
     return NextResponse.next();
   }

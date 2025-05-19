@@ -24,7 +24,12 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      username?: string | null;
       role: Role;
+      isAdmin?: boolean;
+      isRoot?: boolean;
+      isSpellWright?: boolean;
+      isModerator?: boolean;
     };
   }
 
@@ -33,6 +38,7 @@ declare module "next-auth" {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    username?: string | null;
     role: Role;
   }
 }

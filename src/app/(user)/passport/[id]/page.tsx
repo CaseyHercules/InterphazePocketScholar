@@ -71,19 +71,35 @@ function calculateStatValue(character: any, statName: string): number {
     }
   }
 
-  // Add value from secondary class if available
+  // For EP, we don't combine primary and secondary values
+  if (statName === "EP") {
+    return value;
+  }
+
+  // Add value from secondary class if available (at half value)
   if (
     character.secondaryClass &&
     character.secondaryClass[statName] &&
-    character.secondaryClassLvl > 0
+    character.secondaryClassLvl > 0 &&
+    !character.secondaryClass.Title.toLowerCase().includes("none")
   ) {
     try {
       const secondaryClassStat = character.secondaryClass[statName];
       if (typeof secondaryClassStat === "object") {
-        // Handle different level brackets
-        const level = character.secondaryClassLvl.toString();
-        if (secondaryClassStat[level]) {
-          value += parseInt(secondaryClassStat[level]);
+        // Get current level stat value
+        const currentLevel = character.secondaryClassLvl;
+        const currentLevelStr = currentLevel.toString();
+
+        // Get previous level stat value
+        const prevLevel = Math.max(currentLevel - 1, 0);
+        const prevLevelStr = prevLevel.toString();
+
+        let currentValue = 0;
+        let prevValue = 0;
+
+        // Find current level value
+        if (secondaryClassStat[currentLevelStr]) {
+          currentValue = parseInt(secondaryClassStat[currentLevelStr]);
         } else {
           // If exact level not found, find the closest lower bracket
           const levels = Object.keys(secondaryClassStat)
@@ -92,16 +108,42 @@ function calculateStatValue(character: any, statName: string): number {
             .sort((a, b) => a - b);
 
           const closestLevel =
-            levels.filter((l) => l <= character.secondaryClassLvl).pop() || 1;
+            levels.filter((l) => l <= currentLevel).pop() || 0;
           if (secondaryClassStat[closestLevel.toString()]) {
-            value += parseInt(secondaryClassStat[closestLevel.toString()]);
+            currentValue = parseInt(
+              secondaryClassStat[closestLevel.toString()]
+            );
           }
         }
+
+        // Find previous level value
+        if (prevLevel > 0) {
+          if (secondaryClassStat[prevLevelStr]) {
+            prevValue = parseInt(secondaryClassStat[prevLevelStr]);
+          } else {
+            // If exact level not found, find the closest lower bracket
+            const levels = Object.keys(secondaryClassStat)
+              .map(Number)
+              .filter((l) => !isNaN(l))
+              .sort((a, b) => a - b);
+
+            const closestLevel =
+              levels.filter((l) => l <= prevLevel).pop() || 0;
+            if (secondaryClassStat[closestLevel.toString()]) {
+              prevValue = parseInt(secondaryClassStat[closestLevel.toString()]);
+            }
+          }
+        }
+
+        // Calculate half of the difference and add it to the total
+        const levelDifference = currentValue - prevValue;
+        value += Math.floor(levelDifference / 2);
       } else if (
         typeof secondaryClassStat === "string" ||
         typeof secondaryClassStat === "number"
       ) {
-        value += parseInt(secondaryClassStat.toString());
+        // For static values, take half
+        value += Math.floor(parseInt(secondaryClassStat.toString()) / 2);
       }
     } catch (error) {
       console.error(
@@ -112,6 +154,85 @@ function calculateStatValue(character: any, statName: string): number {
   }
 
   return value;
+}
+
+// Return both primary and secondary EP values
+function getEPValues(character: any): { primary: number; secondary: number } {
+  let primaryEP = 0;
+  let secondaryEP = 0;
+
+  // Calculate primary EP
+  if (character.primaryClass && character.primaryClass.EP) {
+    try {
+      const primaryClassStat = character.primaryClass.EP;
+      if (typeof primaryClassStat === "object") {
+        // Handle different level brackets
+        const level = character.primaryClassLvl.toString();
+        if (primaryClassStat[level]) {
+          primaryEP = parseInt(primaryClassStat[level]);
+        } else {
+          // If exact level not found, find the closest lower bracket
+          const levels = Object.keys(primaryClassStat)
+            .map(Number)
+            .filter((l) => !isNaN(l))
+            .sort((a, b) => a - b);
+
+          const closestLevel =
+            levels.filter((l) => l <= character.primaryClassLvl).pop() || 1;
+          if (primaryClassStat[closestLevel.toString()]) {
+            primaryEP = parseInt(primaryClassStat[closestLevel.toString()]);
+          }
+        }
+      } else if (
+        typeof primaryClassStat === "string" ||
+        typeof primaryClassStat === "number"
+      ) {
+        primaryEP = parseInt(primaryClassStat.toString());
+      }
+    } catch (error) {
+      console.error(`Error calculating EP from primary class:`, error);
+    }
+  }
+
+  // Calculate secondary EP
+  if (
+    character.secondaryClass &&
+    character.secondaryClass.EP &&
+    character.secondaryClassLvl > 0 &&
+    !character.secondaryClass.Title.toLowerCase().includes("none")
+  ) {
+    try {
+      const secondaryClassStat = character.secondaryClass.EP;
+      if (typeof secondaryClassStat === "object") {
+        // Handle different level brackets
+        const level = character.secondaryClassLvl.toString();
+        if (secondaryClassStat[level]) {
+          secondaryEP = parseInt(secondaryClassStat[level]);
+        } else {
+          // If exact level not found, find the closest lower bracket
+          const levels = Object.keys(secondaryClassStat)
+            .map(Number)
+            .filter((l) => !isNaN(l))
+            .sort((a, b) => a - b);
+
+          const closestLevel =
+            levels.filter((l) => l <= character.secondaryClassLvl).pop() || 1;
+          if (secondaryClassStat[closestLevel.toString()]) {
+            secondaryEP = parseInt(secondaryClassStat[closestLevel.toString()]);
+          }
+        }
+      } else if (
+        typeof secondaryClassStat === "string" ||
+        typeof secondaryClassStat === "number"
+      ) {
+        secondaryEP = parseInt(secondaryClassStat.toString());
+      }
+    } catch (error) {
+      console.error(`Error calculating EP from secondary class:`, error);
+    }
+  }
+
+  return { primary: primaryEP, secondary: secondaryEP };
 }
 
 export async function generateMetadata({ params }: PassportPageProps) {
@@ -335,146 +456,144 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </div>
 
           <Card className="shadow-sm">
-            <CardHeader className="p-3 sm:p-4">
+            <CardHeader className="p-3 sm:p-4 pb-0">
               <CardTitle className="text-base sm:text-lg">
                 Character Stats
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Base stats from class levels
-              </CardDescription>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="space-y-4">
-                {/* GROUP 1: HP and EP */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">Vitals</h4>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    {/* HP Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">HP</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "HP")}
-                      </p>
-                    </div>
-
-                    {/* EP Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">EP</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "EP")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* GROUP 2: Combat Stats */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">Combat</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    {/* Attack Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Attack</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Attack")}
-                      </p>
-                    </div>
-
-                    {/* Accuracy Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Accuracy</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Accuracy")}
-                      </p>
-                    </div>
-
-                    {/* Defense Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Defense</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Defense")}
-                      </p>
-                    </div>
-
-                    {/* Resistance Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">
-                        Resistance
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Resistance")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* GROUP 3: Saves */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">Saves</h4>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    {/* Tough Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Tough</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Tough")}
-                      </p>
-                    </div>
-
-                    {/* Quick Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Quick</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Quick")}
-                      </p>
-                    </div>
-
-                    {/* Mind Stat */}
-                    <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-xs">Mind</p>
-                      <p className="text-xl font-semibold">
-                        {calculateStatValue(character, "Mind")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="p-3 sm:p-4">
-              <CardTitle className="text-base sm:text-lg">
-                Character Attributes
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Additional attributes and traits
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                {character.Attributes &&
-                  Object.entries(character.Attributes as Record<string, any>)
-                    .filter(([key]) => key.toLowerCase() !== "race")
-                    .map(([key, value]) => (
-                      <div key={key} className="p-2 sm:p-3 bg-muted rounded-lg">
-                        <p className="text-muted-foreground text-xs capitalize">
-                          {key}
-                        </p>
-                        <p className="text-xl font-semibold">{value}</p>
-                      </div>
-                    ))}
-
-                {(!character.Attributes ||
-                  Object.entries(
-                    character.Attributes as Record<string, any>
-                  ).filter(([key]) => key.toLowerCase() !== "race").length ===
-                    0) && (
-                  <p className="col-span-4 text-sm text-muted-foreground">
-                    No additional attributes defined.
+            <CardContent className="p-3 sm:p-4">
+              {/* HP and EP in first row */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {/* HP Stat Card */}
+                <div className="bg-background border rounded-lg p-3">
+                  <h4 className="font-medium text-sm mb-1">Hit Points</h4>
+                  <p className="text-2xl font-bold">
+                    {calculateStatValue(character, "HP")}
                   </p>
-                )}
+                </div>
+
+                {/* EP Stat Card */}
+                <div className="bg-background border rounded-lg p-3">
+                  <h4 className="font-medium text-sm mb-1">Energy Points</h4>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">
+                        {character.primaryClass
+                          ? character.primaryClass.Title
+                          : "Primary"}
+                      </span>
+                      <span className="text-2xl font-bold">
+                        {getEPValues(character).primary}
+                      </span>
+                    </div>
+                    {character.secondaryClass &&
+                      character.secondaryClassLvl > 0 &&
+                      !character.secondaryClass.Title.toLowerCase().includes(
+                        "none"
+                      ) && (
+                        <div className="flex items-center justify-between mt-1 text-muted-foreground">
+                          <span className="text-sm">
+                            {character.secondaryClass.Title}
+                          </span>
+                          <span className="text-lg font-semibold">
+                            {getEPValues(character).secondary}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Combat Stats in second row */}
+              <div className="mb-3">
+                <h4 className="font-medium text-sm mb-2 text-muted-foreground">
+                  Combat Stats
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Attack</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Attack")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Accuracy</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Accuracy")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Defense</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Defense")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Resistance</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Resistance")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Saves in third row */}
+              <div>
+                <h4 className="font-medium text-sm mb-2 text-muted-foreground">
+                  Saving Throws
+                </h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Tough</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Tough")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Quick</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Quick")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-background border rounded-lg p-2">
+                    <span className="text-sm">Mind</span>
+                    <span className="text-lg font-semibold">
+                      {calculateStatValue(character, "Mind")}
+                    </span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Only show attributes card if there are attributes */}
+          {character.Attributes &&
+            Object.entries(character.Attributes as Record<string, any>).filter(
+              ([key]) => key.toLowerCase() !== "race"
+            ).length > 0 && (
+              <Card className="shadow-sm mt-4">
+                <CardHeader className="p-3 sm:p-4 pb-0">
+                  <CardTitle className="text-base sm:text-lg">
+                    Additional Attributes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(character.Attributes as Record<string, any>)
+                      .filter(([key]) => key.toLowerCase() !== "race")
+                      .map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between bg-background border rounded-lg p-2"
+                        >
+                          <span className="text-sm capitalize">{key}</span>
+                          <span className="text-lg font-semibold">{value}</span>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
         </TabsContent>
 
         <TabsContent value="skills" className="space-y-4">

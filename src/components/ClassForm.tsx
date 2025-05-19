@@ -32,6 +32,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ClassSkillSearchbar from "@/components/ClassSkillSearchbar";
+import { useEffect, useState } from "react";
+import { Skill } from "@prisma/client";
+import { SkillViewer } from "@/components/SkillViewer";
+import { Badge } from "@/components/ui/badge";
 
 interface ClassFormData {
   data: {
@@ -131,6 +136,11 @@ const ValidationErrors = ({ errors }: { errors: Record<string, any> }) => {
 export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
   const queryClient = useQueryClient();
   const FormSchema = data ? UpdateValidator : ClassValidator;
+  const [skillDetails, setSkillDetails] = useState<Record<string, Skill>>({});
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("stats");
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
 
   const getTierForLevel = (level: number): number => {
     if (level >= 20) return 4;
@@ -138,6 +148,33 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
     if (level >= 6) return 2;
     return 1;
   };
+
+  // Load all skills once when component mounts
+  useEffect(() => {
+    const fetchAllSkills = async () => {
+      try {
+        const response = await axios.get("/api/admin/skill");
+        if (response.data) {
+          setAllSkills(response.data);
+
+          // Create a lookup map for easy access
+          const skillMap = response.data.reduce(
+            (map: Record<string, Skill>, skill: Skill) => {
+              map[skill.id] = skill;
+              return map;
+            },
+            {}
+          );
+
+          setSkillDetails(skillMap);
+        }
+      } catch (error) {
+        console.error("Error fetching skills:", error);
+      }
+    };
+
+    fetchAllSkills();
+  }, []);
 
   // Initialize default SkillTierGains with max tier for each level
   const defaultSkillTiers = Array.from({ length: 20 }, (_, i) =>
@@ -222,29 +259,50 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
 
   const onSubmit = async (formData: FormData) => {
     try {
-      // Ensure all arrays are properly formatted
-      const skillTiers = formData.SkillTierGains.map((tier) =>
-        typeof tier === "number" ? Math.min(Math.max(0, tier), 4) : 0
-      );
+      // Check if we're only updating skills
+      const isSkillsUpdateOnly = data?.id && activeTab === "skills";
 
-      // Helper function to convert null to 0
-      const convertNullToZero = (val: number | null): number =>
-        val === null ? 0 : Number(val);
+      if (isSkillsUpdateOnly) {
+        // Only update the skills
+        const skillsPayload = {
+          id: data.id,
+          grantedSkills: formData.grantedSkills || [],
+          Skills: formData.Skills || [],
+        };
+
+        const response = await axios.post(
+          "/api/admin/class/updateSkills",
+          skillsPayload
+        );
+
+        toast({
+          title: "Success",
+          description: "Class skills updated successfully",
+        });
+
+        if (onSuccess) {
+          onSuccess();
+        }
+
+        // Invalidate and refetch classes after successful update
+        await queryClient.invalidateQueries({ queryKey: ["classes"] });
+        return;
+      }
 
       // Create the base payload
       const basePayload = {
         ...formData,
-        // Ensure all arrays are properly formatted as numbers
-        SkillTierGains: skillTiers,
-        HP: formData.HP.map(convertNullToZero),
-        EP: formData.EP.map(convertNullToZero),
-        Attack: formData.Attack.map(convertNullToZero),
-        Accuracy: formData.Accuracy.map(convertNullToZero),
-        Defense: formData.Defense.map(convertNullToZero),
-        Resistance: formData.Resistance.map(convertNullToZero),
-        Tough: formData.Tough.map(convertNullToZero),
-        Mind: formData.Mind.map(convertNullToZero),
-        Quick: formData.Quick.map(convertNullToZero),
+        // Just pass through the arrays without any transformation
+        SkillTierGains: formData.SkillTierGains,
+        HP: formData.HP,
+        EP: formData.EP,
+        Attack: formData.Attack,
+        Accuracy: formData.Accuracy,
+        Defense: formData.Defense,
+        Resistance: formData.Resistance,
+        Tough: formData.Tough,
+        Mind: formData.Mind,
+        Quick: formData.Quick,
         // Ensure arrays are initialized
         grantedSkills: formData.grantedSkills || [],
         Skills: formData.Skills || [],
@@ -353,7 +411,12 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
           </Card>
         </div>
 
-        <Tabs defaultValue="stats" className="w-full">
+        <Tabs
+          defaultValue="stats"
+          className="w-full"
+          onValueChange={setActiveTab}
+          value={activeTab}
+        >
           <TabsList className="w-full grid grid-cols-3 mb-4">
             <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
@@ -409,10 +472,190 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
               <CardHeader className="p-0 pb-4">
                 <CardTitle>Class Skills</CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                <p className="text-sm text-muted-foreground">
-                  Skill selection interface to be implemented
-                </p>
+              <CardContent className="p-0 space-y-6">
+                <div>
+                  <h3 className="text-base font-medium mb-2">Granted Skills</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Add skills that are granted by this class
+                  </p>
+
+                  <div className="mb-4">
+                    <ClassSkillSearchbar
+                      allSkills={allSkills}
+                      onSearch={(skill) => {
+                        if (!skill) return;
+
+                        const currentSkills =
+                          form.getValues("grantedSkills") || [];
+                        if (!currentSkills.includes(skill.id)) {
+                          form.setValue("grantedSkills", [
+                            ...currentSkills,
+                            skill.id,
+                          ]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="border rounded-md p-2">
+                    {form.watch("grantedSkills")?.length > 0 ? (
+                      <ul className="space-y-1">
+                        {form.watch("grantedSkills").map((skillId, index) => (
+                          <li
+                            key={`granted-${skillId}`}
+                            className="flex justify-between items-center text-sm bg-muted/50 rounded p-1.5"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center">
+                                <span className="font-medium">
+                                  {skillDetails[skillId]?.title || skillId}
+                                </span>
+                                {skillDetails[skillId]?.tier && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 bg-slate-100"
+                                  >
+                                    Tier {skillDetails[skillId].tier}
+                                  </Badge>
+                                )}
+                              </div>
+                              {skillDetails[skillId]?.descriptionShort && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {skillDetails[skillId].descriptionShort}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {skillDetails[skillId] && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedSkill(skillDetails[skillId]);
+                                    setIsViewerOpen(true);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const currentSkills =
+                                    form.getValues("grantedSkills") || [];
+                                  form.setValue(
+                                    "grantedSkills",
+                                    currentSkills.filter((id) => id !== skillId)
+                                  );
+                                }}
+                                disabled={readOnly}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground p-2">
+                        No granted skills added
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-medium mb-2">
+                    Available Skills
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Add skills that can be learned by this class
+                  </p>
+
+                  <div className="mb-4">
+                    <ClassSkillSearchbar
+                      allSkills={allSkills}
+                      onSearch={(skill) => {
+                        if (!skill) return;
+
+                        const currentSkills = form.getValues("Skills") || [];
+                        if (!currentSkills.includes(skill.id)) {
+                          form.setValue("Skills", [...currentSkills, skill.id]);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="border rounded-md p-2">
+                    {form.watch("Skills")?.length > 0 ? (
+                      <ul className="space-y-1">
+                        {form.watch("Skills").map((skillId, index) => (
+                          <li
+                            key={`skill-${skillId}`}
+                            className="flex justify-between items-center text-sm bg-muted/50 rounded p-1.5"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center">
+                                <span className="font-medium">
+                                  {skillDetails[skillId]?.title || skillId}
+                                </span>
+                                {skillDetails[skillId]?.tier && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 bg-slate-100"
+                                  >
+                                    Tier {skillDetails[skillId].tier}
+                                  </Badge>
+                                )}
+                              </div>
+                              {skillDetails[skillId]?.descriptionShort && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {skillDetails[skillId].descriptionShort}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {skillDetails[skillId] && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedSkill(skillDetails[skillId]);
+                                    setIsViewerOpen(true);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const currentSkills =
+                                    form.getValues("Skills") || [];
+                                  form.setValue(
+                                    "Skills",
+                                    currentSkills.filter((id) => id !== skillId)
+                                  );
+                                }}
+                                disabled={readOnly}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground p-2">
+                        No available skills added
+                      </p>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -487,6 +730,16 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
         </Button>
         <ValidationErrors errors={formState.errors} />
       </form>
+      {selectedSkill && (
+        <SkillViewer
+          skill={selectedSkill}
+          isOpen={isViewerOpen}
+          onClose={() => {
+            setSelectedSkill(null);
+            setIsViewerOpen(false);
+          }}
+        />
+      )}
     </Form>
   );
 }

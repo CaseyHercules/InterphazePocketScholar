@@ -58,7 +58,7 @@ export default async function EditCharacterPage({
         Edit Character: {character.name}
       </h1>
       <p className="text-muted-foreground mb-6">
-        Update your character's details below.
+        Update your character&apos;s details below.
       </p>
 
       <CharacterForm character={character} classes={classes} isEditing={true} />

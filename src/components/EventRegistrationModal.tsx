@@ -38,7 +38,7 @@ import Link from "next/link";
 
 // Define form schema
 const registrationFormSchema = z.object({
-  characterId: z.string().optional(),
+  characterId: z.string(),
 });
 
 type RegistrationFormValues = z.infer<typeof registrationFormSchema>;
@@ -73,14 +73,18 @@ export function EventRegistrationModal({
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationFormSchema),
     defaultValues: {
-      characterId: "",
+      characterId: "none",
     },
   });
 
   async function onSubmit(data: RegistrationFormValues) {
     setIsPending(true);
     try {
-      const result = await registerForEvent(eventId, data.characterId);
+      // Convert "none" to undefined/null for the registration action
+      const characterIdToSubmit =
+        data.characterId === "none" ? undefined : data.characterId;
+
+      const result = await registerForEvent(eventId, characterIdToSubmit);
 
       if (result.success) {
         setRegistrationStatus(result.status as "REGISTERED" | "WAITLIST");
@@ -176,7 +180,7 @@ export function EventRegistrationModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="none">
                           Register without character
                         </SelectItem>
                         {characters.map((character) => (

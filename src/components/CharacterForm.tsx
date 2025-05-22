@@ -44,10 +44,17 @@ type CharacterFormValues = z.infer<typeof characterFormSchema>;
 
 type CharacterFormProps = {
   classes: { id: string; Title: string }[];
-  races: { id: string; name: string }[];
+  races?: { id: string; name: string }[];
+  character?: any;
+  isEditing?: boolean;
 };
 
-export function CharacterForm({ classes, races }: CharacterFormProps) {
+export function CharacterForm({
+  classes,
+  races,
+  character,
+  isEditing,
+}: CharacterFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);

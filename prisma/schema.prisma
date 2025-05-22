@@ -100,7 +100,8 @@ model Skill {
   parentSkill          Skill?      @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   childSkills          Skill[]     @relation("RelatedSkills")
   skillGrouping        SkillGroup? @relation(fields: [skillGroupId], references: [id])
-  characterSkills      Character?  @relation(fields: [chararacterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  primaryCharacters    Character[] @relation("PrimarySkills")
+  secondaryCharacters  Character[] @relation("SecondarySkills")
 
   @@index([skillGroupId])
   @@index([parentSkillId])
@@ -152,7 +153,8 @@ model Character {
   user              User?    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   primaryClass      Class?   @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   secondaryClass    Class?   @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  skills            Skill[]
+  primarySkills     Skill[]  @relation("PrimarySkills")
+  secondarySkills   Skill[]  @relation("SecondarySkills")
   inventory         Item[]
   spells            Spell[]
   events            Event[]
@@ -163,23 +165,25 @@ model Character {
 }
 
 model Event {
-  id              String      @id @default(cuid())
+  id              String              @id @default(cuid())
   title           String
   date            DateTime
   location        String?
   address         String?
   capacity        Int?
   coordinates     Json?
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime            @default(now())
+  endDate         DateTime?
   price           Float?
   registrationEnd DateTime?
-  status          EventStatus @default(DRAFT)
+  status          EventStatus         @default(DRAFT)
   stripePriceId   String?
   stripeProductId String?
   updatedAt       DateTime
   description     Json?
-  endDate         DateTime?
+  data            Json?
   characters      Character[]
+  registrations   EventRegistration[]
 }
 
 model Item {
@@ -198,10 +202,10 @@ model Spell {
   id          String     @id @default(cuid())
   title       String
   type        String?
-  data        Json?
   description String?
   level       Int
   characterId String?
+  data        Json?
   character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
@@ -259,6 +263,7 @@ model EventRegistration {
   totalAmount     Float?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime
+  event           Event          @relation(fields: [eventId], references: [id])
 
   @@index([eventId])
   @@index([userId])
@@ -279,6 +284,24 @@ model PromoCode {
 
   @@index([code])
   @@index([eventId])
+}
+
+model PrimarySkills {
+  A String
+  B String
+
+  @@id([A, B], map: "_PrimarySkills_AB_pkey")
+  @@index([B], map: "_PrimarySkills_B_index")
+  @@map("_PrimarySkills")
+}
+
+model SecondarySkills {
+  A String
+  B String
+
+  @@id([A, B], map: "_SecondarySkills_AB_pkey")
+  @@index([B], map: "_SecondarySkills_B_index")
+  @@map("_SecondarySkills")
 }
 
 enum Role {

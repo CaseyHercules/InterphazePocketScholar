@@ -265,7 +265,12 @@ export default async function PassportPage({ params }: PassportPageProps) {
     include: {
       primaryClass: true,
       secondaryClass: true,
-      skills: {
+      primarySkills: {
+        orderBy: {
+          title: "asc",
+        },
+      },
+      secondarySkills: {
         orderBy: {
           title: "asc",
         },
@@ -605,10 +610,39 @@ export default async function PassportPage({ params }: PassportPageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 pt-0">
-              {character.skills.length > 0 ? (
+              {character.primarySkills.length > 0 ||
+              character.secondarySkills.length > 0 ? (
                 <ScrollArea className="h-[300px] sm:h-[400px]">
                   <div className="space-y-3">
-                    {character.skills.map((skill) => (
+                    {character.primarySkills.map((skill) => (
+                      <div key={skill.id} className="p-3 border rounded-lg">
+                        <h3 className="text-base font-semibold">
+                          {skill.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {skill.description}
+                        </p>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                          <div>
+                            <span className="font-medium">Tier:</span>{" "}
+                            {skill.tier}
+                          </div>
+                          <div>
+                            <span className="font-medium">EP Cost:</span>{" "}
+                            {skill.epCost}
+                          </div>
+                          <div>
+                            <span className="font-medium">Activation:</span>{" "}
+                            {skill.activation}
+                          </div>
+                          <div>
+                            <span className="font-medium">Duration:</span>{" "}
+                            {skill.duration}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {character.secondarySkills.map((skill) => (
                       <div key={skill.id} className="p-3 border rounded-lg">
                         <h3 className="text-base font-semibold">
                           {skill.title}
@@ -646,7 +680,9 @@ export default async function PassportPage({ params }: PassportPageProps) {
             </CardContent>
             <CardFooter className="p-3 sm:p-4 pt-0">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Total Skills: {character.skills.length}
+                Total Skills:{" "}
+                {character.primarySkills.length +
+                  character.secondarySkills.length}
               </p>
             </CardFooter>
           </Card>

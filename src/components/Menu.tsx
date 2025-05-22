@@ -16,8 +16,8 @@ const MENU_ITEMS = [
   {
     label: "Events",
     items: [
+      { label: "Upcoming Events", href: "/events" },
       { label: "Registration", href: "/events/registration" },
-      { label: "Upcoming Events", href: "/events/upcoming" },
     ],
   },
   {

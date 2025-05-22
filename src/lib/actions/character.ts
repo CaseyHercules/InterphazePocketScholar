@@ -198,7 +198,8 @@ export async function getCharacter(characterId: string) {
     include: {
       primaryClass: true,
       secondaryClass: true,
-      skills: true,
+      primarySkills: true,
+      secondarySkills: true,
       inventory: true,
       spells: true,
       user: true,

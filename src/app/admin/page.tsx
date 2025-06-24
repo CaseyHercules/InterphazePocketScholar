@@ -11,6 +11,10 @@ const Page = () => {
         "/admin/dash",
         "Dashboard for all things needed for admins and others to do. Review of things Far from being started RN"
       )}
+      {entry(
+        "/admin/events",
+        "Event Management - View, create and manage events"
+      )}
       {entry("/admin/classTool", "ClassTool for updating and making classes")}
       {entry(
         "/admin/skillTool",

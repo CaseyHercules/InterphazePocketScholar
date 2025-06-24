@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { CreateSpellInput, UpdateSpellInput, SPELL_TYPES } from "@/types/spell";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -41,21 +42,54 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const characterId = searchParams.get("characterId");
+    const session = await getServerSession(authOptions);
 
-    const where = characterId ? { characterId } : {};
-    const spells = await prisma.spell.findMany({ where });
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-    return NextResponse.json(spells);
+    const spells = await prisma.spell.findMany({
+      orderBy: [
+        {
+          level: "asc",
+        },
+        {
+          title: "asc",
+        },
+      ],
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        level: true,
+        type: true,
+        data: true,
+      },
+    });
+
+    const formattedSpells = spells.map((spell) => {
+      if (spell.data && typeof spell.data === "object") {
+        try {
+          const data = spell.data as any;
+        } catch (e) {
+          console.error("Error parsing spell data", e);
+        }
+      }
+
+      return {
+        id: spell.id,
+        name: spell.title,
+        description: spell.description || "",
+        level: spell.level,
+      };
+    });
+
+    return NextResponse.json(formattedSpells);
   } catch (error) {
-    console.error("Error fetching spells:", error);
-    return NextResponse.json(
-      { error: "Error fetching spells" },
-      { status: 500 }
-    );
+    console.error("[SPELLS_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 

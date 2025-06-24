@@ -130,6 +130,12 @@ export default async function EventPage({ params }: EventPageProps) {
               </Link>
             </Button>
             <Button className="w-full justify-start" size="sm" asChild>
+              <Link href={`/admin/events/${params.id}/addthings`}>
+                <PenSquare className="h-4 w-4 mr-2" />
+                Add Items & Spells
+              </Link>
+            </Button>
+            <Button className="w-full justify-start" size="sm" asChild>
               <Link href={`/events/${params.id}`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 View Public Page

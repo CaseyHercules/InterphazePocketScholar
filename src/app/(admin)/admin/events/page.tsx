@@ -147,7 +147,7 @@ export default async function EventsAdminPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/events/${event.id}`}>
+                            <Link href={`/admin/events/${event.id}`}>
                               <EyeIcon className="h-4 w-4" />
                             </Link>
                           </Button>

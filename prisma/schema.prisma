@@ -97,14 +97,17 @@ model Skill {
   playerVisable        Boolean     @default(true)
   additionalInfo       Json?
   chararacterId        String?
+  classId              String?
   parentSkill          Skill?      @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   childSkills          Skill[]     @relation("RelatedSkills")
   skillGrouping        SkillGroup? @relation(fields: [skillGroupId], references: [id])
+  class                Class?      @relation("ClassSkills", fields: [classId], references: [id])
   primaryCharacters    Character[] @relation("PrimarySkills")
   secondaryCharacters  Character[] @relation("SecondarySkills")
 
   @@index([skillGroupId])
   @@index([parentSkillId])
+  @@index([classId])
   @@index([chararacterId])
 }
 
@@ -131,6 +134,7 @@ model Class {
   Tough               Json?
   Quick               Json?
   Mind                Json?
+  skills              Skill[]     @relation("ClassSkills")
   primaryCharacters   Character[] @relation("PrimaryClass")
   secondaryCharacters Character[] @relation("SecondaryClass")
 

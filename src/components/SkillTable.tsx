@@ -18,14 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skill } from "@prisma/client";
+import { Skill, Class } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface SkillTableProps {
-  skills: Skill[];
-  onEdit?: (skill: Skill) => void;
-  onView?: (skill: Skill) => void;
+  skills: (Skill & { class?: Class | null })[];
+  onEdit?: (skill: Skill & { class?: Class | null }) => void;
+  onView?: (skill: Skill & { class?: Class | null }) => void;
   onDelete?: (id: string) => void;
   isLoading?: boolean;
 }
@@ -164,6 +164,7 @@ export function SkillTable({
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
+                <TableHead className="w-[120px]">Class</TableHead>
                 <TableHead className="text-right w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -190,6 +191,9 @@ export function SkillTable({
                   </TableCell>
                   <TableCell className="max-w-[120px]">
                     {skill.duration || "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[120px]">
+                    {skill.class?.Title || "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

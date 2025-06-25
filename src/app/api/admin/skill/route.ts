@@ -18,6 +18,11 @@ export async function GET() {
       : null;
 
     const skills = await db.skill.findMany({
+      include: {
+        class: true,
+        parentSkill: true,
+        skillGrouping: true,
+      },
       orderBy: {
         title: "asc",
       },
@@ -77,6 +82,9 @@ export async function POST(req: Request) {
             : undefined,
           skillGrouping: updateData.skillGroupId
             ? { connect: { id: updateData.skillGroupId } }
+            : undefined,
+          class: updateData.classId
+            ? { connect: { id: updateData.classId } }
             : undefined,
           prerequisiteSkills: updateData.prerequisiteSkills || undefined,
           permenentEpReduction: updateData.permenentEpReduction
@@ -146,6 +154,9 @@ export async function POST(req: Request) {
             : undefined,
           skillGrouping: validatedData.skillGroupId
             ? { connect: { id: validatedData.skillGroupId } }
+            : undefined,
+          class: validatedData.classId
+            ? { connect: { id: validatedData.classId } }
             : undefined,
           prerequisiteSkills: validatedData.prerequisiteSkills || undefined,
           abilityCheck: validatedData.abilityCheck || undefined,

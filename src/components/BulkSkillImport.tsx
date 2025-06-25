@@ -113,6 +113,7 @@ export function BulkSkillImport() {
 
     // Create a mapping of normalized headers to actual headers
     const headerMapping: { [key: string]: string } = {
+      class: "Class",
       tier: "Tier",
       "title of skill": "Title of Skill",
       "desc p1": "Desc P1",
@@ -204,24 +205,6 @@ export function BulkSkillImport() {
     return data;
   };
 
-  const checkDuplicates = (skills: CSVRow[]) => {
-    const seen = new Set<string>();
-    const duplicates: { title: string; tier: string }[] = [];
-
-    skills.forEach((skill) => {
-      const key = `${skill["Title of Skill"]}-${skill.Tier}`;
-      if (seen.has(key)) {
-        duplicates.push({
-          title: skill["Title of Skill"],
-          tier: skill.Tier,
-        });
-      }
-      seen.add(key);
-    });
-
-    return duplicates;
-  };
-
   const importSkills = async () => {
     if (!file) {
       toast({
@@ -239,71 +222,12 @@ export function BulkSkillImport() {
       const text = await file.text();
       const skills = await processCSV(text);
 
-      // Fetch existing skills from database to check for duplicates
-      const existingSkillsResponse = await axios.get("/api/admin/skill");
-      const existingSkills = existingSkillsResponse.data;
-
-      // Create a map of existing skills by title-tier for quick lookup
-      const existingSkillMap = new Map<string, any>();
-      existingSkills.forEach((skill: any) => {
-        const key = `${skill.title}-${skill.tier}`;
-        existingSkillMap.set(key, skill);
-      });
-
-      // Track duplicates and skipped skills
-      const seen = new Set<string>();
-      const duplicatesInCSV: { title: string; tier: string }[] = [];
-      const duplicatesInDB: { title: string; tier: string }[] = [];
-
-      const skillsToImport = skills.filter((skill) => {
-        const key = `${skill["Title of Skill"]}-${skill.Tier}`;
-
-        // Check if already seen in this CSV
-        if (seen.has(key)) {
-          duplicatesInCSV.push({
-            title: skill["Title of Skill"],
-            tier: skill.Tier,
-          });
-          return false;
-        }
-
-        // Check if already exists in database
-        if (existingSkillMap.has(key)) {
-          duplicatesInDB.push({
-            title: skill["Title of Skill"],
-            tier: skill.Tier,
-          });
-          return false;
-        }
-
-        seen.add(key);
-        return true;
-      }); // No limit on number of skills
-
-      // Log duplicates if any were found in CSV
-      if (duplicatesInCSV.length > 0) {
-        toast({
-          title: "Duplicate Skills in CSV",
-          description: `Skipping ${duplicatesInCSV.length} duplicate skills found in the CSV file. Continuing with import...`,
-          variant: "default",
-        });
-      }
-
-      // Log duplicates if any were found in DB
-      if (duplicatesInDB.length > 0) {
-        toast({
-          title: "Skills Already Exist",
-          description: `Skipping ${duplicatesInDB.length} skills that already exist in the database. Continuing with import...`,
-          variant: "default",
-        });
-      }
-
-      const totalSkills = skillsToImport.length;
+      const totalSkills = skills.length;
       let processedSkills = 0;
       let failedSkills = 0;
       const failedSkillDetails: string[] = [];
 
-      for (const skill of skillsToImport) {
+      for (const skill of skills) {
         try {
           // Parse permanent EP reduction from Cost field
           let epCost = skill.Cost || null;
@@ -337,6 +261,7 @@ export function BulkSkillImport() {
             duration: skill.Duration || "None",
             abilityCheck: skill.Save || "None",
             skillGroupId: "",
+            classId: skill.Class || "", // Use class ID from TSV
             permenentEpReduction: permanentEpReduction,
             canBeTakenMultiple: false,
             playerVisable: true,
@@ -378,17 +303,7 @@ export function BulkSkillImport() {
       } else {
         toast({
           title: "Import Complete",
-          description: `Successfully imported ${processedSkills} out of ${totalSkills} skills.
-${
-  duplicatesInCSV.length > 0
-    ? `\nSkipped ${duplicatesInCSV.length} duplicate skills in CSV.`
-    : ""
-}
-${
-  duplicatesInDB.length > 0
-    ? `\nSkipped ${duplicatesInDB.length} skills that already exist in the database.`
-    : ""
-}`,
+          description: `Successfully imported ${processedSkills} skills.`,
         });
       }
     } catch (error: any) {

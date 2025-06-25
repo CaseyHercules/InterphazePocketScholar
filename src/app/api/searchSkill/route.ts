@@ -12,6 +12,9 @@ export async function GET(req: Request) {
         contains: q,
       },
     },
+    include: {
+      class: true,
+    },
     take: 5,
   });
   return new Response(JSON.stringify(resultsP));

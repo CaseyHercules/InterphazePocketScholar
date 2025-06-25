@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Skill } from "@prisma/client";
+import { Skill, Class } from "@prisma/client";
+import { useState, useEffect } from "react";
 
 interface SkillFormProps {
   data: Skill | null;
@@ -36,6 +37,20 @@ interface SkillFormProps {
 export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
   const FormSchema = data ? UpdateValidator : SkillValidator;
   type FormData = z.infer<typeof FormSchema>;
+  const [classes, setClasses] = useState<Class[]>([]);
+
+  // Fetch classes for selection
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await axios.get("/api/admin/class");
+        setClasses(response.data);
+      } catch (error) {
+        console.error("Error fetching classes:", error);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -47,6 +62,7 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
       tier: data?.tier ?? 1,
       parentSkillId: data?.parentSkillId ?? "",
       skillGroupId: data?.skillGroupId ?? "",
+      classId: data?.classId ?? "",
       prerequisiteSkills: data?.prerequisiteSkills ?? [],
       permenentEpReduction: data?.permenentEpReduction ?? 0,
       epCost: data?.epCost ?? "0",
@@ -126,6 +142,40 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
             "Skill Group ID",
             "Enter Skill Group ID..."
           )}
+          {/* Class Selection */}
+          <FormField
+            control={form.control}
+            name="classId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Class</FormLabel>
+                <Select
+                  onValueChange={(value) =>
+                    field.onChange(value === "none" ? null : value)
+                  }
+                  defaultValue={field.value || "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">No Class</SelectItem>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.Title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Select the class this skill belongs to.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {formEntry(
             "prerequisiteSkills",
             "Prerequisite Skills",

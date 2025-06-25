@@ -64,11 +64,11 @@ export function SpellTable({
   // Filter spells based on search, type, level, and descriptor
   const filteredSpells = spells.filter((spell) => {
     const matchesSearch = spell.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
+      ? spell.title.toLowerCase().includes(search.toLowerCase())
+      : false;
     const matchesType =
       typeFilter === "all" ||
-      spell.type?.toLowerCase() === typeFilter.toLowerCase();
+      (spell.type?.toLowerCase() ?? "") === typeFilter.toLowerCase();
     const matchesLevel =
       levelFilter === "all" || getTier(spell.level) === levelFilter;
     const matchesDescriptor =

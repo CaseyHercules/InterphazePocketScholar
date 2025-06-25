@@ -1,4 +1,4 @@
-import { Skill } from "@prisma/client";
+import { Skill, Class } from "@prisma/client";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 interface SkillViewerProps {
-  skill: Skill | null;
+  skill: (Skill & { class?: Class | null }) | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -60,6 +60,10 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
               <div>
                 <span className="text-muted-foreground">EP Reduction: </span>
                 {skill.permenentEpReduction}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Class: </span>
+                {skill.class?.Title || "None"}
               </div>
               <div>
                 <span className="text-muted-foreground">Activation: </span>

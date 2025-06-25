@@ -440,7 +440,6 @@ function SkillSlot({
   showViewButton = false,
   characterId,
   isLastItem = false,
-  availableSlots = 0,
   onViewSkill,
 }: {
   skill: any;
@@ -451,7 +450,6 @@ function SkillSlot({
   showViewButton?: boolean;
   characterId?: string;
   isLastItem?: boolean;
-  availableSlots?: number;
   onViewSkill?: (skill: any) => void;
 }) {
   return (
@@ -459,15 +457,7 @@ function SkillSlot({
       className={`
         flex items-center justify-between p-3 min-h-[3rem]
         ${!isLastItem ? "border-b" : ""}
-        ${
-          isLearned
-            ? "bg-green-50 border-green-200 dark:bg-green-950/50 dark:border-green-800"
-            : canLearn
-            ? "bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-            : availableSlots === 0
-            ? "bg-red-50 border-red-200 dark:bg-red-950/50 dark:border-red-800"
-            : "bg-background hover:bg-muted/50"
-        }
+        ${"bg-background hover:bg-muted/50"}
         transition-colors
       `}
     >
@@ -477,16 +467,6 @@ function SkillSlot({
           <Badge variant="outline" className="text-xs flex-shrink-0">
             Tier {skill.tier}
           </Badge>
-          {isLearned && (
-            <Badge variant="outline" className="text-xs hover:bg-green-300">
-              Learned
-            </Badge>
-          )}
-          {!isLearned && availableSlots === 0 && (
-            <Badge variant="destructive" className="text-xs">
-              No Slots
-            </Badge>
-          )}
         </div>
         {skill.descriptionShort && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">

@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { AdjustmentSourceType } from "@prisma/client";
+import { AdjustmentSourceType, Prisma } from "@prisma/client";
 
 export type AdjustmentFormData = {
   title: string;
@@ -26,7 +26,10 @@ export async function createAdjustment(formData: AdjustmentFormData) {
       description: formData.description ?? null,
       sourceType: formData.sourceType,
       effectsJson: formData.effectsJson,
-      tags: formData.tags ?? null,
+      tags:
+        formData.tags === undefined
+          ? undefined
+          : formData.tags ?? Prisma.JsonNull,
       archived: formData.archived ?? false,
     },
   });
@@ -56,7 +59,9 @@ export async function updateAdjustment(
       ...(formData.effectsJson !== undefined && {
         effectsJson: formData.effectsJson,
       }),
-      ...(formData.tags !== undefined && { tags: formData.tags ?? null }),
+      ...(formData.tags !== undefined && {
+        tags: formData.tags ?? Prisma.JsonNull,
+      }),
       ...(formData.archived !== undefined && { archived: formData.archived }),
     },
   });

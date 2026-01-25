@@ -7,6 +7,21 @@ import GoogleProvider from "next-auth/providers/google";
 import { nanoid } from "nanoid";
 import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
 
+const requiredGoogleEnv = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"] as const;
+const getEnv = (key: string) => (process.env[key] ?? "").trim();
+if (process.env.NODE_ENV === "development") {
+  const missingGoogleEnv = requiredGoogleEnv.filter(
+    (key) => !process.env[key]
+  );
+  if (missingGoogleEnv.length > 0) {
+    console.warn(
+      `[auth] Missing env: ${missingGoogleEnv.join(
+        ", "
+      )}. Google OAuth will fail on localhost.`
+    );
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
   debug: process.env.NODE_ENV === "development",
@@ -21,8 +36,8 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: getEnv("GOOGLE_CLIENT_ID"),
+      clientSecret: getEnv("GOOGLE_CLIENT_SECRET"),
       allowDangerousEmailAccountLinking: true,
     }),
     {

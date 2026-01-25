@@ -63,7 +63,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         {"\u00A0"}
         Wordpress
       </Button>
-      {/* <Button
+      <Button
         variant="outline"
         type="button"
         disabled={isLoading}
@@ -77,7 +77,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           <Icons.google className="mr-2 h-4 w-4" />
         )}{" "}
         Google
-      </Button> */}
+      </Button>
     </div>
   );
 }

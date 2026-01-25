@@ -1,0 +1,206 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { AdjustmentSourceType } from "@prisma/client";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+const jsonString = z
+  .string()
+  .min(1, { message: "JSON is required" })
+  .refine((value) => {
+    try {
+      JSON.parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Must be valid JSON");
+
+const optionalJsonString = z
+  .string()
+  .optional()
+  .refine((value) => {
+    if (!value || value.trim().length === 0) return true;
+    try {
+      JSON.parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Tags must be valid JSON");
+
+const FormSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(2, { message: "Title is required" }),
+  description: z.string().optional(),
+  sourceType: z.nativeEnum(AdjustmentSourceType),
+  effectsJson: jsonString,
+  tags: optionalJsonString,
+});
+
+export type AdjustmentFormValues = z.infer<typeof FormSchema>;
+
+const defaultEffectsTemplate = `{
+  "title": "Example Adjustment",
+  "effects": [
+    { "type": "stat_bonus", "target": "Tough", "value": 5 },
+    { "type": "stat_bonus", "target": "bows", "value": -5 },
+    { "type": "restriction", "target": "heavy", "note": "Unable to use heavy" }
+  ]
+}`;
+
+interface AdjustmentFormProps {
+  data?: {
+    id?: string;
+    title?: string;
+    description?: string | null;
+    sourceType?: AdjustmentSourceType;
+    effectsJson?: any;
+    tags?: any;
+    archived?: boolean;
+  } | null;
+  onSubmit: (data: AdjustmentFormValues) => Promise<void>;
+  onCancel: () => void;
+}
+
+export function AdjustmentForm({ data, onSubmit, onCancel }: AdjustmentFormProps) {
+  const form = useForm<AdjustmentFormValues>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      id: data?.id,
+      title: data?.title ?? "",
+      description: data?.description ?? "",
+      sourceType: data?.sourceType ?? AdjustmentSourceType.CUSTOM,
+      effectsJson:
+        data?.effectsJson != null
+          ? JSON.stringify(data.effectsJson, null, 2)
+          : defaultEffectsTemplate,
+      tags:
+        data?.tags != null ? JSON.stringify(data.tags, null, 2) : "",
+    },
+  });
+
+  const handleSubmit = async (formData: AdjustmentFormValues) => {
+    await onSubmit(formData);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Adjustment title..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Describe the adjustment..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sourceType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source Type</FormLabel>
+              <FormControl>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  {...field}
+                >
+                  {Object.values(AdjustmentSourceType).map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="effectsJson"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Effects JSON</FormLabel>
+              <FormControl>
+                <Textarea
+                  className="min-h-[220px] font-mono text-xs"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Provide any JSON structure your admins want. The system only
+                checks that it is valid JSON.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tags JSON (optional)</FormLabel>
+              <FormControl>
+                <Textarea className="min-h-[100px] font-mono text-xs" {...field} />
+              </FormControl>
+              <FormDescription>
+                Optional metadata or labels as JSON.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">Save Adjustment</Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+

@@ -29,6 +29,10 @@ const Page = () => {
         "ItemTool, used for updating skills values and descriptions"
       )}
       {entry(
+        "/admin/adjustments",
+        "Adjustments, used for creating and managing character modifiers"
+      )}
+      {entry(
         "/admin/createTopic",
         "Makes a new topic that casey has to setup in the backend"
       )}

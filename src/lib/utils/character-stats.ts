@@ -27,6 +27,10 @@ function getStatFromClass(classStat: any, level: number): number {
 export function calculateStatValue(character: any, statName: string): number {
   let value = 0;
 
+  // Future hook: apply character adjustments (race/items/diseases) here.
+  // Adjustments are stored in Adjustment/CharacterAdjustment but are not
+  // yet factored into calculations.
+
   // Primary class - full value
   if (character.primaryClass?.[statName]) {
     value += getStatFromClass(

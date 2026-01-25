@@ -142,7 +142,7 @@ model Class {
 }
 
 model Character {
-  id                String   @id @default(cuid())
+  id                String                @id @default(cuid())
   name              String
   userId            String?
   primaryClassId    String?
@@ -151,21 +151,53 @@ model Character {
   secondaryClassLvl Int
   Attributes        Json?
   notes             Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
   phazians          Int
-  user              User?    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  primaryClass      Class?   @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  secondaryClass    Class?   @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  primarySkills     Skill[]  @relation("PrimarySkills")
-  secondarySkills   Skill[]  @relation("SecondarySkills")
+  user              User?                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  primaryClass      Class?                @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  secondaryClass    Class?                @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  primarySkills     Skill[]               @relation("PrimarySkills")
+  secondarySkills   Skill[]               @relation("SecondarySkills")
   inventory         Item[]
   spells            Spell[]
   events            Event[]
+  adjustments       CharacterAdjustment[]
 
   @@index([userId])
   @@index([primaryClassId])
   @@index([secondaryClassId])
+}
+
+model Adjustment {
+  id          String                @id @default(cuid())
+  title       String
+  description String?
+  sourceType  AdjustmentSourceType
+  effectsJson Json
+  tags        Json?
+  archived    Boolean               @default(false)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  characters  CharacterAdjustment[]
+
+  @@index([title])
+  @@index([sourceType])
+  @@index([archived])
+}
+
+model CharacterAdjustment {
+  id           String     @id @default(cuid())
+  characterId  String
+  adjustmentId String
+  notes        String?
+  appliedAt    DateTime   @default(now())
+  character    Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  adjustment   Adjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, adjustmentId])
+  @@index([characterId])
+  @@index([adjustmentId])
 }
 
 model Event {
@@ -314,6 +346,14 @@ enum Role {
   SUPERADMIN
   SPELLWRIGHT
   MODERATOR
+}
+
+enum AdjustmentSourceType {
+  RACE
+  SKILL
+  ITEM
+  DISEASE
+  CUSTOM
 }
 
 enum ItemType {

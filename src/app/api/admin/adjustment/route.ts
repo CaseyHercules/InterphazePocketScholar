@@ -85,13 +85,17 @@ export async function POST(req: Request) {
 
     let tagsJson = null;
     if (body.tags !== undefined) {
-      try {
-        tagsJson = parseJsonValue(body.tags, "tags");
-      } catch (error) {
-        return new NextResponse(
-          error instanceof Error ? error.message : "Invalid tags",
-          { status: 422 }
-        );
+      if (typeof body.tags === "string" && body.tags.trim().length === 0) {
+        tagsJson = null;
+      } else {
+        try {
+          tagsJson = parseJsonValue(body.tags, "tags");
+        } catch (error) {
+          return new NextResponse(
+            error instanceof Error ? error.message : "Invalid tags",
+            { status: 422 }
+          );
+        }
       }
     }
 

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { adjustmentMatchesRace } from "@/lib/utils/adjustments";
 
 export type CharacterFormData = {
   name: string;
@@ -44,6 +45,44 @@ export async function createCharacter(formData: CharacterFormData) {
       userId: session.user.id,
     },
   });
+
+  if (formData.race?.trim()) {
+    const adjustmentClient = (db as unknown as { adjustment?: any }).adjustment;
+    if (adjustmentClient?.findMany) {
+      const raceAdjustments = await adjustmentClient.findMany({
+        where: {
+          sourceType: "RACE",
+          archived: false,
+        },
+      });
+      const matchingAdjustment = raceAdjustments.find((adjustment: any) =>
+        adjustmentMatchesRace(adjustment, formData.race)
+      );
+
+      if (matchingAdjustment) {
+      try {
+        await db.characterAdjustment.upsert({
+          where: {
+            characterId_adjustmentId: {
+              characterId: character.id,
+              adjustmentId: matchingAdjustment.id,
+            },
+          },
+          update: {},
+          create: {
+            characterId: character.id,
+            adjustmentId: matchingAdjustment.id,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Unique constraint failed")) {
+          throw error;
+        }
+      }
+      }
+    }
+  }
 
   revalidatePath("/characters");
   return { success: true, characterId: character.id };

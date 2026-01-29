@@ -60,9 +60,9 @@ const Layout = async ({
         {/* Button to back */}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:map-x-4 py-8">
-          <div className="flex flex-col col-span-3 space-y-6">{children}</div>
+          <div className="contents">{children}</div>
 
-          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last hidden md:block">
+          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last md:row-start-1 md:col-span-1 hidden md:block">
             <p className="font-semibold pt-2 text-center capitalize">
               Quick Navigation
             </p>

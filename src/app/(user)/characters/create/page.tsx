@@ -27,19 +27,29 @@ export default async function CreateCharacterPage() {
     },
   });
 
-  // Fetch all available races from the database
-  // Since races are stored in a Race table or model, we need to query it
-  // For now, using common fantasy races until we can access the real data
-  const races = [
-    { id: "human", name: "Human" },
-    { id: "elf", name: "Elf" },
-    { id: "dwarf", name: "Dwarf" },
-    { id: "halfling", name: "Halfling" },
-    { id: "orc", name: "Orc" },
-    { id: "dragonborn", name: "Dragonborn" },
-    { id: "tiefling", name: "Tiefling" },
-    { id: "gnome", name: "Gnome" },
-  ];
+  const raceAdjustments = await db.adjustment.findMany({
+    where: {
+      sourceType: "RACE",
+      archived: false,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+    orderBy: {
+      title: "asc",
+    },
+  });
+
+  const races = raceAdjustments
+    .filter((adjustment) => adjustment.title?.trim())
+    .map((adjustment) => {
+      const title = adjustment.title.trim();
+      return {
+        id: title,
+        name: title,
+      };
+    });
 
   return (
     <div className="container max-w-4xl mx-auto py-8">

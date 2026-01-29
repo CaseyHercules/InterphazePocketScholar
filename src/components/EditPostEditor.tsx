@@ -16,6 +16,21 @@ import "quill/dist/quill.snow.css";
 import "@/styles/quill.css";
 import type Quill from "quill";
 import type { Op as DeltaOperation } from "quill-delta";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type FormData = z.infer<typeof UpdateValidator>;
 
@@ -53,11 +68,68 @@ export const EditPostEditor: FC<EditorProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const { startUpload } = useUploadThing("imageUploader");
+  const [classOptions, setClassOptions] = useState<string[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [isSkillTableDialogOpen, setIsSkillTableDialogOpen] =
+    useState<boolean>(false);
+
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        const response = await fetch("/api/admin/class");
+        if (!response.ok) return;
+        const data = (await response.json()) as { Title: string }[];
+        const titles = data
+          .map((item) => item.Title)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setClassOptions(titles);
+        setSelectedClass((current) => current || titles[0] || "");
+      } catch {
+        // ignore load failures
+      }
+    };
+
+    loadClasses();
+  }, []);
+
+  const insertSkillTableEmbed = (className: string) => {
+    if (!quillRef.current || !className) return;
+    const range = quillRef.current.getSelection(true);
+    const insertAt = range?.index ?? quillRef.current.getLength();
+    quillRef.current.insertEmbed(insertAt, "skilltable", {
+      className: className.trim(),
+    });
+    quillRef.current.insertText(insertAt + 1, "\n");
+    quillRef.current.setSelection(insertAt + 2, 0);
+  };
 
   const initializeEditor = useCallback(async () => {
     if (!editorRef.current) return;
 
     const { default: Quill } = await import("quill");
+    const BlockEmbed = Quill.import("blots/block/embed");
+
+    class SkillTableBlot extends BlockEmbed {
+      static blotName = "skilltable";
+      static tagName = "div";
+      static className = "ql-skilltable-embed";
+
+      static create(value: { className?: string }) {
+        const node = super.create() as HTMLElement;
+        const className = value?.className?.trim() || "Unknown";
+        node.setAttribute("data-embed", "skill-table");
+        node.setAttribute("data-class", className);
+        node.textContent = `Skill Table: ${className}`;
+        return node;
+      }
+
+      static value(node: HTMLElement) {
+        return { className: node.getAttribute("data-class") || "" };
+      }
+    }
+
+    Quill.register(SkillTableBlot, true);
 
     const toolbarOptions = [
       ["bold", "italic", "underline", "strike"],
@@ -67,6 +139,7 @@ export const EditPostEditor: FC<EditorProps> = ({
       [{ script: "sub" }, { script: "super" }],
       [{ indent: "-1" }, { indent: "+1" }],
       ["link", "image"],
+      ["skilltable"],
       ["clean"],
     ];
 
@@ -106,6 +179,10 @@ export const EditPostEditor: FC<EditorProps> = ({
           }
         }
       };
+    });
+
+    toolbar.addHandler("skilltable", () => {
+      setIsSkillTableDialogOpen(true);
     });
 
     // Set initial content
@@ -238,24 +315,73 @@ export const EditPostEditor: FC<EditorProps> = ({
   const { ref: titleRef, ...titleProps } = register("title");
 
   return (
-    <div className="w-full p-4 bg-card rounded-lg border border-border">
-      <form id={formId} className="w-full" onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-4">
-          <TextareaAutosize
-            ref={(e) => {
-              titleRef(e);
-              // @ts-ignore
-              _titleRef.current = e;
-            }}
-            {...titleProps}
-            placeholder="Title"
-            className="w-full resize-none appearance-none overflow-hidden bg-transparent text-4xl font-bold focus:outline-none"
-          />
-          <div className="quill">
-            <div ref={editorRef} className="min-h-[350px]" />
+    <>
+      <div className="w-full p-4 bg-card rounded-lg border border-border">
+        <form id={formId} className="w-full" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
+            <TextareaAutosize
+              ref={(e) => {
+                titleRef(e);
+                // @ts-ignore
+                _titleRef.current = e;
+              }}
+              {...titleProps}
+              placeholder="Title"
+              className="w-full resize-none appearance-none overflow-hidden bg-transparent text-4xl font-bold focus:outline-none"
+            />
+            <div className="quill">
+              <div ref={editorRef} className="min-h-[350px]" />
+            </div>
           </div>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+
+      <Dialog
+        open={isSkillTableDialogOpen}
+        onOpenChange={setIsSkillTableDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Insert Skill Table</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Choose a class to insert a class-specific skill table.
+            </p>
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classOptions.map((classTitle) => (
+                  <SelectItem key={classTitle} value={classTitle}>
+                    {classTitle}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSkillTableDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                insertSkillTableEmbed(selectedClass);
+                setIsSkillTableDialogOpen(false);
+              }}
+              disabled={!selectedClass}
+            >
+              Insert
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

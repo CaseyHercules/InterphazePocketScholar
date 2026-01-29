@@ -80,9 +80,13 @@ export async function GET() {
 
       return {
         id: spell.id,
+        title: spell.title,
+        // Keep name for any legacy consumers still expecting it.
         name: spell.title,
         description: spell.description || "",
         level: spell.level,
+        type: spell.type || undefined,
+        data: spell.data ?? undefined,
       };
     });
 

@@ -6,7 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
-import { createCharacter, CharacterFormData } from "@/lib/actions/character";
+import {
+  createCharacter,
+  updateCharacter,
+  CharacterFormData,
+} from "@/lib/actions/character";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -58,8 +62,10 @@ export function CharacterForm({
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [isEditorReady, setIsEditorReady] = useState(false);
   const quillRef = useRef<Quill>();
   const editorRef = useRef<HTMLDivElement>(null);
+  const isEditMode = Boolean(isEditing && character?.id);
 
   // Default values for the form
   const defaultValues: Partial<CharacterFormValues> = {
@@ -101,6 +107,7 @@ export function CharacterForm({
     });
 
     quillRef.current = quill;
+    setIsEditorReady(true);
   }, []);
 
   useEffect(() => {
@@ -115,6 +122,37 @@ export function CharacterForm({
     }
   }, [isMounted, initializeEditor]);
 
+  useEffect(() => {
+    if (!isEditMode || !character) return;
+
+    form.reset({
+      name: character.name ?? "",
+      race: character.Attributes?.race ?? "",
+      primaryClassId: character.primaryClassId ?? "",
+      secondaryClassId:
+        character.secondaryClassId ?? "cmaufwsx600004x0vo5v8afxu",
+      backstory: null,
+    });
+  }, [form, isEditMode, character]);
+
+  useEffect(() => {
+    if (
+      !isEditMode ||
+      !isEditorReady ||
+      !quillRef.current ||
+      !character?.notes?.backstory
+    ) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(character.notes.backstory);
+      quillRef.current.setContents(parsed);
+    } catch {
+      // Ignore invalid stored backstory content
+    }
+  }, [isEditMode, isEditorReady, character]);
+
   const onSubmit = async (data: CharacterFormValues) => {
     setIsPending(true);
     try {
@@ -126,25 +164,40 @@ export function CharacterForm({
       }
 
       // Convert form data to the expected format for the server action
+      const existingAttributes =
+        character && typeof character.Attributes === "object"
+          ? character.Attributes
+          : {};
+      const existingNotes =
+        character && typeof character.notes === "object" ? character.notes : {};
       const formData: CharacterFormData = {
         name: data.name,
         race: data.race,
         primaryClassId: data.primaryClassId,
-        primaryClassLvl: 1, // Default to level 1
+        primaryClassLvl: character?.primaryClassLvl ?? 1,
         secondaryClassId: data.secondaryClassId,
-        secondaryClassLvl: 0, // Default to level 0
+        secondaryClassLvl: character?.secondaryClassLvl ?? 0,
+        attributes: {
+          ...existingAttributes,
+          race: data.race,
+        },
         notes: {
+          ...existingNotes,
           backstory: backstoryContent ? backstoryContent : "",
         },
-        phazians: 0, // Default to 0
+        phazians: character?.phazians ?? 0,
       };
 
-      const result = await createCharacter(formData);
+      const result = isEditMode
+        ? await updateCharacter(character.id, formData)
+        : await createCharacter(formData);
 
       if (result.success) {
         toast({
-          title: "Character created",
-          description: "Your character has been created successfully.",
+          title: isEditMode ? "Character updated" : "Character created",
+          description: isEditMode
+            ? "Your character has been updated successfully."
+            : "Your character has been created successfully.",
         });
 
         router.push(`/passport/${result.characterId}`);
@@ -187,7 +240,7 @@ export function CharacterForm({
                 <FormLabel>Race</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -215,7 +268,7 @@ export function CharacterForm({
                 <FormLabel>Primary Class</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -267,12 +320,12 @@ export function CharacterForm({
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {isEditMode ? "Saving..." : "Creating..."}
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Create Character
+                  {isEditMode ? "Save Changes" : "Create Character"}
                 </>
               )}
             </Button>

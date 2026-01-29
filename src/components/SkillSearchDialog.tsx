@@ -30,6 +30,7 @@ export function SkillSearchDialog({
   skillData,
 }: SkillSearchDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTiers, setActiveTiers] = useState<number[]>([]);
 
   // Get all available skills up to the tier for the specific class
   const getAllAvailableSkills = () => {
@@ -81,6 +82,14 @@ export function SkillSearchDialog({
     targetClass,
   });
 
+  const toggleTier = (tierValue: number) => {
+    setActiveTiers((current) =>
+      current.includes(tierValue)
+        ? current.filter((value) => value !== tierValue)
+        : [...current, tierValue]
+    );
+  };
+
   // Filter skills based on search term
   const filteredSkills = allAvailableSkills.filter(
     (skill: any) =>
@@ -89,8 +98,13 @@ export function SkillSearchDialog({
         skill.descriptionShort.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const tierFilteredSkills =
+    activeTiers.length === 0
+      ? filteredSkills
+      : filteredSkills.filter((skill: any) => activeTiers.includes(skill.tier));
+
   // Group filtered skills by tier
-  const groupedFilteredSkills = filteredSkills.reduce(
+  const groupedFilteredSkills = tierFilteredSkills.reduce(
     (acc: { [tier: number]: any[] }, skill: any) => {
       if (!acc[skill.tier]) {
         acc[skill.tier] = [];
@@ -129,19 +143,56 @@ export function SkillSearchDialog({
           />
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filter tiers:</span>
+          {Array.from({ length: tier }, (_, index) => {
+            const tierValue = index + 1;
+            const isActive = activeTiers.includes(tierValue);
+            return (
+              <Badge
+                key={tierValue}
+                role="button"
+                tabIndex={0}
+                variant={isActive ? "default" : "outline"}
+                className="text-xs cursor-pointer select-none"
+                onClick={() => toggleTier(tierValue)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggleTier(tierValue);
+                  }
+                }}
+              >
+                Tier {tierValue}
+              </Badge>
+            );
+          })}
+          {activeTiers.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={() => setActiveTiers([])}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+
         <ScrollArea className="max-h-[400px]">
           <div className="space-y-2">
-            {filteredSkills.length === 0 ? (
+            {tierFilteredSkills.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 {allAvailableSkills.length === 0
                   ? `No skills available for ${
                       targetClass?.Title || "No Class"
                     } up to tier ${tier}`
-                  : "No skills found matching your search"}
+                  : "No skills found matching your filters"}
               </div>
             ) : searchTerm ? (
               // Show flat list when searching
-              filteredSkills.map((skill: any) => (
+              tierFilteredSkills.map((skill: any) => (
                 <div
                   key={skill.id}
                   className="border rounded p-3 flex items-center justify-between hover:bg-muted/50"

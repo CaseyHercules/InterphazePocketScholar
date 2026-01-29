@@ -36,12 +36,14 @@ export function AddSpellDialog({
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  const normalizedSearch = searchTerm.toLowerCase();
+
   // Filter spells based on search term
   const filteredSpells = spells.filter(
     (spell) =>
-      spell.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      spell.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      spell.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      (spell.title ?? "").toLowerCase().includes(normalizedSearch) ||
+      spell.type?.toLowerCase().includes(normalizedSearch) ||
+      spell.description?.toLowerCase().includes(normalizedSearch)
   );
 
   // Group spells by level

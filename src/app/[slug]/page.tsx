@@ -36,7 +36,7 @@ const page = async ({ params }: pageProps) => {
   if (!topic) return notFound();
 
   return (
-    <>
+    <div className="col-span-1 md:col-span-3 md:row-start-1 flex flex-col space-y-6">
       <h1 className="font-bold text-3xl md:text-4xl h-14">
         {topic?.shortDesc ? topic?.shortDesc : topic?.title}
       </h1>
@@ -45,7 +45,7 @@ const page = async ({ params }: pageProps) => {
         topicName={topic.title}
         userRole={UserRole}
       />
-    </>
+    </div>
   );
 };
 

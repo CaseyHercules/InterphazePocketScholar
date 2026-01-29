@@ -28,6 +28,10 @@ interface SkillTableProps {
   onView?: (skill: Skill & { class?: Class | null }) => void;
   onDelete?: (id: string) => void;
   isLoading?: boolean;
+  showClassFilter?: boolean;
+  showClassColumn?: boolean;
+  enableRowClick?: boolean;
+  showActionsColumn?: boolean;
 }
 
 export function SkillTable({
@@ -36,9 +40,14 @@ export function SkillTable({
   onView,
   onDelete,
   isLoading,
+  showClassFilter = true,
+  showClassColumn = true,
+  enableRowClick = false,
+  showActionsColumn = true,
 }: SkillTableProps) {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Skill;
     direction: "asc" | "desc";
@@ -57,7 +66,11 @@ export function SkillTable({
       .includes(search.toLowerCase());
     const matchesTier =
       tierFilter === "all" || skill.tier.toString() === tierFilter;
-    return matchesSearch && matchesTier;
+    const matchesClass =
+      !showClassFilter ||
+      classFilter === "all" ||
+      skill.class?.Title === classFilter;
+    return matchesSearch && matchesTier && matchesClass;
   });
 
   // Sort and filter skills
@@ -92,6 +105,12 @@ export function SkillTable({
   };
 
   const TIERS = ["1", "2", "3", "4"];
+  const classOptions = showClassFilter
+    ? (Array.from(
+        new Set(skills.map((skill) => skill.class?.Title).filter(Boolean))
+      ) as string[])
+    : [];
+  const hasClassOptions = classOptions.length > 0;
 
   return (
     <Card>
@@ -104,7 +123,7 @@ export function SkillTable({
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[400px]"
           />
-          <div className="flex gap-4 ml-auto">
+          <div className="flex flex-wrap gap-4 ml-auto">
             <Select value={tierFilter} onValueChange={setTierFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by tier" />
@@ -118,6 +137,25 @@ export function SkillTable({
                 ))}
               </SelectContent>
             </Select>
+            {showClassFilter && (
+              <Select
+                value={classFilter}
+                onValueChange={setClassFilter}
+                disabled={!hasClassOptions}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classOptions.map((classTitle) => (
+                    <SelectItem key={classTitle} value={classTitle}>
+                      {classTitle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -138,11 +176,11 @@ export function SkillTable({
                   )}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer w-[80px]"
-                  onClick={() => onSort("tier")}
+                  className="cursor-pointer min-w-[200px]"
+                  onClick={() => onSort("duration")}
                 >
-                  Tier{" "}
-                  {sortConfig?.key === "tier" && (
+                  Duration{" "}
+                  {sortConfig?.key === "duration" && (
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
@@ -155,77 +193,93 @@ export function SkillTable({
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
-                <TableHead
-                  className="cursor-pointer w-[120px]"
-                  onClick={() => onSort("duration")}
-                >
-                  Duration{" "}
-                  {sortConfig?.key === "duration" && (
-                    <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
-                  )}
-                </TableHead>
-                <TableHead className="w-[120px]">Class</TableHead>
-                <TableHead className="text-right w-[150px]">Actions</TableHead>
+                {showClassColumn && (
+                  <TableHead className="w-[120px]">Class</TableHead>
+                )}
+                {showActionsColumn && (onView || onEdit || onDelete) && (
+                  <TableHead className="text-right w-[150px]">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedAndFilteredSkills.map((skill) => (
-                <TableRow key={skill.id}>
-                  <TableCell className="max-w-[250px]">
-                    <div className="font-medium truncate">{skill.title}</div>
+                <TableRow
+                  key={skill.id}
+                  onClick={enableRowClick ? () => onView?.(skill) : undefined}
+                  className={
+                    enableRowClick && onView ? "cursor-pointer" : undefined
+                  }
+                >
+                  <TableCell className="max-w-[40%]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium truncate">{skill.title}</span>
+                      <Badge variant="secondary" className="shrink-0">
+                        Tier {skill.tier}
+                      </Badge>
+                    </div>
                     {skill.descriptionShort && (
                       <div className="text-sm text-muted-foreground mt-1 truncate">
                         {truncateText(skill.descriptionShort)}
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-[80px]">
-                    <Badge variant="secondary">Tier {skill.tier}</Badge>
+                  <TableCell className="max-w-[30%]">
+                    {skill.duration || "—"}
                   </TableCell>
-                  <TableCell className="max-w-[150px]">
+                  <TableCell className="max-w-[30%]">  
                     {skill.permenentEpReduction > 0
                       ? `Permanent EP -${skill.permenentEpReduction}`
                       : skill.epCost && skill.epCost.trim() !== ""
                       ? skill.epCost
                       : "—"}
                   </TableCell>
-                  <TableCell className="max-w-[120px]">
-                    {skill.duration || "—"}
-                  </TableCell>
-                  <TableCell className="max-w-[120px]">
-                    {skill.class?.Title || "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {onView && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onView(skill)}
-                        >
-                          View
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(skill)}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => onDelete(skill.id)}
-                        >
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                  {showClassColumn && (
+                    <TableCell className="max-w-[120px]">
+                      {skill.class?.Title || "—"}
+                    </TableCell>
+                  )}
+                  {showActionsColumn && (onView || onEdit || onDelete) && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {onView && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onView(skill);
+                            }}
+                          >
+                            View
+                          </Button>
+                        )}
+                        {onEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEdit(skill);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDelete(skill.id);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

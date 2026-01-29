@@ -5,6 +5,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import {
+  adjustmentMatchesRace,
+  getCharacterRace,
+} from "@/lib/utils/adjustments";
 
 /**
  * Server action to fetch character data with all necessary relations for passport view
@@ -17,41 +21,76 @@ export async function getCharacterForPassport(characterId: string) {
   }
 
   // Fetch the character with all its relations
-  const character = await db.character.findUnique({
-    where: {
-      id: characterId,
-    },
-    include: {
-      primaryClass: true,
-      secondaryClass: true,
-      primarySkills: {
-        orderBy: {
-          title: "asc",
-        },
-      },
-      secondarySkills: {
-        orderBy: {
-          title: "asc",
-        },
-      },
-      inventory: {
-        orderBy: {
-          title: "asc",
-        },
-      },
-      spells: {
-        orderBy: {
-          level: "asc",
-        },
-      },
-      user: {
-        select: {
-          id: true,
-          UnallocatedLevels: true,
-        },
+  const baseInclude = {
+    primaryClass: true,
+    secondaryClass: true,
+    primarySkills: {
+      orderBy: {
+        title: "asc",
       },
     },
-  });
+    secondarySkills: {
+      orderBy: {
+        title: "asc",
+      },
+    },
+    inventory: {
+      orderBy: {
+        title: "asc",
+      },
+    },
+    spells: {
+      orderBy: {
+        level: "asc",
+      },
+    },
+    user: {
+      select: {
+        id: true,
+        UnallocatedLevels: true,
+      },
+    },
+  } as const;
+
+  const adjustmentClient = (db as unknown as { adjustment?: any }).adjustment;
+  const characterAdjustmentClient = (db as unknown as { characterAdjustment?: any })
+    .characterAdjustment;
+  const characterInclude =
+    adjustmentClient && characterAdjustmentClient
+      ? {
+          ...baseInclude,
+          adjustments: {
+            include: {
+              adjustment: true,
+            },
+            orderBy: {
+              appliedAt: "desc",
+            },
+          },
+        }
+      : baseInclude;
+
+  let character;
+  try {
+    character = await db.character.findUnique({
+      where: {
+        id: characterId,
+      },
+      include: characterInclude,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("Unknown field `adjustments`")) {
+      character = await db.character.findUnique({
+        where: {
+          id: characterId,
+        },
+        include: baseInclude,
+      });
+    } else {
+      throw error;
+    }
+  }
 
   if (!character) {
     notFound();

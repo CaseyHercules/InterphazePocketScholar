@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { CharacterForm } from "@/components/CharacterForm";
+import { deleteCharacter } from "@/lib/actions/character";
+import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Edit Character | Interphaze Pocket Scholar",
@@ -29,7 +30,6 @@ export default async function EditCharacterPage({
   const character = await db.character.findUnique({
     where: {
       id: params.id,
-      userId: session.user.id, // Ensure the character belongs to this user
     },
     include: {
       primaryClass: true,
@@ -37,20 +37,15 @@ export default async function EditCharacterPage({
     },
   });
 
-  if (!character) {
+  if (!character || character.userId !== session.user.id) {
     notFound();
   }
 
-  // Fetch all classes for the form
-  const classes = await db.class.findMany({
-    select: {
-      id: true,
-      Title: true,
-    },
-    orderBy: {
-      Title: "asc",
-    },
-  });
+  async function deleteAction() {
+    "use server";
+    await deleteCharacter(character.id);
+    redirect("/characters");
+  }
 
   return (
     <div className="container max-w-4xl mx-auto py-8">
@@ -58,10 +53,13 @@ export default async function EditCharacterPage({
         Edit Character: {character.name}
       </h1>
       <p className="text-muted-foreground mb-6">
-        Update your character&apos;s details below.
+        Character edits are disabled. You can only delete this character.
       </p>
-
-      <CharacterForm character={character} classes={classes} isEditing={true} />
+      <form action={deleteAction}>
+        <Button type="submit" variant="destructive">
+          Delete Character
+        </Button>
+      </form>
     </div>
   );
 }

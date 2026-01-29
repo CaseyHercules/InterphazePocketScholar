@@ -8,9 +8,30 @@ interface EditorOutputProps {
   content: any;
 }
 
-const EditorOutput: FC<EditorOutputProps> = ({ content }) => {
+const SKILL_TABLE_TAG_REGEX =
+  /\[\[SkillTable\s+class\s*=\s*([^\]]+)\]\]/gi;
+
+const EditorOutput: FC<EditorOutputProps> = ({
+  content,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<any>();
+  const stripSkillTableTags = () => {
+    if (!containerRef.current) return;
+    const editor = containerRef.current.querySelector(".ql-editor");
+    if (!editor) return;
+
+    const blocks = Array.from(editor.querySelectorAll("p, li"));
+    blocks.forEach((block) => {
+      const rawText = block.textContent ?? "";
+      const trimmedText = rawText.trim();
+      const matches = Array.from(trimmedText.matchAll(SKILL_TABLE_TAG_REGEX));
+      if (matches.length !== 1) return;
+      const fullMatch = matches[0][0];
+      if (trimmedText !== fullMatch) return;
+      block.remove();
+    });
+  };
 
   useEffect(() => {
     const initQuill = async () => {
@@ -32,6 +53,29 @@ const EditorOutput: FC<EditorOutputProps> = ({ content }) => {
 
       try {
         const { default: Quill } = await import("quill");
+        const BlockEmbed = Quill.import("blots/block/embed");
+
+        class SkillTableBlot extends BlockEmbed {
+          static blotName = "skilltable";
+          static tagName = "div";
+          static className = "ql-skilltable-embed";
+
+          static create(value: { className?: string }) {
+            const node = super.create() as HTMLElement;
+            const className = value?.className?.trim() || "Unknown";
+            node.setAttribute("data-embed", "skill-table");
+            node.setAttribute("data-class", className);
+            node.setAttribute("contenteditable", "false");
+            node.textContent = `Skill Table: ${className}`;
+            return node;
+          }
+
+          static value(node: HTMLElement) {
+            return { className: node.getAttribute("data-class") || "" };
+          }
+        }
+
+        Quill.register(SkillTableBlot, true);
 
         // Initialize Quill in read-only mode
         const quill = new Quill(containerRef.current, {
@@ -75,6 +119,7 @@ const EditorOutput: FC<EditorOutputProps> = ({ content }) => {
         quill.container.classList.add("read-only");
 
         quillRef.current = quill;
+        stripSkillTableTags();
       } catch (error) {
         console.error("Error initializing Quill:", error);
         if (containerRef.current) {
@@ -89,9 +134,10 @@ const EditorOutput: FC<EditorOutputProps> = ({ content }) => {
     // Cleanup
     return () => {
       if (quillRef.current) {
-        const container = quillRef.current.container;
-        container.remove();
         quillRef.current = undefined;
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
       }
     };
   }, [content]);

@@ -78,7 +78,7 @@ export default function RootLayout({
           {authModal}
 
           {/* Main content area with proper padding for fixed header */}
-          <main className="flex-1 w-[90%] mx-auto pt-16 pb-8">
+          <main className="flex-1 w-[96%] mx-auto pt-16 pb-8">
             <div className="h-full glass-container content-container smooth-transition enhanced-text">
               {children}
             </div>

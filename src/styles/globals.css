@@ -91,7 +91,7 @@
   }
 
   .content-container {
-    @apply max-w-[90%] mx-auto p-6 rounded-lg;
+    @apply max-w-full mx-auto p-4 rounded-lg;
   }
 
   .smooth-transition {

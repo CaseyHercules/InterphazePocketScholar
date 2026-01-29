@@ -30,6 +30,21 @@
   @apply bg-secondary text-secondary-foreground;
 }
 
+/* Custom toolbar button */
+.ql-snow.ql-toolbar button.ql-skilltable {
+  @apply w-auto px-3 text-sm;
+}
+
+.ql-snow.ql-toolbar button.ql-skilltable::after {
+  content: "Skill Table";
+  font-size: 0.875rem;
+}
+
+/* Editor embed placeholder */
+.ql-skilltable-embed {
+  @apply my-4 rounded-md border border-dashed border-input bg-muted/30 px-4 py-3 text-sm text-muted-foreground;
+}
+
 /* Toolbar Dropdowns */
 .ql-snow .ql-picker {
   @apply h-9;
@@ -137,6 +152,10 @@
 
 .quill.read-only .ql-editor {
   @apply p-0 min-h-0;
+}
+
+.quill.read-only .ql-skilltable-embed {
+  display: none;
 }
 
 /* Icons */

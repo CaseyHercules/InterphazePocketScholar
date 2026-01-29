@@ -20,7 +20,7 @@ const Page = async ({ params }: PageProps) => {
   if (!post) return notFound();
 
   return (
-    <div className="flex flex-col items-start gap-6">
+    <div className="col-span-1 md:col-span-3 md:row-start-1 flex flex-col items-start gap-6">
       {/* heading */}
       <div className="border-b border-gray-200 pb-5">
         <div className="-ml-2 -mt-2 flex flex-wrap items-baseline">

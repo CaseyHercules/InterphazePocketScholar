@@ -21,6 +21,7 @@ const requireAdmin = async () => {
   return user;
 };
 
+
 export async function POST(req: Request) {
   try {
     const user = await requireAdmin();

@@ -72,6 +72,10 @@ const MENU_ITEMS = [
     ],
   },
   {
+    label: "Skills",
+    items: [{ label: "All Skills", href: "/skills" }],
+  },
+  {
     label: "World Info",
     items: [
       { label: "Inspiration", href: "/setting/inspiration" },

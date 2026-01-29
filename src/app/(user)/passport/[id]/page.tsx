@@ -12,6 +12,10 @@ import { CharacterAttributesCard } from "@/components/passport/CharacterAttribut
 import { CharacterSkillsCard } from "@/components/passport/CharacterSkillsCard";
 import { CharacterInventoryCard } from "@/components/passport/CharacterInventoryCard";
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
+import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
+import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // Import server actions
 import {
@@ -43,13 +47,22 @@ export async function generateMetadata({ params }: PassportPageProps) {
 
 export default async function PassportPage({ params }: PassportPageProps) {
   // Fetch character data, available classes, and skill data in parallel
-  const [character, availableClasses, skillData] = await Promise.all([
+  const [character, availableClasses, skillData, session] = await Promise.all([
     getCharacterForPassport(params.id),
     getAvailableClasses(),
     getAvailableSkillsForCharacter(params.id),
+    getServerSession(authOptions),
   ]);
 
   const unallocatedLevels = character.user?.UnallocatedLevels || 0;
+  const isAdmin =
+    session?.user?.role === "ADMIN" || session?.user?.role === "SUPERADMIN";
+  const existingAdjustments = Array.isArray((character as any).adjustments)
+    ? (character as any).adjustments
+        .map((entry: any) => entry?.adjustment ?? entry)
+        .filter(Boolean)
+        .map((adj: any) => ({ id: adj.id, title: adj.title }))
+    : [];
 
   return (
     <div className="min-h-screen flex flex-col w-full h-full">
@@ -114,6 +127,13 @@ export default async function PassportPage({ params }: PassportPageProps) {
               availableClasses={availableClasses}
             />
             <CharacterStatsCard character={character} />
+            <CharacterAdjustmentsCard character={character} />
+            {isAdmin && (
+              <CharacterAdjustmentManager
+                characterId={character.id}
+                existingAdjustments={existingAdjustments}
+              />
+            )}
             <CharacterAttributesCard character={character} />
           </TabsContent>
 

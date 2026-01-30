@@ -37,6 +37,9 @@ import { useEffect, useState } from "react";
 import { Skill } from "@prisma/client";
 import { SkillViewer } from "@/components/SkillViewer";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
 
 interface ClassFormData {
   data: {
@@ -55,6 +58,7 @@ interface ClassFormData {
     Tough?: (number | null)[];
     Mind?: (number | null)[];
     Quick?: (number | null)[];
+    visibilityRoles?: string[];
   } | null;
   readOnly?: boolean;
   onSuccess?: () => void;
@@ -76,6 +80,7 @@ interface FormData {
   Tough: (number | null)[];
   Mind: (number | null)[];
   Quick: (number | null)[];
+  visibilityRoles: string[];
 }
 
 interface UpdateFormData extends FormData {
@@ -251,6 +256,7 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
         : typeof data?.Quick === "string"
         ? JSON.parse(data.Quick).map((v: any) => (v === null ? 0 : v))
         : Array(20).fill(0),
+      visibilityRoles: data?.visibilityRoles ?? [],
     },
   });
 
@@ -403,6 +409,41 @@ export function ClassForm({ data, readOnly, onSuccess }: ClassFormData) {
                         disabled={readOnly}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="visibilityRoles"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Visibility Roles</FormLabel>
+                    <FormDescription>
+                      Leave empty to make this class public.
+                    </FormDescription>
+                    <div className="flex flex-wrap gap-3">
+                      {VISIBILITY_ROLE_OPTIONS.map((role) => (
+                        <label
+                          key={role}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <Checkbox
+                            checked={field.value?.includes(role)}
+                            onCheckedChange={(checked) => {
+                              const next = new Set(field.value || []);
+                              if (checked) {
+                                next.add(role);
+                              } else {
+                                next.delete(role);
+                              }
+                              field.onChange(Array.from(next));
+                            }}
+                          />
+                          {role}
+                        </label>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

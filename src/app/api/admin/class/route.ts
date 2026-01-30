@@ -53,6 +53,9 @@ export async function POST(req: Request) {
           Quick: updateData.Quick,
           Skills: updateData.Skills,
           grantedSkills: updateData.grantedSkills,
+          ...(updateData.visibilityRoles !== undefined && {
+            visibilityRoles: updateData.visibilityRoles,
+          }),
         };
 
         try {
@@ -88,6 +91,7 @@ export async function POST(req: Request) {
           Quick: validatedData.Quick,
           Skills: validatedData.Skills,
           grantedSkills: validatedData.grantedSkills,
+          visibilityRoles: validatedData.visibilityRoles || [],
         };
 
         const created = await db.class.create({
@@ -135,6 +139,7 @@ export async function GET() {
         Tough: true,
         Mind: true,
         Quick: true,
+        visibilityRoles: true,
       },
     });
 

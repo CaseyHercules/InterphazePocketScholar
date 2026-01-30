@@ -95,6 +95,7 @@ model Skill {
   abilityCheck         String?
   canBeTakenMultiple   Boolean     @default(false)
   playerVisable        Boolean     @default(true)
+  visibilityRoles      Role[]      @default([])
   additionalInfo       Json?
   chararacterId        String?
   classId              String?
@@ -134,6 +135,7 @@ model Class {
   Tough               Json?
   Quick               Json?
   Mind                Json?
+  visibilityRoles     Role[]      @default([])
   skills              Skill[]     @relation("ClassSkills")
   primaryCharacters   Character[] @relation("PrimaryClass")
   secondaryCharacters Character[] @relation("SecondaryClass")
@@ -228,6 +230,7 @@ model Item {
   description String?
   type        ItemType?
   quantity    Int
+  visibilityRoles Role[] @default([])
   characterId String?
   character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -242,6 +245,7 @@ model Spell {
   level       Int
   characterId String?
   data        Json?
+  visibilityRoles Role[] @default([])
   character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])

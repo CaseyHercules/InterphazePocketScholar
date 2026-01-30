@@ -27,9 +27,14 @@ import {
 } from "./ui/select";
 import { Skill, Class } from "@prisma/client";
 import { useState, useEffect } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
+
+type SkillWithVisibility = Skill & { visibilityRoles?: string[] };
 
 interface SkillFormProps {
-  data: Skill | null;
+  data: SkillWithVisibility | null;
   onSubmit: (data: Partial<Skill>) => Promise<void>;
   onCancel: () => void;
 }
@@ -71,6 +76,7 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
       abilityCheck: data?.abilityCheck ?? "",
       canBeTakenMultiple: data?.canBeTakenMultiple ?? false,
       playerVisable: data?.playerVisable ?? true,
+      visibilityRoles: data?.visibilityRoles ?? [],
       additionalInfo: data?.additionalInfo ?? [],
     },
   });
@@ -213,6 +219,41 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
             [true, false],
             "boolean"
           )}
+          <FormField
+            control={form.control}
+            name="visibilityRoles"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Visibility Roles</FormLabel>
+                <FormDescription>
+                  Leave empty to make this skill public.
+                </FormDescription>
+                <div className="flex flex-wrap gap-3">
+                  {VISIBILITY_ROLE_OPTIONS.map((role) => (
+                    <label
+                      key={role}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <Checkbox
+                        checked={field.value?.includes(role)}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(field.value || []);
+                          if (checked) {
+                            next.add(role);
+                          } else {
+                            next.delete(role);
+                          }
+                          field.onChange(Array.from(next));
+                        }}
+                      />
+                      {role}
+                    </label>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {formEntry(
             "additionalInfo",
             "Additional Info",

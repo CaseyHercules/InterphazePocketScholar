@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const ROLE_VALUES = [
+  "USER",
+  "ADMIN",
+  "SUPERADMIN",
+  "SPELLWRIGHT",
+  "MODERATOR",
+] as const;
+
 export const SkillValidator = z.object({
   title: z
     .string()
@@ -19,6 +27,7 @@ export const SkillValidator = z.object({
   abilityCheck: z.string().optional(),
   canBeTakenMultiple: z.boolean(),
   playerVisable: z.boolean(),
+  visibilityRoles: z.array(z.enum(ROLE_VALUES)).optional(),
   additionalInfo: z.any().optional(),
 });
 
@@ -44,6 +53,7 @@ export const UpdateValidator = z.object({
   abilityCheck: z.string().optional(),
   canBeTakenMultiple: z.boolean(),
   playerVisable: z.boolean(),
+  visibilityRoles: z.array(z.enum(ROLE_VALUES)).optional(),
   additionalInfo: z.any().optional(),
 });
 

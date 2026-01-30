@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CharacterForm } from "@/components/CharacterForm";
+import { getVisibilityWhere } from "@/lib/visibility";
 
 export const metadata = {
   title: "Create Character | Interphaze Pocket Scholar",
@@ -22,6 +23,7 @@ export default async function CreateCharacterPage() {
       id: true,
       Title: true,
     },
+    where: getVisibilityWhere(session.user.role),
     orderBy: {
       Title: "asc",
     },

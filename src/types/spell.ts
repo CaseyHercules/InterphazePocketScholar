@@ -47,6 +47,7 @@ export interface Spell {
   level: number;
   characterId?: string;
   data?: SpellData;
+  visibilityRoles?: string[];
 }
 
 export interface CreateSpellInput {
@@ -56,6 +57,7 @@ export interface CreateSpellInput {
   level: number;
   characterId?: string;
   data?: SpellData;
+  visibilityRoles?: string[];
 }
 
 export interface UpdateSpellInput extends Partial<CreateSpellInput> {

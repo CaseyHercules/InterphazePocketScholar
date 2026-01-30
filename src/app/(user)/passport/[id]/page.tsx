@@ -54,7 +54,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
     getServerSession(authOptions),
   ]);
 
-  const unallocatedLevels = character.user?.UnallocatedLevels || 0;
+  const unallocatedLevels = character.user?.UnallocatedLevels ?? 0;
   const isAdmin =
     session?.user?.role === "ADMIN" || session?.user?.role === "SUPERADMIN";
   const existingAdjustments = Array.isArray((character as any).adjustments)

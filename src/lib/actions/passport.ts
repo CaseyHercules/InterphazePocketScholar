@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -9,11 +10,28 @@ import {
   adjustmentMatchesRace,
   getCharacterRace,
 } from "@/lib/utils/adjustments";
+import { getSkillVisibilityWhere, getVisibilityWhere } from "@/lib/visibility";
+
+const characterPassportInclude = {
+  primaryClass: true,
+  secondaryClass: true,
+  primarySkills: { orderBy: { title: "asc" as const } },
+  secondarySkills: { orderBy: { title: "asc" as const } },
+  inventory: { orderBy: { title: "asc" as const } },
+  spells: { orderBy: { level: "asc" as const } },
+  user: { select: { id: true, UnallocatedLevels: true } },
+} as const;
+
+export type CharacterForPassport = Prisma.CharacterGetPayload<{
+  include: typeof characterPassportInclude;
+}>;
 
 /**
  * Server action to fetch character data with all necessary relations for passport view
  */
-export async function getCharacterForPassport(characterId: string) {
+export async function getCharacterForPassport(
+  characterId: string
+): Promise<CharacterForPassport> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -64,7 +82,7 @@ export async function getCharacterForPassport(characterId: string) {
               adjustment: true,
             },
             orderBy: {
-              appliedAt: "desc",
+              appliedAt: "desc" as const,
             },
           },
         }
@@ -105,13 +123,14 @@ export async function getCharacterForPassport(characterId: string) {
     redirect("/unauthorized");
   }
 
-  return character;
+  return character as CharacterForPassport;
 }
 
 /**
  * Server action to fetch available classes for secondary class selection
  */
 export async function getAvailableClasses() {
+  const session = await getServerSession(authOptions);
   return await db.class.findMany({
     select: { id: true, Title: true },
     where: {
@@ -121,6 +140,7 @@ export async function getAvailableClasses() {
           mode: "insensitive",
         },
       },
+      ...getVisibilityWhere(session?.user?.role),
     },
     orderBy: { Title: "asc" },
   });
@@ -210,7 +230,7 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
   const availableSkills = await db.skill.findMany({
     where: {
       classId: { in: classIds },
-      playerVisable: true,
+      ...getSkillVisibilityWhere(session?.user?.role),
     },
     include: {
       class: true,

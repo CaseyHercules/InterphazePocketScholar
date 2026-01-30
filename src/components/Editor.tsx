@@ -102,7 +102,10 @@ export const Editor: FC<EditorProps> = ({ topicId, formId, content }) => {
     const { default: Quill } = await import("quill");
     const BlockEmbed = Quill.import("blots/block/embed");
 
-    class SkillTableBlot extends BlockEmbed {
+    class SkillTableBlot extends (BlockEmbed as unknown as {
+      new (): object;
+      create(value?: unknown): HTMLElement;
+    }) {
       static blotName = "skilltable";
       static tagName = "div";
       static className = "ql-skilltable-embed";
@@ -121,6 +124,7 @@ export const Editor: FC<EditorProps> = ({ topicId, formId, content }) => {
       }
     }
 
+    // @ts-expect-error Quill blot types don't fully match RegistryDefinition
     Quill.register(SkillTableBlot, true);
 
     const toolbarOptions = [

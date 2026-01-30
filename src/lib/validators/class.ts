@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const ROLE_VALUES = [
+  "USER",
+  "ADMIN",
+  "SUPERADMIN",
+  "SPELLWRIGHT",
+  "MODERATOR",
+] as const;
+
 const statArrayValidator = z.array(z.number().min(0).nullable()).length(20);
 const skillTierValidator = z.array(z.number().min(0).max(4)).length(20);
 
@@ -21,6 +29,7 @@ export const ClassValidator = z.object({
   Tough: statArrayValidator,
   Mind: statArrayValidator,
   Quick: statArrayValidator,
+  visibilityRoles: z.array(z.enum(ROLE_VALUES)).optional(),
 });
 
 export type ClassRequest = z.infer<typeof ClassValidator>;

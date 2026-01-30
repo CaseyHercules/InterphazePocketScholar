@@ -30,6 +30,9 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
 
 const SpellFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -50,6 +53,7 @@ const SpellFormSchema = z.object({
     descriptor: z.array(z.string()).default([]),
     isInSpellLibrary: z.boolean().default(false),
   }),
+  visibilityRoles: z.array(z.enum(VISIBILITY_ROLE_OPTIONS)).default([]),
 });
 
 type SpellFormValues = z.infer<typeof SpellFormSchema>;
@@ -83,6 +87,7 @@ export function SpellForm({
         descriptor: initialSpell?.data?.descriptor || [],
         isInSpellLibrary: initialSpell?.data?.isInSpellLibrary || false,
       },
+      visibilityRoles: (initialSpell?.visibilityRoles || []) as (typeof VISIBILITY_ROLE_OPTIONS)[number][],
     },
   });
 
@@ -104,6 +109,7 @@ export function SpellForm({
             ])
           ),
         },
+        visibilityRoles: values.visibilityRoles || [],
       };
 
       console.log("Sending to API:", formattedValues);
@@ -243,6 +249,42 @@ export function SpellForm({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="visibilityRoles"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Visibility Roles</FormLabel>
+                  <FormDescription>
+                    Leave empty to make this spell public.
+                  </FormDescription>
+                  <div className="flex flex-wrap gap-3">
+                    {VISIBILITY_ROLE_OPTIONS.map((role) => (
+                      <label
+                        key={role}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Checkbox
+                          checked={field.value?.includes(role)}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(field.value || []);
+                            if (checked) {
+                              next.add(role);
+                            } else {
+                              next.delete(role);
+                            }
+                            field.onChange(Array.from(next));
+                          }}
+                        />
+                        {role}
+                      </label>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

@@ -97,6 +97,7 @@ export async function POST(req: Request) {
           canBeTakenMultiple: updateData.canBeTakenMultiple,
           playerVisable: updateData.playerVisable,
           additionalInfo: updateData.additionalInfo || undefined,
+          visibilityRoles: updateData.visibilityRoles,
         };
 
         // Remove undefined values
@@ -163,6 +164,7 @@ export async function POST(req: Request) {
           canBeTakenMultiple: validatedData.canBeTakenMultiple,
           playerVisable: validatedData.playerVisable,
           additionalInfo: validatedData.additionalInfo || undefined,
+          visibilityRoles: validatedData.visibilityRoles || [],
         };
 
         console.log("Final create data:", createData); // Debug log

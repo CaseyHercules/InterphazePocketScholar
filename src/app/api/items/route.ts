@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { getVisibilityWhere } from "@/lib/visibility";
 
 export async function GET() {
   try {
@@ -12,6 +13,7 @@ export async function GET() {
     }
 
     const items = await db.item.findMany({
+      where: getVisibilityWhere(session?.user?.role),
       orderBy: {
         title: "asc",
       },

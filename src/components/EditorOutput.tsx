@@ -55,7 +55,10 @@ const EditorOutput: FC<EditorOutputProps> = ({
         const { default: Quill } = await import("quill");
         const BlockEmbed = Quill.import("blots/block/embed");
 
-        class SkillTableBlot extends BlockEmbed {
+        class SkillTableBlot extends (BlockEmbed as unknown as {
+          new (): object;
+          create(value?: unknown): HTMLElement;
+        }) {
           static blotName = "skilltable";
           static tagName = "div";
           static className = "ql-skilltable-embed";
@@ -75,6 +78,7 @@ const EditorOutput: FC<EditorOutputProps> = ({
           }
         }
 
+        // @ts-expect-error Quill blot types don't fully match RegistryDefinition
         Quill.register(SkillTableBlot, true);
 
         // Initialize Quill in read-only mode

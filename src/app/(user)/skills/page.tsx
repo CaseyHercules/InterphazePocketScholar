@@ -1,9 +1,13 @@
+import { getServerSession } from "next-auth";
 import SkillBrowser from "@/components/SkillBrowser";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getSkillVisibilityWhere } from "@/lib/visibility";
 
 export default async function SkillsPage() {
+  const session = await getServerSession(authOptions);
   const skills = await db.skill.findMany({
-    where: { playerVisable: true },
+    where: getSkillVisibilityWhere(session?.user?.role),
     include: { class: true },
     orderBy: { title: "asc" },
   });

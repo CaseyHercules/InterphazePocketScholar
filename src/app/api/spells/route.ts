@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { CreateSpellInput, UpdateSpellInput, SPELL_TYPES } from "@/types/spell";
 import { authOptions } from "@/lib/auth";
+import { getVisibilityWhere } from "@/lib/visibility";
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +14,8 @@ export async function POST(req: Request) {
     }
 
     const body: CreateSpellInput = await req.json();
-    const { title, type, data, description, level, characterId } = body;
+    const { title, type, data, description, level, characterId, visibilityRoles } =
+      body;
 
     if (!title || level === undefined) {
       return NextResponse.json(
@@ -29,6 +32,7 @@ export async function POST(req: Request) {
         description,
         level,
         characterId: characterId || null,
+        visibilityRoles: (visibilityRoles ?? []) as Role[],
       },
     });
 
@@ -51,6 +55,7 @@ export async function GET() {
     }
 
     const spells = await prisma.spell.findMany({
+      where: getVisibilityWhere(session?.user?.role),
       orderBy: [
         {
           level: "asc",
@@ -105,7 +110,7 @@ export async function PUT(req: Request) {
     }
 
     const body: UpdateSpellInput = await req.json();
-    const { id, type, characterId, ...updateData } = body;
+    const { id, type, characterId, visibilityRoles, ...updateData } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -123,6 +128,7 @@ export async function PUT(req: Request) {
           : undefined,
         type: type || null,
         characterId: characterId || null,
+        ...(visibilityRoles ? { visibilityRoles: visibilityRoles as Role[] } : {}),
       },
     });
 

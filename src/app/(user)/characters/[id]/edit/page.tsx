@@ -41,9 +41,11 @@ export default async function EditCharacterPage({
     notFound();
   }
 
+  const characterId = character.id;
+
   async function deleteAction() {
     "use server";
-    await deleteCharacter(character.id);
+    await deleteCharacter(characterId);
     redirect("/characters");
   }
 

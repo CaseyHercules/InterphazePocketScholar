@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { SkillValidator, UpdateValidator } from "@/lib/validators/skill";
 import axios from "axios";
@@ -28,6 +29,19 @@ import {
 import { Skill, Class } from "@prisma/client";
 import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { SkillEffectsEditor } from "@/components/SkillEffectsEditor";
+import {
+  ParentSkillSearch,
+  SkillGroupSearch,
+  PrerequisiteSkillsSearch,
+} from "@/components/SkillManagementSearch";
+import {
+  type SkillEffect,
+  getSkillEffects,
+  getSkillNotes,
+  createSkillAdditionalInfo,
+} from "@/types/skill-effects";
 
 const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
 
@@ -43,6 +57,15 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
   const FormSchema = data ? UpdateValidator : SkillValidator;
   type FormData = z.infer<typeof FormSchema>;
   const [classes, setClasses] = useState<Class[]>([]);
+  const [isMetaEffectsOpen, setIsMetaEffectsOpen] = useState(false);
+  
+  // Extract effects and notes from existing additionalInfo
+  const [skillEffects, setSkillEffects] = useState<SkillEffect[]>(() => 
+    getSkillEffects(data?.additionalInfo)
+  );
+  const [skillNotes, setSkillNotes] = useState<string>(() => 
+    getSkillNotes(data?.additionalInfo)
+  );
 
   // Fetch classes for selection
   useEffect(() => {
@@ -55,6 +78,13 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
       }
     };
     fetchClasses();
+  }, []);
+  
+  // Auto-expand meta-effects section if there are effects
+  useEffect(() => {
+    if (skillEffects.length > 0) {
+      setIsMetaEffectsOpen(true);
+    }
   }, []);
 
   const form = useForm<FormData>({
@@ -83,8 +113,15 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
 
   async function handleSubmit(formData: FormData) {
     try {
-      console.log("Submitting form data:", formData); // Debug log
-      await onSubmit(formData);
+      // Merge effects and notes into additionalInfo
+      const additionalInfo = createSkillAdditionalInfo(skillEffects, skillNotes);
+      const finalData = {
+        ...formData,
+        additionalInfo: Object.keys(additionalInfo).length > 0 ? additionalInfo : null,
+      };
+      
+      console.log("Submitting form data:", finalData); // Debug log
+      await onSubmit(finalData);
     } catch (err: any) {
       console.error("Form submission error:", err); // Debug log
       if (err.response?.data?.details) {
@@ -138,16 +175,47 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
             "",
             tierEmun
           )}
-          {formEntry(
-            "parentSkillId",
-            "Parent Skill ID",
-            "Enter Parent Skill ID..."
-          )}
-          {formEntry(
-            "skillGroupId",
-            "Skill Group ID",
-            "Enter Skill Group ID..."
-          )}
+          <FormField
+            control={form.control}
+            name="parentSkillId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Parent Skill</FormLabel>
+                <FormControl>
+                  <ParentSkillSearch
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    excludeSkillId={data?.id}
+                    placeholder="Search for parent skill..."
+                  />
+                </FormControl>
+                <FormDescription>
+                  Optional parent skill this skill belongs under.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="skillGroupId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Skill Group</FormLabel>
+                <FormControl>
+                  <SkillGroupSearch
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Search for skill group..."
+                  />
+                </FormControl>
+                <FormDescription>
+                  Optional skill group this skill belongs to.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {/* Class Selection */}
           <FormField
             control={form.control}
@@ -182,11 +250,31 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
               </FormItem>
             )}
           />
-          {formEntry(
-            "prerequisiteSkills",
-            "Prerequisite Skills",
-            "Enter Prerequisite Skills..."
-          )}
+          <FormField
+            control={form.control}
+            name="prerequisiteSkills"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Prerequisite Skills</FormLabel>
+                <FormControl>
+                  <PrerequisiteSkillsSearch
+                    value={
+                      Array.isArray(field.value)
+                        ? field.value.map((v) => (typeof v === "string" ? v : String(v)))
+                        : []
+                    }
+                    onChange={field.onChange}
+                    excludeSkillId={data?.id}
+                    placeholder="Search and add prerequisite skills..."
+                  />
+                </FormControl>
+                <FormDescription>
+                  Skills that must be learned before this skill can be taken.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {formEntry(
             "permenentEpReduction",
             "Permanent EP Reduction",
@@ -254,11 +342,54 @@ export function SkillForm({ data, onSubmit, onCancel }: SkillFormProps) {
               </FormItem>
             )}
           />
-          {formEntry(
-            "additionalInfo",
-            "Additional Info",
-            "Enter Additional Info..."
-          )}
+          {/* Meta-Effects Section */}
+          <div className="border rounded-lg overflow-hidden">
+            <button
+              type="button"
+              className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted/70 transition-colors"
+              onClick={() => setIsMetaEffectsOpen(!isMetaEffectsOpen)}
+            >
+              <span className="font-medium text-sm">
+                Meta-Effects & Additional Info
+                {skillEffects.length > 0 && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    ({skillEffects.length} effect{skillEffects.length !== 1 ? "s" : ""})
+                  </span>
+                )}
+              </span>
+              {isMetaEffectsOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+            {isMetaEffectsOpen && (
+              <div className="p-4 space-y-4 border-t">
+                <div className="space-y-2">
+                  <FormLabel>Meta-Effects</FormLabel>
+                  <FormDescription>
+                    Add stat bonuses, skill modifiers, or grant access to skills from other classes.
+                  </FormDescription>
+                  <SkillEffectsEditor
+                    value={skillEffects}
+                    onChange={setSkillEffects}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <FormLabel>Additional Notes</FormLabel>
+                  <Textarea
+                    placeholder="Optional notes to display in the skill viewer..."
+                    value={skillNotes}
+                    onChange={(e) => setSkillNotes(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                  <FormDescription>
+                    Freeform notes displayed when viewing this skill.
+                  </FormDescription>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

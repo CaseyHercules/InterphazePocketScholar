@@ -11,6 +11,11 @@ import {
   getCharacterRace,
 } from "@/lib/utils/adjustments";
 import { getSkillVisibilityWhere, getVisibilityWhere } from "@/lib/visibility";
+import {
+  getSkillEffects,
+  isGrantSkillEffect,
+  type GrantSkillEffect,
+} from "@/types/skill-effects";
 
 const characterPassportInclude = {
   primaryClass: true,
@@ -255,6 +260,94 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
         skillsByTier[skill.tier] = [];
       }
       skillsByTier[skill.tier].push(skill);
+    }
+  }
+
+  // Process grant_skill effects from learned skills
+  const allLearnedSkills = [...character.primarySkills, ...character.secondarySkills];
+  const grantedSkillIds = new Set<string>();
+  const grantedClassTiers: { classId: string; maxTier: number }[] = [];
+  
+  // Collect all grant_skill effects (with loop prevention)
+  const processedSkillIds = new Set<string>();
+  const skillsToProcess = [...allLearnedSkills];
+  
+  while (skillsToProcess.length > 0) {
+    const skill = skillsToProcess.pop();
+    if (!skill || processedSkillIds.has(skill.id)) continue;
+    processedSkillIds.add(skill.id);
+    
+    const effects = getSkillEffects(skill.additionalInfo);
+    
+    for (const effect of effects) {
+      if (!isGrantSkillEffect(effect)) continue;
+      
+      // Handle specific skill grants
+      if (effect.skillId) {
+        grantedSkillIds.add(effect.skillId);
+      }
+      if (effect.skillIds) {
+        for (const id of effect.skillIds) {
+          grantedSkillIds.add(id);
+        }
+      }
+      
+      // Handle class-wide tier grants
+      if (effect.classId && effect.maxTier && effect.maxTier > 0) {
+        grantedClassTiers.push({
+          classId: effect.classId,
+          maxTier: effect.maxTier,
+        });
+      }
+    }
+  }
+  
+  // Fetch specifically granted skills by ID
+  if (grantedSkillIds.size > 0) {
+    const specificGrantedSkills = await db.skill.findMany({
+      where: {
+        id: { in: Array.from(grantedSkillIds) },
+        ...getSkillVisibilityWhere(session?.user?.role),
+      },
+      include: { class: true },
+    });
+    
+    for (const skill of specificGrantedSkills) {
+      // Add to appropriate tier if within maxTier
+      if (skill.tier <= maxTier) {
+        if (!skillsByTier[skill.tier]) {
+          skillsByTier[skill.tier] = [];
+        }
+        // Avoid duplicates
+        if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
+          skillsByTier[skill.tier].push(skill);
+        }
+      }
+    }
+  }
+  
+  // Fetch skills from granted class tiers
+  for (const { classId, maxTier: grantedMaxTier } of grantedClassTiers) {
+    // Skip if this is already one of the character's classes
+    if (classId === primaryClassId || classId === secondaryClassId) continue;
+    
+    const grantedClassSkills = await db.skill.findMany({
+      where: {
+        classId,
+        tier: { lte: Math.min(grantedMaxTier, maxTier) },
+        ...getSkillVisibilityWhere(session?.user?.role),
+      },
+      include: { class: true },
+    });
+    
+    for (const skill of grantedClassSkills) {
+      if (!skillsByTier[skill.tier]) {
+        skillsByTier[skill.tier] = [];
+      }
+      // Avoid duplicates
+      if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
+        skillsByTier[skill.tier].push(skill);
+      }
     }
   }
 

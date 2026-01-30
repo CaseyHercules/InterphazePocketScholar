@@ -21,6 +21,7 @@ import {
   removeSkillFromCharacter,
 } from "@/lib/actions/passport";
 import { useState } from "react";
+import { getEffectiveSkillValue } from "@/lib/utils/character-stats";
 
 interface CharacterSkillsCardProps {
   character: any;
@@ -264,6 +265,7 @@ export function CharacterSkillsCard({
                                   isLearned={isLearned}
                                   showViewButton={true}
                                   characterId={character.id}
+                                  character={character}
                                   isLastItem={index === classSkills.length - 1}
                                   onViewSkill={(skill) => {
                                     setSelectedSkill(skill);
@@ -295,6 +297,7 @@ export function CharacterSkillsCard({
                       skill={skill}
                       isLearned={true}
                       characterId={character.id}
+                      character={character}
                       showRemoveButton={true}
                       isLastItem={index === array.length - 1}
                     />
@@ -439,6 +442,7 @@ function SkillSlot({
   showRemoveButton = false,
   showViewButton = false,
   characterId,
+  character,
   isLastItem = false,
   onViewSkill,
 }: {
@@ -449,9 +453,18 @@ function SkillSlot({
   showRemoveButton?: boolean;
   showViewButton?: boolean;
   characterId?: string;
+  character?: any;
   isLastItem?: boolean;
   onViewSkill?: (skill: any) => void;
 }) {
+  // Get effective values (accounting for skill_modifier effects from other skills)
+  const effectiveEpReduction = character
+    ? getEffectiveSkillValue(skill, character, "permenentEpReduction")
+    : skill.permenentEpReduction;
+  const effectiveEpCost = character
+    ? getEffectiveSkillValue(skill, character, "epCost")
+    : skill.epCost;
+
   return (
     <div
       className={`
@@ -478,10 +491,10 @@ function SkillSlot({
       <div className="flex items-center gap-3 flex-shrink-0 min-w-0 ">
         <div className="text-right min-w-0">
           <div className="text-sm font-medium whitespace-nowrap">
-            {skill.permenentEpReduction > 0
-              ? `Permanent EP -${skill.permenentEpReduction}`
-              : skill.epCost && skill.epCost.trim() !== ""
-              ? skill.epCost
+            {Number(effectiveEpReduction) > 0
+              ? `Permanent EP -${effectiveEpReduction}`
+              : effectiveEpCost && String(effectiveEpCost).trim() !== ""
+              ? effectiveEpCost
               : ""}
           </div>
         </div>

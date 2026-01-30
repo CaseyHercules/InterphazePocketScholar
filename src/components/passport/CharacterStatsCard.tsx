@@ -5,6 +5,7 @@ import {
   getEPBreakdown,
   getStatBreakdown,
   type StatAdjustmentBreakdown,
+  type StatBreakdownExtended,
 } from "@/lib/utils/character-stats";
 import { HoverBreakdown } from "@/components/passport/HoverBreakdown";
 
@@ -71,11 +72,15 @@ export function CharacterStatsCard({ character }: CharacterStatsCardProps) {
 
   const renderStatTooltip = (
     label: string,
-    breakdown: ReturnType<typeof getStatBreakdown>
+    breakdown: StatBreakdownExtended
   ) => {
     const lowerLabel = label.toLowerCase();
     const conditionPrefix =
       lowerLabel === "attack" || lowerLabel === "accuracy" ? "with" : "vs";
+    
+    const hasAdjustments = breakdown.adjustments.length > 0;
+    const hasSkillBonuses = breakdown.skillBonuses.length > 0;
+    const hasConditional = breakdown.conditionalAdjustments.length > 0 || breakdown.conditionalSkillBonuses.length > 0;
 
     return (
     <div className="w-56 space-y-2">
@@ -90,16 +95,23 @@ export function CharacterStatsCard({ character }: CharacterStatsCardProps) {
           <span className="text-sm font-medium">{breakdown.secondary}</span>
         </div>
       </div>
-      <div className="border-t pt-2">{renderAdjustmentLines(breakdown.adjustments)}</div>
-      <div className="border-t pt-2">
-        <div className="text-sm font-semibold">Conditional bonuses</div>
-        <div className="mt-1">
-          {renderConditionalLines(
-            breakdown.conditionalAdjustments,
-            conditionPrefix
-          )}
+      {(hasAdjustments || hasSkillBonuses) && (
+        <div className="border-t pt-2">
+          <div className="text-sm font-semibold mb-1">Bonuses</div>
+          {renderAdjustmentLines([...breakdown.adjustments, ...breakdown.skillBonuses])}
         </div>
-      </div>
+      )}
+      {hasConditional && (
+        <div className="border-t pt-2">
+          <div className="text-sm font-semibold">Conditional bonuses</div>
+          <div className="mt-1">
+            {renderConditionalLines(
+              [...breakdown.conditionalAdjustments, ...breakdown.conditionalSkillBonuses],
+              conditionPrefix
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex justify-between border-t pt-2">
         <span className="text-sm font-semibold">Total</span>
         <span className="text-sm font-semibold">{breakdown.total}</span>
@@ -110,6 +122,10 @@ export function CharacterStatsCard({ character }: CharacterStatsCardProps) {
 
   const renderEPTooltip = () => {
     const breakdown = getEPBreakdown(character);
+    const hasAdjustments = breakdown.adjustments.length > 0;
+    const hasSkillBonuses = breakdown.skillBonuses.length > 0;
+    const hasConditional = breakdown.conditionalAdjustments.length > 0 || breakdown.conditionalSkillBonuses.length > 0;
+
     return (
       <div className="w-56 space-y-2">
         <div className="text-sm font-semibold">Energy Points breakdown</div>
@@ -141,15 +157,23 @@ export function CharacterStatsCard({ character }: CharacterStatsCardProps) {
             </span>
           </div>
         </div>
-        <div className="border-t pt-2">
-          {renderAdjustmentLines(breakdown.adjustments)}
-        </div>
-        <div className="border-t pt-2">
-          <div className="text-sm font-semibold">Conditional bonuses</div>
-          <div className="mt-1">
-            {renderConditionalLines(breakdown.conditionalAdjustments, "vs")}
+        {(hasAdjustments || hasSkillBonuses) && (
+          <div className="border-t pt-2">
+            <div className="text-sm font-semibold mb-1">Bonuses</div>
+            {renderAdjustmentLines([...breakdown.adjustments, ...breakdown.skillBonuses])}
           </div>
-        </div>
+        )}
+        {hasConditional && (
+          <div className="border-t pt-2">
+            <div className="text-sm font-semibold">Conditional bonuses</div>
+            <div className="mt-1">
+              {renderConditionalLines(
+                [...breakdown.conditionalAdjustments, ...breakdown.conditionalSkillBonuses],
+                "vs"
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex justify-between border-t pt-2">
           <span className="text-xs font-semibold">Total</span>
           <span className="text-xs font-semibold">{breakdown.total}</span>

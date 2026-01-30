@@ -14,6 +14,7 @@ import { CharacterInventoryCard } from "@/components/passport/CharacterInventory
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
 import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
 import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
+import { CharacterClassManager } from "@/components/passport/CharacterClassManager";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -129,10 +130,19 @@ export default async function PassportPage({ params }: PassportPageProps) {
             <CharacterStatsCard character={character} />
             <CharacterAdjustmentsCard character={character} />
             {isAdmin && (
-              <CharacterAdjustmentManager
-                characterId={character.id}
-                existingAdjustments={existingAdjustments}
-              />
+              <>
+                <CharacterClassManager
+                  characterId={character.id}
+                  primaryClassId={character.primaryClassId}
+                  secondaryClassId={character.secondaryClassId}
+                  primaryClassLvl={character.primaryClassLvl}
+                  secondaryClassLvl={character.secondaryClassLvl}
+                />
+                <CharacterAdjustmentManager
+                  characterId={character.id}
+                  existingAdjustments={existingAdjustments}
+                />
+              </>
             )}
             <CharacterAttributesCard character={character} />
           </TabsContent>

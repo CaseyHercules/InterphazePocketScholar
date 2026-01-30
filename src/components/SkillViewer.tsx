@@ -8,6 +8,14 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  getSkillEffects,
+  getSkillNotes,
+  isStatBonusEffect,
+  isSkillModifierEffect,
+  isGrantSkillEffect,
+  type SkillEffect,
+} from "@/types/skill-effects";
 
 interface SkillViewerProps {
   skill: (Skill & { class?: Class | null }) | null;
@@ -25,9 +33,29 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
     ? [skill.prerequisiteSkills]
     : [];
 
-  // Ensure additionalInfo is a string
-  const additionalInfo =
-    typeof skill.additionalInfo === "string" ? skill.additionalInfo : "";
+  // Extract notes and effects from additionalInfo (handles legacy string format)
+  const notes = getSkillNotes(skill.additionalInfo);
+  const effects = getSkillEffects(skill.additionalInfo);
+  
+  // Format effect for display
+  const formatEffect = (effect: SkillEffect): string => {
+    if (isStatBonusEffect(effect)) {
+      const sign = effect.value >= 0 ? "+" : "";
+      const condition = effect.condition ? ` (${effect.condition})` : "";
+      return `${sign}${effect.value} ${effect.stat}${condition}`;
+    }
+    if (isSkillModifierEffect(effect)) {
+      const sign = typeof effect.modifier === "number" && effect.modifier >= 0 ? "+" : "";
+      return `Modifies ${effect.targetField}: ${sign}${effect.modifier}`;
+    }
+    if (isGrantSkillEffect(effect)) {
+      if (effect.maxTier) {
+        return `Grants access to skills up to Tier ${effect.maxTier} from another class`;
+      }
+      return "Grants access to specific skills";
+    }
+    return "Unknown effect";
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -79,10 +107,23 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
               </div>
             </div>
 
-            {additionalInfo && (
+            {effects.length > 0 && (
+              <div className="text-sm">
+                <span className="text-muted-foreground font-medium">Meta-Effects:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {effects.map((effect, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {formatEffect(effect)}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {notes && (
               <div className="text-sm">
                 <span className="text-muted-foreground">Additional Info: </span>
-                <p className="whitespace-pre-wrap mt-1">{additionalInfo}</p>
+                <p className="whitespace-pre-wrap mt-1">{notes}</p>
               </div>
             )}
 

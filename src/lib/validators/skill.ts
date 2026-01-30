@@ -8,6 +8,64 @@ const ROLE_VALUES = [
   "MODERATOR",
 ] as const;
 
+// Skill effect schemas for structured additionalInfo
+const StatBonusEffectSchema = z.object({
+  type: z.literal("stat_bonus"),
+  stat: z.string(),
+  value: z.number(),
+  condition: z.string().optional(),
+  applyToTotal: z.boolean().optional(),
+});
+
+const SkillModifierEffectSchema = z.object({
+  type: z.literal("skill_modifier"),
+  targetSkillId: z.string(),
+  targetField: z.enum(["epCost", "permenentEpReduction", "activation", "duration"]),
+  modifier: z.union([z.number(), z.string()]),
+});
+
+const GrantSkillEffectSchema = z.object({
+  type: z.literal("grant_skill"),
+  classId: z.string(),
+  skillId: z.string().optional(),
+  skillIds: z.array(z.string()).optional(),
+  maxTier: z.number().min(1).max(4).optional(),
+});
+
+const SkillEffectSchema = z.discriminatedUnion("type", [
+  StatBonusEffectSchema,
+  SkillModifierEffectSchema,
+  GrantSkillEffectSchema,
+]);
+
+// Structured additionalInfo schema (object with effects and notes)
+const StructuredAdditionalInfoSchema = z.object({
+  effects: z.array(SkillEffectSchema).optional(),
+  notes: z.string().optional(),
+});
+
+// additionalInfo can be: string (legacy), array (legacy), null, or structured object
+// We use z.any() with a custom refinement for flexibility while still validating structured objects
+const AdditionalInfoSchema = z.any().optional().superRefine((val, ctx) => {
+  // Allow null, undefined, strings, and arrays (legacy formats)
+  if (val == null || typeof val === "string" || Array.isArray(val)) {
+    return;
+  }
+  
+  // If it's an object, try to validate as structured additionalInfo
+  if (typeof val === "object") {
+    const result = StructuredAdditionalInfoSchema.safeParse(val);
+    if (!result.success) {
+      result.error.issues.forEach((issue) => {
+        ctx.addIssue({
+          ...issue,
+          path: ["additionalInfo", ...issue.path],
+        });
+      });
+    }
+  }
+});
+
 export const SkillValidator = z.object({
   title: z
     .string()
@@ -28,7 +86,7 @@ export const SkillValidator = z.object({
   canBeTakenMultiple: z.boolean(),
   playerVisable: z.boolean(),
   visibilityRoles: z.array(z.enum(ROLE_VALUES)).optional(),
-  additionalInfo: z.any().optional(),
+  additionalInfo: AdditionalInfoSchema,
 });
 
 export type SkillRequest = z.infer<typeof SkillValidator>;
@@ -54,7 +112,7 @@ export const UpdateValidator = z.object({
   canBeTakenMultiple: z.boolean(),
   playerVisable: z.boolean(),
   visibilityRoles: z.array(z.enum(ROLE_VALUES)).optional(),
-  additionalInfo: z.any().optional(),
+  additionalInfo: AdditionalInfoSchema,
 });
 
 export type UpdateRequest = z.infer<typeof UpdateValidator>;

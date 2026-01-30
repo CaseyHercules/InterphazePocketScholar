@@ -1,3 +1,12 @@
+import {
+  getSkillEffects,
+  isStatBonusEffect,
+  isSkillModifierEffect,
+  type SkillEffect,
+  type StatBonusEffect,
+  type SkillModifierEffect,
+} from "@/types/skill-effects";
+
 function getStatFromClass(classStat: any, level: number): number {
   if (!classStat) return 0;
 
@@ -43,6 +52,8 @@ export type EPBreakdown = {
   secondary: number;
   adjustments: StatAdjustmentBreakdown[];
   conditionalAdjustments: StatAdjustmentBreakdown[];
+  skillBonuses: StatAdjustmentBreakdown[];
+  conditionalSkillBonuses: StatAdjustmentBreakdown[];
   skillReductions: {
     primary: number;
     secondary: number;
@@ -56,6 +67,7 @@ export function calculateStatValue(character: any, statName: string): number {
 
   const normalizedStat = statName.trim().toLowerCase();
   const adjustmentValue = getAdjustmentStatBonus(character, normalizedStat).total;
+  const skillBonusValue = getSkillStatBonuses(character, normalizedStat).total;
 
   // Primary class - full value
   if (character.primaryClass?.[statName]) {
@@ -67,7 +79,7 @@ export function calculateStatValue(character: any, statName: string): number {
 
   // EP is handled separately - don't combine primary and secondary
   if (statName === "EP") {
-    return value + adjustmentValue;
+    return value + adjustmentValue + skillBonusValue;
   }
 
   // Secondary class - half value (multiclass penalty), rounded up
@@ -83,7 +95,7 @@ export function calculateStatValue(character: any, statName: string): number {
       ) - getStatFromClass(character.secondaryClass[statName], 1);
     value += Math.ceil(secondaryValue / 2);
   }
-  return value + adjustmentValue;
+  return value + adjustmentValue + skillBonusValue;
 }
 
 export function getEPValues(character: any): {
@@ -162,12 +174,18 @@ function normalizeStatName(stat: string): string {
   return stat.toLowerCase().trim().replace(/\\s+/g, " ");
 }
 
+export type StatBreakdownExtended = StatBreakdown & {
+  skillBonuses: StatAdjustmentBreakdown[];
+  conditionalSkillBonuses: StatAdjustmentBreakdown[];
+};
+
 export function getStatBreakdown(
   character: any,
   statName: string
-): StatBreakdown {
+): StatBreakdownExtended {
   const normalizedStat = statName.trim().toLowerCase();
   const adjustments = getAdjustmentStatBonus(character, normalizedStat);
+  const skillBonuses = getSkillStatBonuses(character, normalizedStat);
 
   let primary = 0;
   let secondary = 0;
@@ -192,13 +210,15 @@ export function getStatBreakdown(
     secondary = Math.ceil(secondaryValue / 2);
   }
 
-  const total = primary + secondary + adjustments.total;
+  const total = primary + secondary + adjustments.total + skillBonuses.total;
 
   return {
     primary,
     secondary,
     adjustments: adjustments.items,
     conditionalAdjustments: adjustments.conditionalItems,
+    skillBonuses: skillBonuses.items,
+    conditionalSkillBonuses: skillBonuses.conditionalItems,
     total,
   };
 }
@@ -206,14 +226,17 @@ export function getStatBreakdown(
 export function getEPBreakdown(character: any): EPBreakdown {
   const { primary, secondary } = getEPValues(character);
   const adjustments = getAdjustmentStatBonus(character, "ep");
+  const skillBonuses = getSkillStatBonuses(character, "ep");
   const skillReductions = getSkillEpReductions(character);
-  const total = primary + secondary + adjustments.total - skillReductions.total;
+  const total = primary + secondary + adjustments.total + skillBonuses.total - skillReductions.total;
 
   return {
     primary,
     secondary,
     adjustments: adjustments.items,
     conditionalAdjustments: adjustments.conditionalItems,
+    skillBonuses: skillBonuses.items,
+    conditionalSkillBonuses: skillBonuses.conditionalItems,
     skillReductions,
     total,
   };
@@ -281,4 +304,137 @@ function getAdjustmentStatBonus(
   }
 
   return { total, items, conditionalItems };
+}
+
+/**
+ * Gets stat bonuses from learned skills' additionalInfo.effects
+ */
+function getSkillStatBonuses(
+  character: any,
+  normalizedStat: string
+): {
+  total: number;
+  items: StatAdjustmentBreakdown[];
+  conditionalItems: StatAdjustmentBreakdown[];
+} {
+  const primarySkills = Array.isArray(character?.primarySkills)
+    ? character.primarySkills
+    : [];
+  const secondarySkills = Array.isArray(character?.secondarySkills)
+    ? character.secondarySkills
+    : [];
+  const allSkills = [...primarySkills, ...secondarySkills];
+
+  let total = 0;
+  const items: StatAdjustmentBreakdown[] = [];
+  const conditionalItems: StatAdjustmentBreakdown[] = [];
+
+  for (const skill of allSkills) {
+    const effects = getSkillEffects(skill?.additionalInfo);
+
+    for (const effect of effects) {
+      if (!isStatBonusEffect(effect)) continue;
+
+      const statRaw = typeof effect.stat === "string" ? effect.stat.trim() : "";
+      if (!statRaw) continue;
+
+      const stat = normalizeStatName(statRaw);
+      if (!stat || stat !== normalizedStat) continue;
+
+      const value = Number(effect.value);
+      if (!Number.isFinite(value)) continue;
+
+      const condition =
+        typeof effect.condition === "string" && effect.condition.trim()
+          ? effect.condition.trim()
+          : undefined;
+      const applyToTotal =
+        typeof effect.applyToTotal === "boolean" ? effect.applyToTotal : true;
+
+      const breakdownItem = {
+        title:
+          typeof skill?.title === "string" && skill.title.trim()
+            ? `Skill: ${skill.title.trim()}`
+            : "Skill",
+        value,
+        condition,
+      };
+
+      if (condition || !applyToTotal) {
+        conditionalItems.push(breakdownItem);
+      } else {
+        total += value;
+        items.push(breakdownItem);
+      }
+    }
+  }
+
+  return { total, items, conditionalItems };
+}
+
+/**
+ * Gets effective skill value after applying modifiers from other learned skills.
+ * Use this when displaying skill epCost, permenentEpReduction, etc.
+ */
+export function getEffectiveSkillValue(
+  skill: any,
+  character: any,
+  field: "epCost" | "permenentEpReduction" | "activation" | "duration"
+): string | number {
+  const baseValue = skill?.[field];
+  
+  if (baseValue == null) {
+    return field === "permenentEpReduction" ? 0 : "";
+  }
+
+  const primarySkills = Array.isArray(character?.primarySkills)
+    ? character.primarySkills
+    : [];
+  const secondarySkills = Array.isArray(character?.secondarySkills)
+    ? character.secondarySkills
+    : [];
+  const allSkills = [...primarySkills, ...secondarySkills];
+
+  let modifiedValue = baseValue;
+  const skillId = skill?.id;
+
+  if (!skillId) return modifiedValue;
+
+  // Find all skill_modifier effects targeting this skill
+  for (const sourceSkill of allSkills) {
+    // Don't let a skill modify itself
+    if (sourceSkill?.id === skillId) continue;
+
+    const effects = getSkillEffects(sourceSkill?.additionalInfo);
+
+    for (const effect of effects) {
+      if (!isSkillModifierEffect(effect)) continue;
+      if (effect.targetSkillId !== skillId) continue;
+      if (effect.targetField !== field) continue;
+
+      // Apply modifier additively for numbers
+      if (field === "permenentEpReduction") {
+        const numericBase = Number(modifiedValue) || 0;
+        const numericModifier = Number(effect.modifier) || 0;
+        modifiedValue = Math.max(0, numericBase + numericModifier);
+      } else if (field === "epCost") {
+        // For epCost, try numeric addition first
+        const numericBase = Number(modifiedValue);
+        const numericModifier = Number(effect.modifier);
+        if (!isNaN(numericBase) && !isNaN(numericModifier)) {
+          modifiedValue = String(Math.max(0, numericBase + numericModifier));
+        } else if (typeof effect.modifier === "string") {
+          // String replacement for non-numeric epCost
+          modifiedValue = effect.modifier;
+        }
+      } else {
+        // For activation/duration, use string replacement
+        if (typeof effect.modifier === "string") {
+          modifiedValue = effect.modifier;
+        }
+      }
+    }
+  }
+
+  return modifiedValue;
 }

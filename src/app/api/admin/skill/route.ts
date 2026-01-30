@@ -5,18 +5,10 @@ import { Role, Prisma } from "@prisma/client";
 import {
   SkillValidator,
   UpdateValidator,
-  DeleteValidator,
 } from "@/lib/validators/skill";
 
 export async function GET() {
   try {
-    const session = await getAuthSession();
-    const user = session?.user
-      ? await db.user.findFirst({
-          where: { id: session?.user?.id },
-        })
-      : null;
-
     const skills = await db.skill.findMany({
       include: {
         class: true,
@@ -32,7 +24,6 @@ export async function GET() {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error fetching skills:", error);
     return new Response(
       JSON.stringify({
         error: "Failed to fetch skills",
@@ -63,13 +54,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log("Received body:", body); // Debug log
 
     // Check if this is an update request (has id)
     if (body.id) {
       try {
         const validatedData = UpdateValidator.parse(body);
-        console.log("Validated update data:", validatedData); // Debug log
         const { id, ...updateData } = validatedData;
 
         const cleanUpdateData: Partial<Prisma.SkillUpdateInput> = {
@@ -103,11 +92,9 @@ export async function POST(req: Request) {
         // Remove undefined values
         const finalUpdateData = Object.fromEntries(
           Object.entries(cleanUpdateData).filter(
-            ([_, value]) => value !== undefined
+            ([, value]) => value !== undefined
           )
         ) as Prisma.SkillUpdateInput;
-
-        console.log("Final update data:", finalUpdateData); // Debug log
 
         const updatedSkill = await db.skill.update({
           where: { id },
@@ -123,7 +110,6 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "application/json" },
         });
       } catch (validationError) {
-        console.error("Validation error:", validationError); // Debug log
         if (validationError instanceof z.ZodError) {
           return new Response(
             JSON.stringify({
@@ -142,7 +128,6 @@ export async function POST(req: Request) {
       // This is a create request
       try {
         const validatedData = SkillValidator.parse(body);
-        console.log("Validated create data:", validatedData); // Debug log
 
         const createData: Prisma.SkillCreateInput = {
           title: validatedData.title,
@@ -172,8 +157,6 @@ export async function POST(req: Request) {
           visibilityRoles: validatedData.visibilityRoles || [],
         };
 
-        console.log("Final create data:", createData); // Debug log
-
         const createdSkill = await db.skill.create({
           data: createData,
           include: {
@@ -187,7 +170,6 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "application/json" },
         });
       } catch (validationError) {
-        console.error("Validation error:", validationError); // Debug log
         if (validationError instanceof z.ZodError) {
           return new Response(
             JSON.stringify({
@@ -204,7 +186,6 @@ export async function POST(req: Request) {
       }
     }
   } catch (error) {
-    console.error("Server error:", error); // Debug log
     if (error instanceof z.ZodError) {
       return new Response(
         JSON.stringify({
@@ -260,7 +241,6 @@ export async function DELETE(req: Request) {
 
     return new Response("OK");
   } catch (error) {
-    console.error("Error deleting skill:", error);
     return new Response(
       JSON.stringify({
         error: "Could not delete this skill",

@@ -40,8 +40,8 @@ export async function EventSpellsTab({ eventId }: EventSpellsTabProps) {
         if (data.class) {
           spellClass = data.class;
         }
-      } catch (e) {
-        console.error("Error parsing spell data", e);
+      } catch {
+        // Ignore parse errors
       }
     }
     // Fallback to type field if class not found in data
@@ -142,8 +142,7 @@ export async function EventSpellsTab({ eventId }: EventSpellsTabProps) {
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
       return true;
-    } catch (error) {
-      console.error("Error saving spells:", error);
+    } catch {
       return false;
     }
   }

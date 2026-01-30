@@ -54,7 +54,7 @@ const Page = () => {
         variant: "destructive",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Request sent",
         description: "This reviewed by the Phaze team, Thank you!",

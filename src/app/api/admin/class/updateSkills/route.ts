@@ -55,8 +55,7 @@ export async function POST(req: Request) {
         return new Response(JSON.stringify(updated), {
           headers: { "Content-Type": "application/json" },
         });
-      } catch (dbError) {
-        console.error("Database error:", dbError);
+      } catch {
         return new Response("Failed to update class skills in database", {
           status: 500,
         });

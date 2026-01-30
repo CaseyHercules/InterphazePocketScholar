@@ -87,7 +87,6 @@ export function AddSpellDialog({
       onOpenChange(false);
       router.refresh();
     } catch (error) {
-      console.error("Error adding spell:", error);
       toast({
         title: "Error",
         description:

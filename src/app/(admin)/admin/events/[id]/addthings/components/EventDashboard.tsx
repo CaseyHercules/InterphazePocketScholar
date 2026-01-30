@@ -60,8 +60,8 @@ function extractSpellClass(spell: any): string | undefined {
       if (data.class) {
         spellClass = data.class;
       }
-    } catch (error) {
-      console.error("Error parsing spell data:", error);
+    } catch {
+      // Ignore parse errors
     }
   }
 
@@ -189,8 +189,8 @@ function createRemoveItemAction(eventId: string) {
 
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
-    } catch (error) {
-      console.error("Error removing item:", error);
+    } catch {
+      // Ignore remove errors
     }
   };
 }
@@ -224,8 +224,8 @@ function createRemoveSpellAction(eventId: string) {
 
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
-    } catch (error) {
-      console.error("Error removing spell:", error);
+    } catch {
+      // Ignore remove errors
     }
   };
 }
@@ -258,8 +258,8 @@ function createRemoveRewardAction(eventId: string) {
 
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
-    } catch (error) {
-      console.error("Error removing reward:", error);
+    } catch {
+      // Ignore remove errors
     }
   };
 }
@@ -328,7 +328,7 @@ function ItemsSection({
   removeItemAction,
 }: {
   items: EventItem[];
-  removeItemAction: (itemId: string) => Promise<void>;
+  removeItemAction: (id: string) => Promise<void>;
 }) {
   return (
     <TabsContent value="items">
@@ -383,7 +383,7 @@ function SpellsSection({
   removeSpellAction,
 }: {
   spells: EventSpell[];
-  removeSpellAction: (spellId: string) => Promise<void>;
+  removeSpellAction: (id: string) => Promise<void>;
 }) {
   return (
     <TabsContent value="spells">
@@ -439,7 +439,7 @@ function RewardsSection({
   removeRewardAction,
 }: {
   rewards: EventReward[];
-  removeRewardAction: (rewardId: string) => Promise<void>;
+  removeRewardAction: (id: string) => Promise<void>;
 }) {
   return (
     <TabsContent value="rewards">

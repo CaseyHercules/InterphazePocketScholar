@@ -1,19 +1,8 @@
 import EditorOutput from "@/components/EditorOutput";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { formatTimeToNow } from "@/lib/utils";
 import { Post, Role, User } from "@prisma/client";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-
-import { DeleteValidator, DeleteRequest } from "@/lib/validators/post";
-import axios from "axios";
 import EditButtonOnPosts from "@/components/EditButtonOnPosts";
 import SkillEmbedTableServer from "@/components/SkillEmbedTableServer";
 

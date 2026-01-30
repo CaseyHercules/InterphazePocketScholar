@@ -64,8 +64,7 @@ export async function PATCH(
     revalidatePath(`/characters/${characterId}/backstory`);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error updating backstory:", error);
+  } catch {
     return new NextResponse("Internal server error", { status: 500 });
   }
 }

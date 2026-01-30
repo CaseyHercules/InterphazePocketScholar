@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from "react";
 import "quill/dist/quill.bubble.css";
-import type Quill from "quill";
 
 type BackstoryRendererProps = {
   content: string;
@@ -38,9 +37,9 @@ export function BackstoryRenderer({ content }: BackstoryRendererProps) {
     loadQuill();
 
     return () => {
-      // Clean up if necessary
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
+      const el = containerRef.current;
+      if (el) {
+        el.innerHTML = "";
       }
     };
   }, [content]);

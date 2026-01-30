@@ -28,12 +28,12 @@ interface Reward {
 
 interface RewardsSelectorProps {
   eventId: string;
-  onSave: (rewards: Reward[]) => Promise<boolean>;
+  onSave: (rewardList: Reward[]) => Promise<boolean>;
   initialRewards: Reward[];
 }
 
 export function RewardsSelector({
-  eventId,
+  eventId: _eventId,
   onSave,
   initialRewards,
 }: RewardsSelectorProps) {

@@ -7,14 +7,6 @@ interface EventItemsTabProps {
   eventId: string;
 }
 
-// Define the item interface with types that match the database
-interface Item {
-  id: string;
-  title: string;
-  description?: string | null;
-  type?: string | null;
-}
-
 export async function EventItemsTab({ eventId }: EventItemsTabProps) {
   // Fetch the event data
   const event = await db.event.findUnique({
@@ -104,8 +96,7 @@ export async function EventItemsTab({ eventId }: EventItemsTabProps) {
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
       return true;
-    } catch (error) {
-      console.error("Error saving items:", error);
+    } catch {
       return false;
     }
   }

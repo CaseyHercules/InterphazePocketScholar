@@ -50,7 +50,7 @@ const Page = () => {
         variant: "destructive",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Request sent",
         description: "See Create posts, to add to this topic",

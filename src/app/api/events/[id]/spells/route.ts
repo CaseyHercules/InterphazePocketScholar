@@ -9,12 +9,6 @@ interface Params {
   };
 }
 
-// Interface for spell with quantity
-interface SpellWithQuantity {
-  id: string;
-  quantity: number;
-}
-
 export async function GET(req: Request, { params }: Params) {
   try {
     const session = await getServerSession(authOptions);
@@ -94,8 +88,7 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     return NextResponse.json(spells);
-  } catch (error) {
-    console.error("[EVENT_SPELLS_GET]", error);
+  } catch {
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -142,8 +135,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[EVENT_SPELLS_POST]", error);
+  } catch {
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

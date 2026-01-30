@@ -5,7 +5,6 @@ import { Skill } from "@prisma/client";
 import { SkillTable } from "@/components/SkillTable";
 import { SkillForm } from "@/components/SkillForm";
 import { SkillViewer } from "@/components/SkillViewer";
-import { BulkSkillImport } from "@/components/BulkSkillImport";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,11 +47,10 @@ export default function SkillToolPage() {
       }
       const data = await response.json();
       setSkills(data);
-    } catch (error: any) {
-      console.error("Error fetching skills:", error);
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to load skills",
+        description: error instanceof Error ? error.message : "Failed to load skills",
         variant: "destructive",
       });
     } finally {
@@ -95,11 +93,10 @@ export default function SkillToolPage() {
         description: "Skill deleted successfully",
       });
       setSkillToDelete(null);
-    } catch (error: any) {
-      console.error("Error deleting skill:", error);
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete skill",
+        description: error instanceof Error ? error.message : "Failed to delete skill",
         variant: "destructive",
       });
     }
@@ -151,16 +148,16 @@ export default function SkillToolPage() {
       }
 
       handleBack();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Re-throw validation errors to be handled by the form
-      if (error.response?.data?.details) {
+      const err = error as { response?: { data?: { details?: unknown } } };
+      if (err?.response?.data?.details) {
         throw error;
       }
       // Handle other errors with a toast
-      console.error("Error saving skill:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save skill",
+        description: error instanceof Error ? error.message : "Failed to save skill",
         variant: "destructive",
       });
     }

@@ -26,12 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { EventStatus } from "@prisma/client";
 import "quill/dist/quill.snow.css";
 import "@/styles/quill.css";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import type Quill from "quill";
 
 // Define form schema
@@ -125,37 +123,22 @@ export function EventForm({ event }: EventFormProps) {
     // Then set initial content if available
     if (isMounted && event?.description) {
       try {
-        console.log("Initial description data:", event.description);
-
         // Make sure to parse the ops if needed
         let content;
         if (typeof event.description.content === "string") {
-          console.log("Description content is string, parsing...");
           content = JSON.parse(event.description.content);
         } else {
-          console.log("Description content is object");
           content = event.description.content;
         }
 
-        console.log("Parsed content:", content);
-
         if (content && content.ops) {
-          console.log("Setting content with ops");
           quill.setContents(content.ops);
         } else if (content) {
-          console.log("Setting direct content");
           quill.setContents(content);
-        } else {
-          console.log("No valid content found in description");
         }
-      } catch (error) {
-        console.error("Error setting initial content:", error);
+      } catch {
+        // Silently ignore parse errors for initial content
       }
-    } else {
-      console.log("No description available or not mounted yet:", {
-        isMounted,
-        hasDescription: !!event?.description,
-      });
     }
   }, [isMounted, event?.description]);
 
@@ -220,7 +203,6 @@ export function EventForm({ event }: EventFormProps) {
         router.push(`/admin/events/${result.eventId}`);
       }
     } catch (error) {
-      console.error("Error creating/updating event:", error);
       toast({
         title: "Something went wrong",
         description:

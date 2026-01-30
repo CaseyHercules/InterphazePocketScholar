@@ -21,13 +21,13 @@ interface EventItem extends Item {
 
 interface ItemSelectorProps {
   eventId: string;
-  onSave: (items: { itemId: string; quantity: number }[]) => Promise<boolean>;
+  onSave: (entries: { itemId: string; quantity: number }[]) => Promise<boolean>;
   initialItems: EventItem[];
   availableItems: Item[];
 }
 
 export function ItemSelector({
-  eventId,
+  eventId: _eventId,
   onSave,
   initialItems,
   availableItems,

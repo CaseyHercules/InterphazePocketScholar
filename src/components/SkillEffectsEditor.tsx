@@ -161,6 +161,7 @@ export function SkillEffectsEditor({
   };
 
   const getEffectSummary = (effect: SkillEffect): string => {
+    if ("note" in effect) return effect.note;
     switch (effect.type) {
       case "stat_bonus":
         const sign = effect.value >= 0 ? "+" : "";
@@ -177,11 +178,13 @@ export function SkillEffectsEditor({
           return `Grant ${className} skills up to Tier ${effect.maxTier}`;
         }
         return `Grant specific skills from ${className}`;
-      default:
-        if ("note" in effect && effect.note) {
-          return effect.note;
+      default: {
+        const noteEffect = effect as NoteEffect;
+        if ("note" in noteEffect && noteEffect.note) {
+          return noteEffect.note;
         }
-        return effect.type || "Custom effect";
+        return noteEffect.type || "Custom effect";
+      }
     }
   };
 
@@ -410,11 +413,11 @@ export function SkillEffectsEditor({
   const renderEffectFields = (effect: SkillEffect, index: number) => {
     switch (effect.type) {
       case "stat_bonus":
-        return renderStatBonusFields(effect, index);
+        return renderStatBonusFields(effect as StatBonusEffect, index);
       case "skill_modifier":
-        return renderSkillModifierFields(effect, index);
+        return renderSkillModifierFields(effect as SkillModifierEffect, index);
       case "grant_skill":
-        return renderGrantSkillFields(effect, index);
+        return renderGrantSkillFields(effect as GrantSkillEffect, index);
       default:
         if ("note" in effect) {
           return renderNoteFields(effect as NoteEffect, index);
@@ -435,7 +438,7 @@ export function SkillEffectsEditor({
     <div className="space-y-3">
       {value.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          No meta-effects defined. Click "Add Effect" to create one.
+          No meta-effects defined. Click &quot;Add Effect&quot; to create one.
         </div>
       ) : (
         <div className="space-y-2">

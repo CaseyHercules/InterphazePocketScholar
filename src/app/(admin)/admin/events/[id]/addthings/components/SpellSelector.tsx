@@ -22,13 +22,13 @@ interface EventSpell extends Spell {
 
 interface SpellSelectorProps {
   eventId: string;
-  onSave: (spells: { id: string; quantity: number }[]) => Promise<boolean>;
+  onSave: (entries: { id: string; quantity: number }[]) => Promise<boolean>;
   initialSpells: EventSpell[];
   availableSpells: Spell[];
 }
 
 export function SpellSelector({
-  eventId,
+  eventId: _eventId,
   onSave,
   initialSpells,
   availableSpells,

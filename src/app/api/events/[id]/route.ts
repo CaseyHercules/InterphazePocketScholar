@@ -44,14 +44,13 @@ export async function GET(req: Request, { params }: Params) {
 
     // If the user is not an admin, only return public event details
     if (!isAdmin) {
-      const { data, ...publicEvent } = eventWithRegistrationCount;
+      const { data: _data, ...publicEvent } = eventWithRegistrationCount;
       return NextResponse.json(publicEvent);
     }
 
     // Return full event data to admins
     return NextResponse.json(eventWithRegistrationCount);
-  } catch (error) {
-    console.error("[EVENT_GET]", error);
+  } catch {
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -88,8 +87,7 @@ export async function PUT(req: Request, { params }: Params) {
     });
 
     return NextResponse.json(updatedEvent);
-  } catch (error) {
-    console.error("[EVENT_UPDATE]", error);
+  } catch {
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

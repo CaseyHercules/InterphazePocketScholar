@@ -80,20 +80,20 @@ interface AdjustmentFormProps {
   onCancel: () => void;
 }
 
-export function AdjustmentForm({ data, onSubmit, onCancel }: AdjustmentFormProps) {
+export function AdjustmentForm({ data: formData, onSubmit, onCancel }: AdjustmentFormProps) {
   const form = useForm<AdjustmentFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      id: data?.id,
-      title: data?.title ?? "",
-      description: data?.description ?? "",
-      sourceType: data?.sourceType ?? AdjustmentSourceType.CUSTOM,
+      id: formData?.id,
+      title: formData?.title ?? "",
+      description: formData?.description ?? "",
+      sourceType: formData?.sourceType ?? AdjustmentSourceType.CUSTOM,
       effectsJson:
-        data?.effectsJson != null
-          ? JSON.stringify(data.effectsJson, null, 2)
+        formData?.effectsJson != null
+          ? JSON.stringify(formData.effectsJson, null, 2)
           : defaultEffectsTemplate,
       tags:
-        data?.tags != null ? JSON.stringify(data.tags, null, 2) : "",
+        formData?.tags != null ? JSON.stringify(formData.tags, null, 2) : "",
     },
   });
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { CreateSpellInput, UpdateSpellInput, SPELL_TYPES } from "@/types/spell";
+import { CreateSpellInput, UpdateSpellInput } from "@/types/spell";
 import { authOptions } from "@/lib/auth";
 import { getVisibilityWhere } from "@/lib/visibility";
 
@@ -37,8 +37,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(spell);
-  } catch (error) {
-    console.error("Error creating spell:", error);
+  } catch {
     return NextResponse.json(
       { error: "Error creating spell" },
       { status: 500 }
@@ -96,8 +95,7 @@ export async function GET() {
     });
 
     return NextResponse.json(formattedSpells);
-  } catch (error) {
-    console.error("[SPELLS_GET]", error);
+  } catch {
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -164,8 +162,7 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting spell:", error);
+  } catch {
     return NextResponse.json(
       { error: "Error deleting spell" },
       { status: 500 }

@@ -6,8 +6,6 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
-interface pageProps {}
-
 const ADMIN_LINKS = [
   {
     href: "/admin/dash",

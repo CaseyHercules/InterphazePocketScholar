@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { EventStatus } from "@prisma/client";
 
 export const metadata = {
   title: "Events | Interphaze Pocket Scholar",
@@ -24,21 +23,7 @@ export const metadata = {
 
 async function getEvents() {
   try {
-    console.log("Fetching events...");
     const now = new Date();
-    console.log("Current time:", now.toISOString());
-
-    // First, let's check if there are any events at all
-    const allEvents = await db.event.findMany();
-    console.log("Total events in database:", allEvents.length);
-    if (allEvents.length > 0) {
-      console.log("Sample event:", {
-        id: allEvents[0].id,
-        title: allEvents[0].title,
-        status: allEvents[0].status,
-        date: allEvents[0].date,
-      });
-    }
 
     // Get all published future events
     const events = await db.event.findMany({
@@ -60,15 +45,8 @@ async function getEvents() {
       },
     });
 
-    console.log("Found published future events:", events.length);
-    if (events.length > 0) {
-      console.log("First event date:", events[0].date);
-      console.log("First event status:", events[0].status);
-    }
-
     return events;
-  } catch (error) {
-    console.error("Error fetching events:", error);
+  } catch {
     return [];
   }
 }

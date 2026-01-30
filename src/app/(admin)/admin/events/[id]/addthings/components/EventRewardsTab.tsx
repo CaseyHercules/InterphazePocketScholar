@@ -58,8 +58,7 @@ export async function EventRewardsTab({ eventId }: EventRewardsTabProps) {
       revalidatePath(`/admin/events/${eventId}/addthings`);
       revalidatePath(`/admin/events/${eventId}`);
       return true;
-    } catch (error) {
-      console.error("Error saving rewards:", error);
+    } catch {
       return false;
     }
   }

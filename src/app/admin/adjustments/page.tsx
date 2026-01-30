@@ -212,9 +212,6 @@ const AdjustmentsPage = () => {
               </Table>
             )}
           </CardContent>
-          <CardFooter className="text-xs justify-center text-stone-500">
-            Created and Maintained By Casey Holman
-          </CardFooter>
         </Card>
       ) : (
         <Card>
@@ -235,9 +232,6 @@ const AdjustmentsPage = () => {
               onCancel={handleBack}
             />
           </CardContent>
-          <CardFooter className="text-xs justify-center text-stone-500">
-            Created and Maintained By Casey Holman
-          </CardFooter>
         </Card>
       )}
     </div>

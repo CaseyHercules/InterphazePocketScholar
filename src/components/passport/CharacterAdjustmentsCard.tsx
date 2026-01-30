@@ -10,6 +10,11 @@ type AdjustmentEffect = {
   condition?: string;
   applyToTotal?: boolean;
   note?: string;
+  targetSkillId?: string;
+  targetField?: string;
+  modifier?: number | string;
+  classId?: string;
+  maxTier?: number;
 };
 
 type AdjustmentEntry = {
@@ -37,6 +42,22 @@ function formatEffect(effect: AdjustmentEffect): string {
     const conditionalLabel =
       effect.applyToTotal === false || condition ? " (conditional)" : "";
     return `${value} ${stat}${condition ? ` vs ${condition}` : ""}${conditionalLabel}`;
+  }
+
+  if (effect.type === "skill_modifier") {
+    const field = effect.targetField ?? "skill";
+    const mod =
+      typeof effect.modifier === "number"
+        ? effect.modifier >= 0
+          ? `+${effect.modifier}`
+          : `${effect.modifier}`
+        : effect.modifier ?? "";
+    return `Modify skill ${field}: ${mod}`;
+  }
+
+  if (effect.type === "grant_skill") {
+    const tier = effect.maxTier;
+    return tier ? `Grant skills up to Tier ${tier}` : "Grant skill access";
   }
 
   if (effect.note && effect.note.trim()) {

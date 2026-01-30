@@ -1,6 +1,7 @@
 import { Icons } from "@/components/ui/icons";
 import { UserAuthForm } from "@/components/user-auth-form";
 import Link from "next/link";
+import { Suspense } from "react";
 
 const SignIn = () => {
   return (
@@ -8,7 +9,9 @@ const SignIn = () => {
       <div className="flex flex-col space-y-2 text-center">
         <Icons.logo className="mx-auto h-20 w-29" />
         <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <UserAuthForm />
+        <Suspense fallback={<div className="grid gap-6 animate-pulse"><div className="h-10 bg-muted rounded" /><div className="h-10 bg-muted rounded" /></div>}>
+          <UserAuthForm />
+        </Suspense>
         <p></p>
         <p></p>
         <p></p>

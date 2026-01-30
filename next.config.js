@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['uploadthing.com', 'lh3.googleusercontent.com', 'secure.gravatar.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'uploadthing.com', port: '', pathname: '/**', search: '' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com', port: '', pathname: '/**', search: '' },
+      { protocol: 'https', hostname: 'secure.gravatar.com', port: '', pathname: '/**', search: '' },
+    ],
   },
   async headers() {
     return [

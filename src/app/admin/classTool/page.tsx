@@ -403,9 +403,6 @@ const Page = () => {
               </Table>
             )}
           </CardContent>
-          <CardFooter className="text-xs justify-center text-stone-500">
-            Created and Maintained By Casey Holman
-          </CardFooter>
         </Card>
       ) : (
         <Card>
@@ -450,9 +447,6 @@ const Page = () => {
               />
             )}
           </CardContent>
-          <CardFooter className="text-xs justify-center text-stone-500">
-            Created and Maintained By Casey Holman
-          </CardFooter>
         </Card>
       )}
     </div>

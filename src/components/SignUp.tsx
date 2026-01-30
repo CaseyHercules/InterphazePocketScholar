@@ -1,5 +1,6 @@
 import { UserAuthForm } from "@/components/user-auth-form";
 import Link from "next/link";
+import { Suspense } from "react";
 
 const SignUp = () => {
   return (
@@ -12,7 +13,9 @@ const SignUp = () => {
           Use one of the providers below to create your account
         </p>
       </div>
-      <UserAuthForm />
+      <Suspense fallback={<div className="grid gap-6 animate-pulse"><div className="h-10 bg-muted rounded" /><div className="h-10 bg-muted rounded" /></div>}>
+        <UserAuthForm />
+      </Suspense>
       <p className="px-8 text-center text-sm text-muted-foreground">
         By continuing, you agree to our{" "}
         <Link

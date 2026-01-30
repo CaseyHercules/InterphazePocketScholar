@@ -182,13 +182,13 @@ export function AdjustmentForm({ data: formData, onSubmit, onCancel }: Adjustmen
                           JSON.stringify(createEffectsJson(newEffects), null, 2)
                         )
                       }
-                      mode="adjustment"
+                      mode="all"
                     />
                   </div>
                 </FormControl>
                 <FormDescription>
-                  Add stat bonuses or custom effects. Stat bonuses modify
-                  character stats; custom notes display as-is (e.g., restrictions).
+                  Add stat bonuses, skill modifiers, grant access to skills from
+                  other classes, or custom notes. Same effects as skill meta-effects.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,7 +15,7 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const characterId = params.id;
+    const { id: characterId } = await params;
 
     // Verify character ownership
     const character = await db.character.findUnique({

@@ -161,23 +161,29 @@ export function SkillEffectsEditor({
   };
 
   const getEffectSummary = (effect: SkillEffect): string => {
-    if ("note" in effect) return effect.note;
+    if ("note" in effect) return (effect as NoteEffect).note;
     switch (effect.type) {
-      case "stat_bonus":
-        const sign = effect.value >= 0 ? "+" : "";
-        const condition = effect.condition ? ` (${effect.condition})` : "";
-        return `${sign}${effect.value} ${effect.stat}${condition}`;
-      case "skill_modifier":
-        const targetSkill = skills.find((s) => s.id === effect.targetSkillId);
+      case "stat_bonus": {
+        const statEffect = effect as StatBonusEffect;
+        const sign = statEffect.value >= 0 ? "+" : "";
+        const condition = statEffect.condition ? ` (${statEffect.condition})` : "";
+        return `${sign}${statEffect.value} ${statEffect.stat}${condition}`;
+      }
+      case "skill_modifier": {
+        const modEffect = effect as SkillModifierEffect;
+        const targetSkill = skills.find((s) => s.id === modEffect.targetSkillId);
         const skillName = targetSkill?.title || "Unknown Skill";
-        return `Modify ${skillName}'s ${effect.targetField}`;
-      case "grant_skill":
-        const targetClass = classes.find((c) => c.id === effect.classId);
+        return `Modify ${skillName}'s ${modEffect.targetField}`;
+      }
+      case "grant_skill": {
+        const grantEffect = effect as GrantSkillEffect;
+        const targetClass = classes.find((c) => c.id === grantEffect.classId);
         const className = targetClass?.Title || "Unknown Class";
-        if (effect.maxTier) {
-          return `Grant ${className} skills up to Tier ${effect.maxTier}`;
+        if (grantEffect.maxTier) {
+          return `Grant ${className} skills up to Tier ${grantEffect.maxTier}`;
         }
         return `Grant specific skills from ${className}`;
+      }
       default: {
         const noteEffect = effect as NoteEffect;
         if ("note" in noteEffect && noteEffect.note) {

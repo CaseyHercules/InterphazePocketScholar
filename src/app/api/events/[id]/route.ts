@@ -4,9 +4,7 @@ import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 interface Params {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -17,7 +15,7 @@ export async function GET(req: Request, { params }: Params) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
 
     // Check if event exists - without including registrations to avoid schema issues
     const event = await db.event.findUnique({
@@ -68,7 +66,7 @@ export async function PUT(req: Request, { params }: Params) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = await req.json();
 
     // Check if event exists

@@ -13,8 +13,9 @@ import {
 import { getSkillVisibilityWhere, getVisibilityWhere } from "@/lib/visibility";
 import {
   getSkillEffects,
+  getEffectsFromJson,
   isGrantSkillEffect,
-  type GrantSkillEffect,
+  type SkillEffect,
 } from "@/types/skill-effects";
 
 const characterPassportInclude = {
@@ -151,9 +152,7 @@ export async function getAvailableClasses() {
   });
 }
 
-/**
- * Server action to get available skills for a character based on their class progression
- */
+
 export async function getAvailableSkillsForCharacter(characterId: string) {
   const session = await getServerSession(authOptions);
 
@@ -161,7 +160,6 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     redirect("/auth/signin");
   }
 
-  // Get character with class information
   const character = await db.character.findUnique({
     where: { id: characterId },
     include: {
@@ -169,6 +167,7 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
       secondaryClass: true,
       primarySkills: true,
       secondarySkills: true,
+      adjustments: { include: { adjustment: true } },
     },
   });
 
@@ -176,7 +175,6 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     notFound();
   }
 
-  // Verify ownership unless the user is an admin
   if (
     character.userId !== session.user.id &&
     session.user.role !== "ADMIN" &&
@@ -185,7 +183,6 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     redirect("/unauthorized");
   }
 
-  // Helper function to get skill tier gains for a class at a specific level
   const getSkillTierForLevel = (classData: any, level: number): number => {
     if (!classData?.SkillTierGains) return 0;
 
@@ -198,11 +195,10 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
       return 0;
     }
 
-    const index = level - 1; // Convert 1-based level to 0-based index
+    const index = level - 1; 
     return index >= 0 && index < tierGains.length ? tierGains[index] : 0;
   };
 
-  // Get available tiers for primary class
   const primarySkillTiers: { [level: number]: number } = {};
   for (let level = 1; level <= character.primaryClassLvl; level++) {
     const tier = character.primaryClass
@@ -213,7 +209,6 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     }
   }
 
-  // Get available tiers for secondary class
   const secondarySkillTiers: { [level: number]: number } = {};
   for (let level = 1; level <= character.secondaryClassLvl; level++) {
     const tier = character.secondaryClass
@@ -224,14 +219,12 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     }
   }
 
-  // Get class IDs for filtering
   const primaryClassId = character.primaryClass?.id;
   const secondaryClassId = character.secondaryClass?.id;
   const classIds = [primaryClassId, secondaryClassId].filter(
     Boolean
   ) as string[];
 
-  // Fetch all skills that belong to the character's classes
   const availableSkills = await db.skill.findMany({
     where: {
       classId: { in: classIds },
@@ -243,12 +236,10 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     orderBy: [{ tier: "asc" }, { title: "asc" }],
   });
 
-  // Get learned skill IDs
   const primarySkillIds = character.primarySkills.map((s) => s.id);
   const secondarySkillIds = character.secondarySkills.map((s) => s.id);
   const learnedSkillIds = new Set([...primarySkillIds, ...secondarySkillIds]);
 
-  // Organize skills by tier and filter based on what character can learn
   const skillsByTier: { [tier: number]: typeof availableSkills } = {};
   const maxPrimaryTier = Math.max(...Object.values(primarySkillTiers), 0);
   const maxSecondaryTier = Math.max(...Object.values(secondarySkillTiers), 0);
@@ -263,43 +254,39 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     }
   }
 
-  // Process grant_skill effects from learned skills
+  // Process grant_skill effects from learned skills and adjustments
   const allLearnedSkills = [...character.primarySkills, ...character.secondarySkills];
   const grantedSkillIds = new Set<string>();
   const grantedClassTiers: { classId: string; maxTier: number }[] = [];
   
-  // Collect all grant_skill effects (with loop prevention)
+  const processGrantSkillEffects = (effects: SkillEffect[]) => {
+    for (const effect of effects) {
+      if (!isGrantSkillEffect(effect)) continue;
+      if (effect.skillId) grantedSkillIds.add(effect.skillId);
+      if (effect.skillIds) {
+        for (const id of effect.skillIds) grantedSkillIds.add(id);
+      }
+      if (effect.classId && effect.maxTier && effect.maxTier > 0) {
+        grantedClassTiers.push({ classId: effect.classId, maxTier: effect.maxTier });
+      }
+    }
+  };
+
+  // From learned skills (with loop prevention)
   const processedSkillIds = new Set<string>();
   const skillsToProcess = [...allLearnedSkills];
-  
   while (skillsToProcess.length > 0) {
     const skill = skillsToProcess.pop();
     if (!skill || processedSkillIds.has(skill.id)) continue;
     processedSkillIds.add(skill.id);
-    
-    const effects = getSkillEffects(skill.additionalInfo);
-    
-    for (const effect of effects) {
-      if (!isGrantSkillEffect(effect)) continue;
-      
-      // Handle specific skill grants
-      if (effect.skillId) {
-        grantedSkillIds.add(effect.skillId);
-      }
-      if (effect.skillIds) {
-        for (const id of effect.skillIds) {
-          grantedSkillIds.add(id);
-        }
-      }
-      
-      // Handle class-wide tier grants
-      if (effect.classId && effect.maxTier && effect.maxTier > 0) {
-        grantedClassTiers.push({
-          classId: effect.classId,
-          maxTier: effect.maxTier,
-        });
-      }
-    }
+    processGrantSkillEffects(getSkillEffects(skill.additionalInfo));
+  }
+
+  // From adjustments
+  const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
+  for (const entry of adjustments) {
+    const adjustment = entry?.adjustment ?? entry;
+    processGrantSkillEffects(getEffectsFromJson(adjustment?.effectsJson));
   }
   
   // Fetch specifically granted skills by ID

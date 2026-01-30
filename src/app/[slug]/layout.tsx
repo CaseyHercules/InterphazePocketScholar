@@ -8,11 +8,12 @@ import PostSearchbar from "@/components/PostSearchbar";
 
 const Layout = async ({
   children,
-  params: { slug },
+  params,
 }: {
   children: React.ReactNode;
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) => {
+  const { slug } = await params;
   const session = await getAuthSession();
   const UserObj = session?.user
     ? await db.user.findFirst({

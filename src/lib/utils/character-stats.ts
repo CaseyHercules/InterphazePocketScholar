@@ -1,5 +1,6 @@
 import {
   getSkillEffects,
+  getEffectsFromJson,
   isStatBonusEffect,
   isSkillModifierEffect,
   type SkillEffect,
@@ -372,8 +373,36 @@ function getSkillStatBonuses(
   return { total, items, conditionalItems };
 }
 
+function applySkillModifier(
+  modifiedValue: string | number,
+  effect: SkillModifierEffect,
+  field: "epCost" | "permenentEpReduction" | "activation" | "duration"
+): string | number {
+  if (field === "permenentEpReduction") {
+    const numericBase = Number(modifiedValue) || 0;
+    const numericModifier = Number(effect.modifier) || 0;
+    return Math.max(0, numericBase + numericModifier);
+  }
+  if (field === "epCost") {
+    const numericBase = Number(modifiedValue);
+    const numericModifier = Number(effect.modifier);
+    if (!isNaN(numericBase) && !isNaN(numericModifier)) {
+      return String(Math.max(0, numericBase + numericModifier));
+    }
+    if (typeof effect.modifier === "string") {
+      return effect.modifier;
+    }
+  }
+  if (field === "activation" || field === "duration") {
+    if (typeof effect.modifier === "string") {
+      return effect.modifier;
+    }
+  }
+  return modifiedValue;
+}
+
 /**
- * Gets effective skill value after applying modifiers from other learned skills.
+ * Gets effective skill value after applying modifiers from learned skills and adjustments.
  * Use this when displaying skill epCost, permenentEpReduction, etc.
  */
 export function getEffectiveSkillValue(
@@ -400,39 +429,26 @@ export function getEffectiveSkillValue(
 
   if (!skillId) return modifiedValue;
 
-  // Find all skill_modifier effects targeting this skill
+  // Apply skill_modifier effects from learned skills
   for (const sourceSkill of allSkills) {
-    // Don't let a skill modify itself
     if (sourceSkill?.id === skillId) continue;
-
     const effects = getSkillEffects(sourceSkill?.additionalInfo);
-
     for (const effect of effects) {
       if (!isSkillModifierEffect(effect)) continue;
-      if (effect.targetSkillId !== skillId) continue;
-      if (effect.targetField !== field) continue;
+      if (effect.targetSkillId !== skillId || effect.targetField !== field) continue;
+      modifiedValue = applySkillModifier(modifiedValue, effect, field);
+    }
+  }
 
-      // Apply modifier additively for numbers
-      if (field === "permenentEpReduction") {
-        const numericBase = Number(modifiedValue) || 0;
-        const numericModifier = Number(effect.modifier) || 0;
-        modifiedValue = Math.max(0, numericBase + numericModifier);
-      } else if (field === "epCost") {
-        // For epCost, try numeric addition first
-        const numericBase = Number(modifiedValue);
-        const numericModifier = Number(effect.modifier);
-        if (!isNaN(numericBase) && !isNaN(numericModifier)) {
-          modifiedValue = String(Math.max(0, numericBase + numericModifier));
-        } else if (typeof effect.modifier === "string") {
-          // String replacement for non-numeric epCost
-          modifiedValue = effect.modifier;
-        }
-      } else {
-        // For activation/duration, use string replacement
-        if (typeof effect.modifier === "string") {
-          modifiedValue = effect.modifier;
-        }
-      }
+  // Apply skill_modifier effects from adjustments
+  const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
+  for (const entry of adjustments) {
+    const adjustment = entry?.adjustment ?? entry;
+    const effects = getEffectsFromJson(adjustment?.effectsJson);
+    for (const effect of effects) {
+      if (!isSkillModifierEffect(effect)) continue;
+      if (effect.targetSkillId !== skillId || effect.targetField !== field) continue;
+      modifiedValue = applySkillModifier(modifiedValue, effect, field);
     }
   }
 

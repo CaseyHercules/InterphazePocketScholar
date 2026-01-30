@@ -4,9 +4,7 @@ import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 interface Params {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -17,7 +15,7 @@ export async function GET(req: Request, { params }: Params) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
 
     // Check if event exists
     const event = await db.event.findUnique({
@@ -106,7 +104,7 @@ export async function POST(req: Request, { params }: Params) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = await req.json();
     const { spells } = body;
 

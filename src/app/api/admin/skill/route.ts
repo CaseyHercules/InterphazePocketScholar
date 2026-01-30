@@ -112,11 +112,6 @@ export async function POST(req: Request) {
         const updatedSkill = await db.skill.update({
           where: { id },
           data: finalUpdateData,
-          include: {
-            class: true,
-            parentSkill: true,
-            skillGrouping: true,
-          },
         });
 
         return new Response(JSON.stringify(updatedSkill), {
@@ -176,11 +171,6 @@ export async function POST(req: Request) {
 
         const createdSkill = await db.skill.create({
           data: createData,
-          include: {
-            class: true,
-            parentSkill: true,
-            skillGrouping: true,
-          },
         });
 
         return new Response(JSON.stringify(createdSkill), {

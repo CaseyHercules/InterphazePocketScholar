@@ -56,9 +56,22 @@ export type GrantSkillEffect = {
 };
 
 /**
- * Union type for all possible skill effects.
+ * Effect for custom/note display (e.g., restrictions). Used by adjustments.
+ * Example: { type: "restriction", note: "Unable to use heavy armor" }
  */
-export type SkillEffect = StatBonusEffect | SkillModifierEffect | GrantSkillEffect;
+export type NoteEffect = {
+  type: string;
+  note: string;
+};
+
+/**
+ * Union type for all possible effects (skills and adjustments).
+ */
+export type SkillEffect =
+  | StatBonusEffect
+  | SkillModifierEffect
+  | GrantSkillEffect
+  | NoteEffect;
 
 /**
  * Structure for additionalInfo when it contains effects.
@@ -69,6 +82,45 @@ export type SkillAdditionalInfo = {
   /** Optional freeform notes for display in SkillViewer */
   notes?: string;
 };
+
+/**
+ * Parses adjustment effectsJson and returns normalized effects.
+ * Handles legacy "target" field (maps to "stat" for stat_bonus).
+ */
+export function getEffectsFromJson(effectsJson: unknown): SkillEffect[] {
+  if (!effectsJson || typeof effectsJson !== "object") return [];
+  const obj = effectsJson as Record<string, unknown>;
+  const effects = obj.effects;
+  if (!Array.isArray(effects)) return [];
+  return effects
+    .map((e): SkillEffect | null => {
+      if (!e || typeof e !== "object" || typeof (e as Record<string, unknown>).type !== "string")
+        return null;
+      const effect = e as Record<string, unknown>;
+      if (effect.type === "stat_bonus") {
+        const stat = (effect.stat as string) || (effect.target as string) || "Tough";
+        return {
+          type: "stat_bonus",
+          stat,
+          value: Number(effect.value) || 0,
+          condition: effect.condition as string | undefined,
+          applyToTotal: effect.applyToTotal as boolean | undefined,
+        };
+      }
+      if (effect.type === "skill_modifier" || effect.type === "grant_skill") {
+        return effect as SkillEffect;
+      }
+      return { type: String(effect.type || "restriction"), note: String(effect.note || "") };
+    })
+    .filter((e): e is SkillEffect => e !== null);
+}
+
+/**
+ * Creates effectsJson structure from effects array (for adjustments).
+ */
+export function createEffectsJson(effects: SkillEffect[]): { effects: SkillEffect[] } {
+  return { effects };
+}
 
 /**
  * Safely extracts the effects array from a skill's additionalInfo field.
@@ -157,6 +209,18 @@ export function isSkillModifierEffect(effect: SkillEffect): effect is SkillModif
  */
 export function isGrantSkillEffect(effect: SkillEffect): effect is GrantSkillEffect {
   return effect.type === "grant_skill";
+}
+
+/**
+ * Type guard to check if an effect is a note/custom effect.
+ */
+export function isNoteEffect(effect: SkillEffect): effect is NoteEffect {
+  return (
+    effect.type !== "stat_bonus" &&
+    effect.type !== "skill_modifier" &&
+    effect.type !== "grant_skill" &&
+    "note" in effect
+  );
 }
 
 /**

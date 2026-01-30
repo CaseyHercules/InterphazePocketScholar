@@ -19,6 +19,7 @@ import {
   type StatBonusEffect,
   type SkillModifierEffect,
   type GrantSkillEffect,
+  type NoteEffect,
   VALID_STATS,
   SKILL_MODIFIER_FIELDS,
 } from "@/types/skill-effects";
@@ -35,18 +36,23 @@ type SkillOption = {
   classId: string | null;
 };
 
-interface SkillEffectsEditorProps {
-  value: SkillEffect[];
-  onChange: (effects: SkillEffect[]) => void;
-}
-
-const EFFECT_TYPES = [
+const ALL_EFFECT_TYPES = [
   { value: "stat_bonus", label: "Stat Bonus" },
   { value: "skill_modifier", label: "Skill Modifier" },
   { value: "grant_skill", label: "Grant Skill" },
+  { value: "note", label: "Custom / Note" },
 ] as const;
 
-type EffectType = typeof EFFECT_TYPES[number]["value"];
+type EffectType = (typeof ALL_EFFECT_TYPES)[number]["value"];
+
+export type EffectsEditorMode = "skill" | "adjustment" | "all";
+
+interface SkillEffectsEditorProps {
+  value: SkillEffect[];
+  onChange: (effects: SkillEffect[]) => void;
+  /** Restrict which effect types are available. "skill" = all, "adjustment" = stat_bonus + note, "all" = all types */
+  mode?: EffectsEditorMode;
+}
 
 function createDefaultEffect(type: EffectType): SkillEffect {
   switch (type) {
@@ -61,17 +67,46 @@ function createDefaultEffect(type: EffectType): SkillEffect {
       };
     case "grant_skill":
       return { type: "grant_skill", classId: "", maxTier: 1 };
+    case "note":
+      return { type: "restriction", note: "" };
   }
 }
 
-export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps) {
+function getEffectTypesForMode(mode?: EffectsEditorMode) {
+  switch (mode) {
+    case "adjustment":
+      return ALL_EFFECT_TYPES.filter(
+        (t) => t.value === "stat_bonus" || t.value === "note"
+      );
+    case "skill":
+    case "all":
+    default:
+      return [...ALL_EFFECT_TYPES];
+  }
+}
+
+function needsClassAndSkillData(mode?: EffectsEditorMode) {
+  return mode !== "adjustment";
+}
+
+export function SkillEffectsEditor({
+  value,
+  onChange,
+  mode = "skill",
+}: SkillEffectsEditorProps) {
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [skills, setSkills] = useState<SkillOption[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(needsClassAndSkillData(mode));
 
-  // Fetch classes and skills for dropdowns
+  const effectTypes = getEffectTypesForMode(mode);
+
+  // Fetch classes and skills for dropdowns (only when skill_modifier or grant_skill are available)
   useEffect(() => {
+    if (!needsClassAndSkillData(mode)) {
+      setIsLoading(false);
+      return;
+    }
     const fetchData = async () => {
       try {
         const [classesRes, skillsRes] = await Promise.all([
@@ -87,7 +122,7 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
       }
     };
     fetchData();
-  }, []);
+  }, [mode]);
 
   const addEffect = () => {
     const newEffect = createDefaultEffect("stat_bonus");
@@ -116,6 +151,15 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
     updateEffect(index, newEffect);
   };
 
+  const isEffectTypeAllowed = (type: string) =>
+    effectTypes.some((t) => t.value === type);
+
+  const getSelectValueForEffect = (effect: SkillEffect) => {
+    if (isEffectTypeAllowed(effect.type)) return effect.type;
+    if ("note" in effect) return "note";
+    return effectTypes[0]?.value ?? "stat_bonus";
+  };
+
   const getEffectSummary = (effect: SkillEffect): string => {
     switch (effect.type) {
       case "stat_bonus":
@@ -134,7 +178,10 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
         }
         return `Grant specific skills from ${className}`;
       default:
-        return "Unknown effect";
+        if ("note" in effect && effect.note) {
+          return effect.note;
+        }
+        return effect.type || "Custom effect";
     }
   };
 
@@ -280,6 +327,33 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
     </div>
   );
 
+  const renderNoteFields = (effect: NoteEffect, index: number) => (
+    <div className="space-y-3">
+      <div>
+        <Label className="text-xs">Type (e.g., restriction, custom)</Label>
+        <Input
+          placeholder="restriction"
+          value={effect.type || ""}
+          onChange={(e) =>
+            updateEffect(index, { ...effect, type: e.target.value })
+          }
+          className="h-9"
+        />
+      </div>
+      <div>
+        <Label className="text-xs">Note / Description</Label>
+        <Input
+          placeholder="e.g., Unable to use heavy armor"
+          value={effect.note || ""}
+          onChange={(e) =>
+            updateEffect(index, { ...effect, note: e.target.value })
+          }
+          className="h-9"
+        />
+      </div>
+    </div>
+  );
+
   const renderGrantSkillFields = (effect: GrantSkillEffect, index: number) => (
     <div className="space-y-3">
       <div>
@@ -341,6 +415,11 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
         return renderSkillModifierFields(effect, index);
       case "grant_skill":
         return renderGrantSkillFields(effect, index);
+      default:
+        if ("note" in effect) {
+          return renderNoteFields(effect as NoteEffect, index);
+        }
+        return null;
     }
   };
 
@@ -397,7 +476,7 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
                     <div>
                       <Label className="text-xs">Effect Type</Label>
                       <Select
-                        value={effect.type}
+                        value={getSelectValueForEffect(effect)}
                         onValueChange={(val) =>
                           changeEffectType(index, val as EffectType)
                         }
@@ -406,7 +485,7 @@ export function SkillEffectsEditor({ value, onChange }: SkillEffectsEditorProps)
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {EFFECT_TYPES.map((type) => (
+                          {effectTypes.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.label}
                             </SelectItem>

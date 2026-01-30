@@ -88,7 +88,7 @@ export async function POST(req: Request) {
 
     const newLevel = currentLevel - actualRefund;
 
-    const updates: Parameters<typeof db.$transaction>[0] = [
+    const updates = [
       db.character.update({
         where: { id: characterId },
         data:
@@ -96,16 +96,15 @@ export async function POST(req: Request) {
             ? { primaryClassLvl: newLevel }
             : { secondaryClassLvl: newLevel },
       }),
+      ...(character.userId && actualRefund > 0
+        ? [
+            db.user.update({
+              where: { id: character.userId },
+              data: { UnallocatedLevels: { increment: actualRefund } },
+            }),
+          ]
+        : []),
     ];
-
-    if (character.userId && actualRefund > 0) {
-      updates.push(
-        db.user.update({
-          where: { id: character.userId },
-          data: { UnallocatedLevels: { increment: actualRefund } },
-        })
-      );
-    }
 
     await db.$transaction(updates);
 

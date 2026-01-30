@@ -54,6 +54,9 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
       }
       return "Grants access to specific skills";
     }
+    if ("note" in effect && effect.note) {
+      return effect.note;
+    }
     return "Unknown effect";
   };
 

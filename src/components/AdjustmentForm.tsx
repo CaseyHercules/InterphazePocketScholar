@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SkillEffectsEditor } from "@/components/SkillEffectsEditor";
+import {
+  getEffectsFromJson,
+  createEffectsJson,
+  type SkillEffect,
+} from "@/types/skill-effects";
 
 const jsonString = z
   .string()
@@ -54,11 +60,9 @@ const FormSchema = z.object({
 export type AdjustmentFormValues = z.infer<typeof FormSchema>;
 
 const defaultEffectsTemplate = `{
-  "title": "Example Adjustment",
   "effects": [
-    { "type": "stat_bonus", "target": "Tough", "value": 5 },
-    { "type": "stat_bonus", "target": "bows", "value": -5 },
-    { "type": "restriction", "target": "heavy", "note": "Unable to use heavy" }
+    { "type": "stat_bonus", "stat": "Tough", "value": 5 },
+    { "type": "restriction", "note": "Unable to use heavy armor" }
   ]
 }`;
 
@@ -158,22 +162,38 @@ export function AdjustmentForm({ data, onSubmit, onCancel }: AdjustmentFormProps
         <FormField
           control={form.control}
           name="effectsJson"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Effects JSON</FormLabel>
-              <FormControl>
-                <Textarea
-                  className="min-h-[220px] font-mono text-xs"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Provide any JSON structure your admins want. The system only
-                checks that it is valid JSON.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            let effects: SkillEffect[] = [];
+            try {
+              const parsed = field.value?.trim() ? JSON.parse(field.value) : {};
+              effects = getEffectsFromJson(parsed);
+            } catch {
+              effects = [];
+            }
+            return (
+              <FormItem>
+                <FormLabel>Effects</FormLabel>
+                <FormControl>
+                  <div className="rounded-md border p-4 min-h-[200px]">
+                    <SkillEffectsEditor
+                      value={effects}
+                      onChange={(newEffects) =>
+                        field.onChange(
+                          JSON.stringify(createEffectsJson(newEffects), null, 2)
+                        )
+                      }
+                      mode="adjustment"
+                    />
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Add stat bonuses or custom effects. Stat bonuses modify
+                  character stats; custom notes display as-is (e.g., restrictions).
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField

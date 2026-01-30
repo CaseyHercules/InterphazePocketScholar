@@ -15,6 +15,7 @@ import {
   getSkillEffects,
   getEffectsFromJson,
   isGrantSkillEffect,
+  isPickSkillByTierEffect,
   type SkillEffect,
 } from "@/types/skill-effects";
 
@@ -254,39 +255,41 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     }
   }
 
-  // Process grant_skill effects from learned skills and adjustments
   const allLearnedSkills = [...character.primarySkills, ...character.secondarySkills];
   const grantedSkillIds = new Set<string>();
   const grantedClassTiers: { classId: string; maxTier: number }[] = [];
-  
-  const processGrantSkillEffects = (effects: SkillEffect[]) => {
+  let pickSkillByTierMax = 0;
+
+  const processEffects = (effects: SkillEffect[]) => {
     for (const effect of effects) {
-      if (!isGrantSkillEffect(effect)) continue;
-      if (effect.skillId) grantedSkillIds.add(effect.skillId);
-      if (effect.skillIds) {
-        for (const id of effect.skillIds) grantedSkillIds.add(id);
+      if (isGrantSkillEffect(effect)) {
+        if (effect.skillId) grantedSkillIds.add(effect.skillId);
+        if (effect.skillIds) {
+          for (const id of effect.skillIds) grantedSkillIds.add(id);
+        }
+        if (effect.classId && effect.maxTier && effect.maxTier > 0) {
+          grantedClassTiers.push({ classId: effect.classId, maxTier: effect.maxTier });
+        }
       }
-      if (effect.classId && effect.maxTier && effect.maxTier > 0) {
-        grantedClassTiers.push({ classId: effect.classId, maxTier: effect.maxTier });
+      if (isPickSkillByTierEffect(effect) && effect.maxTier > 0) {
+        pickSkillByTierMax = Math.max(pickSkillByTierMax, effect.maxTier);
       }
     }
   };
 
-  // From learned skills (with loop prevention)
   const processedSkillIds = new Set<string>();
   const skillsToProcess = [...allLearnedSkills];
   while (skillsToProcess.length > 0) {
     const skill = skillsToProcess.pop();
     if (!skill || processedSkillIds.has(skill.id)) continue;
     processedSkillIds.add(skill.id);
-    processGrantSkillEffects(getSkillEffects(skill.additionalInfo));
+    processEffects(getSkillEffects(skill.additionalInfo));
   }
 
-  // From adjustments
   const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
   for (const entry of adjustments) {
     const adjustment = entry?.adjustment ?? entry;
-    processGrantSkillEffects(getEffectsFromJson(adjustment?.effectsJson));
+    processEffects(getEffectsFromJson(adjustment?.effectsJson));
   }
   
   // Fetch specifically granted skills by ID
@@ -313,11 +316,9 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     }
   }
   
-  // Fetch skills from granted class tiers
   for (const { classId, maxTier: grantedMaxTier } of grantedClassTiers) {
-    // Skip if this is already one of the character's classes
     if (classId === primaryClassId || classId === secondaryClassId) continue;
-    
+
     const grantedClassSkills = await db.skill.findMany({
       where: {
         classId,
@@ -326,12 +327,31 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
       },
       include: { class: true },
     });
-    
+
     for (const skill of grantedClassSkills) {
       if (!skillsByTier[skill.tier]) {
         skillsByTier[skill.tier] = [];
       }
-      // Avoid duplicates
+      if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
+        skillsByTier[skill.tier].push(skill);
+      }
+    }
+  }
+
+  if (pickSkillByTierMax > 0 && classIds.length > 0) {
+    const pickSkills = await db.skill.findMany({
+      where: {
+        classId: { in: classIds },
+        tier: { lte: pickSkillByTierMax },
+        ...getSkillVisibilityWhere(session?.user?.role),
+      },
+      include: { class: true },
+    });
+
+    for (const skill of pickSkills) {
+      if (!skillsByTier[skill.tier]) {
+        skillsByTier[skill.tier] = [];
+      }
       if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
         skillsByTier[skill.tier].push(skill);
       }

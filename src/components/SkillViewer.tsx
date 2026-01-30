@@ -14,6 +14,7 @@ import {
   isStatBonusEffect,
   isSkillModifierEffect,
   isGrantSkillEffect,
+  isPickSkillByTierEffect,
   type SkillEffect,
 } from "@/types/skill-effects";
 
@@ -49,10 +50,18 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
       return `Modifies ${effect.targetField}: ${sign}${effect.modifier}`;
     }
     if (isGrantSkillEffect(effect)) {
-      if (effect.maxTier) {
+      const hasSpecific =
+        effect.skillId || (effect.skillIds && effect.skillIds.length > 0);
+      if (hasSpecific) {
+        return "Grants access to specific skill(s)";
+      }
+      if (effect.classId && effect.maxTier) {
         return `Grants access to skills up to Tier ${effect.maxTier} from another class`;
       }
-      return "Grants access to specific skills";
+      return "Grants access to skill(s)";
+    }
+    if (isPickSkillByTierEffect(effect)) {
+      return `Pick any skill up to Tier ${effect.maxTier} from your class(es)`;
     }
     if ("note" in effect && effect.note) {
       return effect.note;

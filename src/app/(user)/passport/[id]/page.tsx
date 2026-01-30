@@ -25,14 +25,13 @@ import {
 } from "@/lib/actions/passport";
 
 interface PassportPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: PassportPageProps) {
+  const { id } = await params;
   try {
-    const character = await getCharacterForPassport(params.id);
+    const character = await getCharacterForPassport(id);
     return {
       title: `${character.name}'s Passport | Interphaze Pocket Scholar`,
       description: "View your character's details",
@@ -46,11 +45,11 @@ export async function generateMetadata({ params }: PassportPageProps) {
 }
 
 export default async function PassportPage({ params }: PassportPageProps) {
-  // Fetch character data, available classes, and skill data in parallel
+  const { id } = await params;
   const [character, availableClasses, skillData, session] = await Promise.all([
-    getCharacterForPassport(params.id),
+    getCharacterForPassport(id),
     getAvailableClasses(),
-    getAvailableSkillsForCharacter(params.id),
+    getAvailableSkillsForCharacter(id),
     getServerSession(authOptions),
   ]);
 

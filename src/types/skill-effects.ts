@@ -41,18 +41,27 @@ export type SkillModifierEffect = {
 
 /**
  * Effect that grants access to skills from another class.
- * Example: { type: "grant_skill", classId: "xyz789", maxTier: 2 }
+ * Specific mode: skillId or skillIds. Cross-class mode: classId + maxTier.
  */
 export type GrantSkillEffect = {
   type: "grant_skill";
-  /** The class to grant skills from */
-  classId: string;
-  /** Optional: specific skill ID to grant (if not provided, uses maxTier) */
+  /** The class to grant skills from (required for cross-class mode) */
+  classId?: string;
+  /** Specific skill ID to grant */
   skillId?: string;
-  /** Optional: array of specific skill IDs to grant */
+  /** Array of specific skill IDs to grant */
   skillIds?: string[];
-  /** Optional: grant all skills up to this tier from the class */
+  /** Grant all skills up to this tier from the class (cross-class mode) */
   maxTier?: number;
+};
+
+/**
+ * Effect that allows picking any skill tier X or lower from primary/secondary class.
+ * Example: { type: "pick_skill_by_tier", maxTier: 2 }
+ */
+export type PickSkillByTierEffect = {
+  type: "pick_skill_by_tier";
+  maxTier: number;
 };
 
 /**
@@ -71,6 +80,7 @@ export type SkillEffect =
   | StatBonusEffect
   | SkillModifierEffect
   | GrantSkillEffect
+  | PickSkillByTierEffect
   | NoteEffect;
 
 /**
@@ -107,7 +117,11 @@ export function getEffectsFromJson(effectsJson: unknown): SkillEffect[] {
           applyToTotal: effect.applyToTotal as boolean | undefined,
         };
       }
-      if (effect.type === "skill_modifier" || effect.type === "grant_skill") {
+      if (
+        effect.type === "skill_modifier" ||
+        effect.type === "grant_skill" ||
+        effect.type === "pick_skill_by_tier"
+      ) {
         return effect as SkillEffect;
       }
       return { type: String(effect.type || "restriction"), note: String(effect.note || "") };
@@ -212,6 +226,15 @@ export function isGrantSkillEffect(effect: SkillEffect): effect is GrantSkillEff
 }
 
 /**
+ * Type guard to check if an effect is a pick skill by tier effect.
+ */
+export function isPickSkillByTierEffect(
+  effect: SkillEffect
+): effect is PickSkillByTierEffect {
+  return effect.type === "pick_skill_by_tier";
+}
+
+/**
  * Type guard to check if an effect is a note/custom effect.
  */
 export function isNoteEffect(effect: SkillEffect): effect is NoteEffect {
@@ -219,6 +242,7 @@ export function isNoteEffect(effect: SkillEffect): effect is NoteEffect {
     effect.type !== "stat_bonus" &&
     effect.type !== "skill_modifier" &&
     effect.type !== "grant_skill" &&
+    effect.type !== "pick_skill_by_tier" &&
     "note" in effect
   );
 }

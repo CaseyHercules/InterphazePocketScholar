@@ -19,6 +19,7 @@ import {
   type StatBonusEffect,
   type SkillModifierEffect,
   type GrantSkillEffect,
+  type PickSkillByTierEffect,
   type NoteEffect,
   VALID_STATS,
   SKILL_MODIFIER_FIELDS,
@@ -40,6 +41,7 @@ const ALL_EFFECT_TYPES = [
   { value: "stat_bonus", label: "Stat Bonus" },
   { value: "skill_modifier", label: "Skill Modifier" },
   { value: "grant_skill", label: "Grant Skill" },
+  { value: "pick_skill_by_tier", label: "Pick Skill by Tier" },
   { value: "note", label: "Custom / Note" },
 ] as const;
 
@@ -66,7 +68,9 @@ function createDefaultEffect(type: EffectType): SkillEffect {
         modifier: 0,
       };
     case "grant_skill":
-      return { type: "grant_skill", classId: "", maxTier: 1 };
+      return { type: "grant_skill", skillIds: [] };
+    case "pick_skill_by_tier":
+      return { type: "pick_skill_by_tier", maxTier: 1 };
     case "note":
       return { type: "restriction", note: "" };
   }
@@ -156,6 +160,7 @@ export function SkillEffectsEditor({
 
   const getSelectValueForEffect = (effect: SkillEffect) => {
     if (isEffectTypeAllowed(effect.type)) return effect.type;
+    if (effect.type === "pick_skill_by_tier") return "pick_skill_by_tier";
     if ("note" in effect) return "note";
     return effectTypes[0]?.value ?? "stat_bonus";
   };
@@ -177,12 +182,28 @@ export function SkillEffectsEditor({
       }
       case "grant_skill": {
         const grantEffect = effect as GrantSkillEffect;
+        const ids = [
+          ...(grantEffect.skillId ? [grantEffect.skillId] : []),
+          ...(grantEffect.skillIds || []),
+        ];
+        if (ids.length > 0) {
+          const names = ids
+            .map((id) => skills.find((s) => s.id === id)?.title)
+            .filter(Boolean);
+          return names.length > 0
+            ? `Grant: ${names.join(", ")}`
+            : `Grant ${ids.length} specific skill(s)`;
+        }
         const targetClass = classes.find((c) => c.id === grantEffect.classId);
         const className = targetClass?.Title || "Unknown Class";
-        if (grantEffect.maxTier) {
+        if (grantEffect.classId && grantEffect.maxTier) {
           return `Grant ${className} skills up to Tier ${grantEffect.maxTier}`;
         }
-        return `Grant specific skills from ${className}`;
+        return "Grant skill (configure below)";
+      }
+      case "pick_skill_by_tier": {
+        const pickEffect = effect as PickSkillByTierEffect;
+        return `Pick any skill up to Tier ${pickEffect.maxTier} from your class(es)`;
       }
       default: {
         const noteEffect = effect as NoteEffect;
@@ -363,39 +384,217 @@ export function SkillEffectsEditor({
     </div>
   );
 
-  const renderGrantSkillFields = (effect: GrantSkillEffect, index: number) => (
+  const isGrantSpecificMode = (e: GrantSkillEffect) =>
+    Boolean(e.skillId || (e.skillIds && e.skillIds.length > 0)) ||
+    (!e.classId && e.maxTier === undefined);
+
+  const renderGrantSkillFields = (effect: GrantSkillEffect, index: number) => {
+    const isSpecific = isGrantSpecificMode(effect);
+    const selectedIds = [
+      ...(effect.skillId ? [effect.skillId] : []),
+      ...(effect.skillIds || []),
+    ];
+    const filteredSkills = effect.classId
+      ? skills.filter((s) => s.classId === effect.classId)
+      : skills;
+
+    return (
+      <div className="space-y-3">
+        <div>
+          <Label className="text-xs">Grant Mode</Label>
+          <Select
+            value={isSpecific ? "specific" : "pick_from_class"}
+            onValueChange={(val) => {
+              if (val === "specific") {
+                updateEffect(index, {
+                  ...effect,
+                  classId: undefined,
+                  maxTier: undefined,
+                  skillId: undefined,
+                  skillIds: [],
+                });
+              } else {
+                updateEffect(index, {
+                  ...effect,
+                  skillId: undefined,
+                  skillIds: undefined,
+                  classId: effect.classId || "",
+                  maxTier: 1,
+                });
+              }
+            }}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="specific">
+                Grant specific skill(s)
+              </SelectItem>
+              <SelectItem value="pick_from_class">
+                Grant pick from class by tier
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {isSpecific ? (
+          <>
+            <div>
+              <Label className="text-xs">Filter by Class (optional)</Label>
+              <Select
+                value={effect.classId || "_all"}
+                onValueChange={(val) =>
+                  updateEffect(index, {
+                    ...effect,
+                    classId: val === "_all" ? undefined : val,
+                  })
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All classes</SelectItem>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.Title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Skill(s) to Grant</Label>
+              <Select
+                value="_none"
+                onValueChange={(val) => {
+                  if (val === "_none") return;
+                  const next = [...selectedIds, val].filter(
+                    (id, i, arr) => arr.indexOf(id) === i
+                  );
+                  updateEffect(index, {
+                    ...effect,
+                    skillId: undefined,
+                    skillIds: next,
+                  });
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Add skill..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none" disabled>
+                    Add skill...
+                  </SelectItem>
+                  {filteredSkills
+                    .filter((s) => !selectedIds.includes(s.id))
+                    .map((skill) => (
+                      <SelectItem key={skill.id} value={skill.id}>
+                        {skill.title}
+                        {skill.classId
+                          ? ` (${classes.find((c) => c.id === skill.classId)?.Title ?? ""})`
+                          : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {selectedIds.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {selectedIds.map((id) => {
+                    const skill = skills.find((s) => s.id === id);
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                      >
+                        {skill?.title ?? id}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = selectedIds.filter((x) => x !== id);
+                            updateEffect(index, {
+                              ...effect,
+                              skillId: undefined,
+                              skillIds: next,
+                            });
+                          }}
+                          className="hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <Label className="text-xs">Class to Grant Skills From</Label>
+              <Select
+                value={effect.classId || ""}
+                onValueChange={(val) =>
+                  updateEffect(index, { ...effect, classId: val })
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select class..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.Title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Maximum Tier to Grant</Label>
+              <Select
+                value={String(effect.maxTier || 1)}
+                onValueChange={(val) =>
+                  updateEffect(index, {
+                    ...effect,
+                    maxTier: parseInt(val),
+                  })
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4].map((tier) => (
+                    <SelectItem key={tier} value={String(tier)}>
+                      Tier {tier}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Character can learn any skill up to this tier from the selected
+                class (cross-class).
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderPickSkillByTierFields = (
+    effect: PickSkillByTierEffect,
+    index: number
+  ) => (
     <div className="space-y-3">
       <div>
-        <Label className="text-xs">Class to Grant Skills From</Label>
+        <Label className="text-xs">Maximum Tier</Label>
         <Select
-          value={effect.classId}
+          value={String(effect.maxTier)}
           onValueChange={(val) =>
-            updateEffect(index, { ...effect, classId: val })
-          }
-        >
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Select class..." />
-          </SelectTrigger>
-          <SelectContent>
-            {classes.map((cls) => (
-              <SelectItem key={cls.id} value={cls.id}>
-                {cls.Title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-xs">Maximum Tier to Grant</Label>
-        <Select
-          value={String(effect.maxTier || 1)}
-          onValueChange={(val) =>
-            updateEffect(index, {
-              ...effect,
-              maxTier: parseInt(val),
-              skillId: undefined,
-              skillIds: undefined,
-            })
+            updateEffect(index, { ...effect, maxTier: parseInt(val) })
           }
         >
           <SelectTrigger className="h-9">
@@ -410,7 +609,8 @@ export function SkillEffectsEditor({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground mt-1">
-          Character can learn any skill up to this tier from the selected class.
+          Character can pick any skill tier X or lower from their primary or
+          secondary class.
         </p>
       </div>
     </div>
@@ -424,6 +624,11 @@ export function SkillEffectsEditor({
         return renderSkillModifierFields(effect as SkillModifierEffect, index);
       case "grant_skill":
         return renderGrantSkillFields(effect as GrantSkillEffect, index);
+      case "pick_skill_by_tier":
+        return renderPickSkillByTierFields(
+          effect as PickSkillByTierEffect,
+          index
+        );
       default:
         if ("note" in effect) {
           return renderNoteFields(effect as NoteEffect, index);

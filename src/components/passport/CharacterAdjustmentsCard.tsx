@@ -60,6 +60,13 @@ function formatEffect(effect: AdjustmentEffect): string {
     return tier ? `Grant skills up to Tier ${tier}` : "Grant skill access";
   }
 
+  if (effect.type === "pick_skill_by_tier") {
+    const tier = effect.maxTier;
+    return tier
+      ? `Pick any skill up to Tier ${tier} from your class(es)`
+      : "Pick skill by tier";
+  }
+
   if (effect.note && effect.note.trim()) {
     return effect.note.trim();
   }

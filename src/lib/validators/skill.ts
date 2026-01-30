@@ -26,16 +26,22 @@ const SkillModifierEffectSchema = z.object({
 
 const GrantSkillEffectSchema = z.object({
   type: z.literal("grant_skill"),
-  classId: z.string(),
+  classId: z.string().optional(),
   skillId: z.string().optional(),
   skillIds: z.array(z.string()).optional(),
   maxTier: z.number().min(1).max(4).optional(),
+});
+
+const PickSkillByTierEffectSchema = z.object({
+  type: z.literal("pick_skill_by_tier"),
+  maxTier: z.number().min(1).max(4),
 });
 
 const SkillEffectSchema = z.discriminatedUnion("type", [
   StatBonusEffectSchema,
   SkillModifierEffectSchema,
   GrantSkillEffectSchema,
+  PickSkillByTierEffectSchema,
 ]);
 
 // Structured additionalInfo schema (object with effects and notes)

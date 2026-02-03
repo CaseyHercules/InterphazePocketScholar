@@ -158,6 +158,34 @@
   display: none;
 }
 
+.post-letter .quill.read-only {
+  @apply max-w-none w-full mx-0;
+}
+
+.post-letter .quill.read-only .ql-editor {
+  font-family: var(--font-gentium-book-plus), Georgia, serif !important;
+  @apply text-[18px] leading-[1.75] tracking-wide;
+}
+
+.post-letter .quill.read-only .ql-editor p {
+  @apply leading-[1.75] text-amber-950/90;
+}
+
+.post-letter .quill.read-only .ql-editor h1,
+.post-letter .quill.read-only .ql-editor h2,
+.post-letter .quill.read-only .ql-editor h3 {
+  font-family: var(--font-gentium-book-plus), Georgia, serif !important;
+  @apply text-amber-950;
+}
+
+.post-letter .quill.read-only .ql-editor a {
+  @apply text-amber-800 underline underline-offset-2 hover:text-amber-900;
+}
+
+.post-letter .quill.read-only .ql-editor blockquote {
+  @apply border-amber-300/60 text-amber-900/80;
+}
+
 /* Icons */
 .ql-snow .ql-stroke {
   stroke: hsl(var(--foreground));

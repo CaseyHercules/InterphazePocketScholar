@@ -51,7 +51,7 @@ export function SkillTable({
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Skill;
     direction: "asc" | "desc";
-  }>({ key: "title", direction: "asc" });
+  }>({ key: "tier", direction: "asc" });
 
   // Helper function to truncate text
   const truncateText = (text: string, maxLength: number = 50) => {
@@ -73,21 +73,28 @@ export function SkillTable({
     return matchesSearch && matchesTier && matchesClass;
   });
 
-  // Sort and filter skills
   const sortedAndFilteredSkills = [...filteredSkills].sort((a, b) => {
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
 
-    // Handle undefined/null values
-    aValue = aValue ?? "";
-    bValue = bValue ?? "";
-
-    // For numeric fields, use numeric comparison
-    if (typeof aValue === "number" && typeof bValue === "number") {
-      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+    if (sortConfig.key === "tier") {
+      const tierA = Number(aValue) || 0;
+      const tierB = Number(bValue) || 0;
+      const primary =
+        sortConfig.direction === "asc" ? tierA - tierB : tierB - tierA;
+      if (primary !== 0) return primary;
+      return (a.title ?? "").localeCompare(b.title ?? "");
     }
 
-    // For other fields, use string comparison
+    aValue = aValue ?? "";
+    bValue = bValue ?? "";
+    if (typeof aValue === "number" && typeof bValue === "number") {
+      const primary =
+        sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+      if (primary !== 0) return primary;
+      return (a.title ?? "").localeCompare(b.title ?? "");
+    }
+
     return sortConfig.direction === "asc"
       ? String(aValue).localeCompare(String(bValue))
       : String(bValue).localeCompare(String(aValue));
@@ -193,7 +200,7 @@ export function SkillTable({
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
-                {showClassColumn && (
+                {showClassColumn && classFilter === "all" && (
                   <TableHead className="w-[120px]">Class</TableHead>
                 )}
                 {showActionsColumn && (onView || onEdit || onDelete) && (
@@ -233,7 +240,7 @@ export function SkillTable({
                       ? skill.epCost
                       : "—"}
                   </TableCell>
-                  {showClassColumn && (
+                  {showClassColumn && classFilter === "all" && (
                     <TableCell className="max-w-[120px]">
                       {skill.class?.Title || "—"}
                     </TableCell>

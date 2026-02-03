@@ -4,16 +4,14 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: {
-    postId: string;
-    slug: string;
-  };
+  params: Promise<{ postId: string; slug: string }>;
 }
 
 const Page = async ({ params }: PageProps) => {
+  const { postId } = await params;
   const post = await db.post.findFirst({
     where: {
-      id: params.postId,
+      id: postId,
     },
   });
 
@@ -35,13 +33,13 @@ const Page = async ({ params }: PageProps) => {
 
       <EditPostEditor
         topicId={post.topicId}
-        formId={params.postId}
+        formId={postId}
         content={post.content}
         title={post.title}
       />
 
       <div className="w-full flex justify-end">
-        <Button type="submit" className="w-full" form={params.postId}>
+        <Button type="submit" className="w-full" form={postId}>
           Update
         </Button>
       </div>

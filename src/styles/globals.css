@@ -105,4 +105,9 @@
   .focus-ring {
     @apply focus:ring-2 focus:ring-primary/20 focus:outline-none;
   }
+
+  .post-letter {
+    font-family: var(--font-gentium-book-plus), Georgia, serif;
+    @apply tracking-wide leading-relaxed;
+  }
 }

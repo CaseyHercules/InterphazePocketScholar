@@ -152,18 +152,13 @@ export function SkillViewer({ skill, isOpen, onClose }: SkillViewerProps) {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-1">
-              {skill.canBeTakenMultiple && (
+            {skill.canBeTakenMultiple && (
+              <div className="flex flex-wrap gap-1">
                 <Badge variant="outline" className="text-xs">
                   Can be taken multiple times
                 </Badge>
-              )}
-              {!skill.playerVisable && (
-                <Badge variant="outline" className="text-xs">
-                  Hidden from players
-                </Badge>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </DialogContent>

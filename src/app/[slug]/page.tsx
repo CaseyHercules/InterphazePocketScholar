@@ -6,13 +6,13 @@ import { INFINITE_SCROLL_PAGINATION_RESULTS } from "@/config";
 import { getRole } from "@/lib/getRole";
 
 interface pageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 const page = async ({ params }: pageProps) => {
-  const { slug } = params;
+  const { slug } = await params;
   const session = await getAuthSession();
 
   const topic = await db.topic.findFirst({

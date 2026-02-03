@@ -44,7 +44,7 @@ const Layout = async ({
   // If no topic is found, we should handle this case
   if (!topic) {
     return (
-      <div className="sm:container max-w-7xl mx-auto h-full">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 h-full">
         <div className="text-center py-8">
           <h2 className="text-xl font-semibold">Topic not found</h2>
           <p className="text-zinc-500">
@@ -56,14 +56,14 @@ const Layout = async ({
   }
 
   return (
-    <div className="sm:container max-w-7xl mx-auto h-full">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 h-full">
       <div>
         {/* Button to back */}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:map-x-4 py-8">
           <div className="contents">{children}</div>
 
-          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last md:row-start-1 md:col-span-1 hidden md:block">
+          <div className="overflow-hidden h-fit rounded-lg border border-gray-200 order-first md:order-last md:row-start-1 md:col-span-1 md:col-start-4">
             <p className="font-semibold pt-2 text-center capitalize">
               Quick Navigation
             </p>

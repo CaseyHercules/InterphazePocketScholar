@@ -21,7 +21,6 @@ import { authOptions } from "@/lib/auth";
 import {
   getCharacterForPassport,
   getAvailableClasses,
-  getAvailableSkillsForCharacter,
 } from "@/lib/actions/passport";
 
 interface PassportPageProps {
@@ -46,10 +45,9 @@ export async function generateMetadata({ params }: PassportPageProps) {
 
 export default async function PassportPage({ params }: PassportPageProps) {
   const { id } = await params;
-  const [character, availableClasses, skillData, session] = await Promise.all([
+  const [character, availableClasses, session] = await Promise.all([
     getCharacterForPassport(id),
     getAvailableClasses(),
-    getAvailableSkillsForCharacter(id),
     getServerSession(authOptions),
   ]);
 
@@ -147,7 +145,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
 
           {/* Skills Tab */}
           <TabsContent value="skills" className="space-y-4">
-            <CharacterSkillsCard character={character} skillData={skillData} />
+            <CharacterSkillsCard character={character} />
           </TabsContent>
 
           {/* Spells Tab */}

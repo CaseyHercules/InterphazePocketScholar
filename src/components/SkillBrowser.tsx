@@ -25,6 +25,8 @@ export default function SkillBrowser({
           setSelectedSkill(skill);
           setIsViewerOpen(true);
         }}
+        enableRowClick
+        showActionsColumn={false}
       />
 
       {isViewerOpen && selectedSkill && (

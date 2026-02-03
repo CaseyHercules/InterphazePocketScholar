@@ -7,9 +7,7 @@ import EditButtonOnPosts from "@/components/EditButtonOnPosts";
 import SkillEmbedTableServer from "@/components/SkillEmbedTableServer";
 
 interface pageProps {
-  params: {
-    postId: string;
-  };
+  params: Promise<{ slug: string; postId: string }>;
 }
 
 export const dynamic = "force-dynamic";
@@ -64,7 +62,7 @@ const extractSkillTableClass = (content: any) => {
 };
 
 const page = async ({ params }: pageProps) => {
-  let post: (Post & { User: User }) | null = null;
+  const { slug, postId } = await params;
 
   const session = await getAuthSession();
   const UserObj = session?.user
@@ -73,9 +71,19 @@ const page = async ({ params }: pageProps) => {
       })
     : null;
 
-  post = await db.post.findFirst({
+  const decodedSlug = decodeURIComponent(slug);
+  const topic = await db.topic.findFirst({
     where: {
-      id: params.postId,
+      title: { equals: decodedSlug, mode: "insensitive" },
+    },
+  });
+
+  if (!topic) return notFound();
+
+  const post = await db.post.findFirst({
+    where: {
+      id: postId,
+      topicId: topic.id,
     },
     include: {
       Topic: true,
@@ -108,20 +116,22 @@ const page = async ({ params }: pageProps) => {
     <>
       <div className="col-span-1 md:col-span-3 md:row-start-1">
         <div className="h-full flex flex-col sm:flex-row items-center sm:items-start justify-between">
-          <div className="sm:w-0 w-full flex-1 bg-white p-4 rounded-sm">
-            <p className="max-h-40 mt-1 truncate text-xs text-gray-500">
+          <div className="post-letter sm:w-0 w-full flex-1 bg-stone-50/90 border border-stone-200/80 shadow-sm p-6 sm:p-8 rounded-sm">
+            <p className="max-h-40 mt-1 truncate text-xs text-amber-800/70">
               {UserObj?.role === Role.ADMIN ||
               UserObj?.role === Role.SUPERADMIN ||
               UserObj?.role === Role.MODERATOR ? (
-                <EditButtonOnPosts
-                  //@ts-expect-error
-                  topictitle={post.Topic.title}
-                  postId={params.postId}
-                />
+                <span className="hidden md:inline-block">
+                  <EditButtonOnPosts
+                    //@ts-expect-error
+                    topictitle={post.Topic.title}
+                    postId={postId}
+                  />
+                </span>
               ) : null}
             </p>
 
-            <h1 className="text-2xl font-semibold py-2 leading-6 text-gray-900">
+            <h1 className="text-2xl font-semibold py-2 leading-7 text-amber-950">
               {post?.title}
             </h1>
 

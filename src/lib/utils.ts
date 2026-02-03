@@ -51,6 +51,17 @@ function formatDistance(token: string, count: number, options?: any): string {
   return result;
 }
 
+export function sortSkillsByTier<T extends { tier?: number; title?: string }>(
+  skills: T[]
+): T[] {
+  return [...skills].sort((a, b) => {
+    const tierA = Number(a.tier) || 0;
+    const tierB = Number(b.tier) || 0;
+    if (tierA !== tierB) return tierA - tierB;
+    return (a.title ?? "").localeCompare(b.title ?? "");
+  });
+}
+
 export function formatTimeToNow(date: Date): string {
   return formatDistanceToNowStrict(date, {
     addSuffix: true,

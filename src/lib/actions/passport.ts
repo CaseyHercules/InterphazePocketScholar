@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
@@ -22,8 +23,14 @@ import {
 const characterPassportInclude = {
   primaryClass: true,
   secondaryClass: true,
-  primarySkills: { orderBy: { title: "asc" as const } },
-  secondarySkills: { orderBy: { title: "asc" as const } },
+  primarySkills: {
+    orderBy: { title: "asc" as const },
+    include: { class: true },
+  },
+  secondarySkills: {
+    orderBy: { title: "asc" as const },
+    include: { class: true },
+  },
   inventory: { orderBy: { title: "asc" as const } },
   spells: { orderBy: { level: "asc" as const } },
   user: { select: { id: true, UnallocatedLevels: true } },
@@ -33,10 +40,7 @@ export type CharacterForPassport = Prisma.CharacterGetPayload<{
   include: typeof characterPassportInclude;
 }>;
 
-/**
- * Server action to fetch character data with all necessary relations for passport view
- */
-export async function getCharacterForPassport(
+export const getCharacterForPassport = cache(async function getCharacterForPassport(
   characterId: string
 ): Promise<CharacterForPassport> {
   const session = await getServerSession(authOptions);
@@ -53,11 +57,13 @@ export async function getCharacterForPassport(
       orderBy: {
         title: "asc",
       },
+      include: { class: true },
     },
     secondarySkills: {
       orderBy: {
         title: "asc",
       },
+      include: { class: true },
     },
     inventory: {
       orderBy: {
@@ -131,7 +137,7 @@ export async function getCharacterForPassport(
   }
 
   return character as CharacterForPassport;
-}
+});
 
 /**
  * Server action to fetch available classes for secondary class selection
@@ -155,34 +161,10 @@ export async function getAvailableClasses() {
 
 
 export async function getAvailableSkillsForCharacter(characterId: string) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect("/auth/signin");
-  }
-
-  const character = await db.character.findUnique({
-    where: { id: characterId },
-    include: {
-      primaryClass: true,
-      secondaryClass: true,
-      primarySkills: true,
-      secondarySkills: true,
-      adjustments: { include: { adjustment: true } },
-    },
-  });
-
-  if (!character) {
-    notFound();
-  }
-
-  if (
-    character.userId !== session.user.id &&
-    session.user.role !== "ADMIN" &&
-    session.user.role !== "SUPERADMIN"
-  ) {
-    redirect("/unauthorized");
-  }
+  const [character, session] = await Promise.all([
+    getCharacterForPassport(characterId),
+    getServerSession(authOptions),
+  ]);
 
   const getSkillTierForLevel = (classData: any, level: number): number => {
     if (!classData?.SkillTierGains) return 0;
@@ -286,76 +268,74 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     processEffects(getSkillEffects(skill.additionalInfo));
   }
 
-  const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
-  for (const entry of adjustments) {
+  const charAdjustments = Array.isArray((character as Record<string, unknown>).adjustments)
+    ? ((character as Record<string, unknown>).adjustments as { adjustment?: { effectsJson?: unknown } }[])
+    : [];
+  for (const entry of charAdjustments) {
     const adjustment = entry?.adjustment ?? entry;
-    processEffects(getEffectsFromJson(adjustment?.effectsJson));
+    processEffects(getEffectsFromJson((adjustment as { effectsJson?: unknown })?.effectsJson));
   }
-  
-  // Fetch specifically granted skills by ID
+
+  const visibilityWhere = getSkillVisibilityWhere(session?.user?.role);
+  const extraSkillPromises: Promise<typeof availableSkills>[] = [];
+
   if (grantedSkillIds.size > 0) {
-    const specificGrantedSkills = await db.skill.findMany({
-      where: {
-        id: { in: Array.from(grantedSkillIds) },
-        ...getSkillVisibilityWhere(session?.user?.role),
-      },
-      include: { class: true },
-    });
-    
-    for (const skill of specificGrantedSkills) {
-      // Add to appropriate tier if within maxTier
+    extraSkillPromises.push(
+      db.skill.findMany({
+        where: {
+          id: { in: Array.from(grantedSkillIds) },
+          ...visibilityWhere,
+        },
+        include: { class: true },
+      })
+    );
+  }
+
+  const externalGrantedTiers = grantedClassTiers.filter(
+    ({ classId }) => classId !== primaryClassId && classId !== secondaryClassId
+  );
+  for (const { classId, maxTier: grantedMaxTier } of externalGrantedTiers) {
+    extraSkillPromises.push(
+      db.skill.findMany({
+        where: {
+          classId,
+          tier: { lte: Math.min(grantedMaxTier, maxTier) },
+          ...visibilityWhere,
+        },
+        include: { class: true },
+      })
+    );
+  }
+
+  if (pickSkillByTierMax > 0 && classIds.length > 0) {
+    extraSkillPromises.push(
+      db.skill.findMany({
+        where: {
+          classId: { in: classIds },
+          tier: { lte: pickSkillByTierMax },
+          ...visibilityWhere,
+        },
+        include: { class: true },
+      })
+    );
+  }
+
+  const extraSkillResults = await Promise.all(extraSkillPromises);
+  for (const skills of extraSkillResults) {
+    for (const skill of skills) {
       if (skill.tier <= maxTier) {
-        if (!skillsByTier[skill.tier]) {
-          skillsByTier[skill.tier] = [];
-        }
-        // Avoid duplicates
+        if (!skillsByTier[skill.tier]) skillsByTier[skill.tier] = [];
         if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
           skillsByTier[skill.tier].push(skill);
         }
       }
     }
   }
-  
-  for (const { classId, maxTier: grantedMaxTier } of grantedClassTiers) {
-    if (classId === primaryClassId || classId === secondaryClassId) continue;
 
-    const grantedClassSkills = await db.skill.findMany({
-      where: {
-        classId,
-        tier: { lte: Math.min(grantedMaxTier, maxTier) },
-        ...getSkillVisibilityWhere(session?.user?.role),
-      },
-      include: { class: true },
-    });
-
-    for (const skill of grantedClassSkills) {
-      if (!skillsByTier[skill.tier]) {
-        skillsByTier[skill.tier] = [];
-      }
-      if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
-        skillsByTier[skill.tier].push(skill);
-      }
-    }
-  }
-
-  if (pickSkillByTierMax > 0 && classIds.length > 0) {
-    const pickSkills = await db.skill.findMany({
-      where: {
-        classId: { in: classIds },
-        tier: { lte: pickSkillByTierMax },
-        ...getSkillVisibilityWhere(session?.user?.role),
-      },
-      include: { class: true },
-    });
-
-    for (const skill of pickSkills) {
-      if (!skillsByTier[skill.tier]) {
-        skillsByTier[skill.tier] = [];
-      }
-      if (!skillsByTier[skill.tier].some((s) => s.id === skill.id)) {
-        skillsByTier[skill.tier].push(skill);
-      }
-    }
+  for (const tier of Object.keys(skillsByTier)) {
+    skillsByTier[Number(tier)].sort((a, b) =>
+      (a.title ?? "").localeCompare(b.title ?? "")
+    );
   }
 
   return {
@@ -363,7 +343,7 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
     primarySkillTiers,
     secondarySkillTiers,
     skillsByTier,
-    learnedSkillIds,
+    learnedSkillIds: Array.from(learnedSkillIds),
     maxPrimaryTier,
     maxSecondaryTier,
   };
@@ -406,14 +386,19 @@ export async function addSkillToCharacter(
       throw new Error("Unauthorized");
     }
 
-    // Check if skill already exists
     const skillAlreadyExists = [
       ...character.primarySkills.map((s) => s.id),
       ...character.secondarySkills.map((s) => s.id),
     ].includes(skillId);
 
     if (skillAlreadyExists) {
-      throw new Error("Skill already learned");
+      const skill = await db.skill.findUnique({
+        where: { id: skillId },
+        select: { canBeTakenMultiple: true },
+      });
+      if (!skill?.canBeTakenMultiple) {
+        throw new Error("Skill already learned");
+      }
     }
 
     // Add skill to character

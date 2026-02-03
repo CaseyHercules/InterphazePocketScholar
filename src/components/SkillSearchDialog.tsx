@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Plus, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +16,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { addSkillToCharacterAction } from "@/lib/actions/skill-actions";
+import { SkillViewer } from "@/components/SkillViewer";
+import { sortSkillsByTier } from "@/lib/utils";
 
 interface SkillSearchDialogProps {
   tier: number;
   targetClass: any;
   character: any;
   skillData: any;
+  onSkillAdded?: () => void;
 }
 
 export function SkillSearchDialog({
@@ -28,59 +32,55 @@ export function SkillSearchDialog({
   targetClass,
   character,
   skillData,
+  onSkillAdded,
 }: SkillSearchDialogProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTiers, setActiveTiers] = useState<number[]>([]);
+  const [viewSkill, setViewSkill] = useState<any>(null);
+  const [pendingSkillId, setPendingSkillId] = useState<string | null>(null);
 
-  // Get all available skills up to the tier for the specific class
+  const learnedSkillIds = new Set([
+    ...(character?.primarySkills || []).map((s: { id: string }) => s.id),
+    ...(character?.secondarySkills || []).map((s: { id: string }) => s.id),
+  ]);
+
   const getAllAvailableSkills = () => {
     const classId = targetClass?.id;
-    if (!classId) {
-      console.log("No class ID found for filtering skills");
-      return [];
-    }
+    if (!classId || !skillData?.skillsByTier) return [];
 
     const allSkills: any[] = [];
-
-    console.log("Filtering skills for class ID:", classId);
-    console.log("Skills by tier:", skillData.skillsByTier);
-
     for (let currentTier = 1; currentTier <= tier; currentTier++) {
       const tierSkills = skillData.skillsByTier[currentTier] || [];
-      console.log(`Tier ${currentTier} skills:`, tierSkills.length);
-
       const availableSkillsForTier = tierSkills.filter((skill: any) => {
-        const isClassSkill = skill.classId === classId;
-        const isNotLearned = !skillData.learnedSkillIds.has(skill.id);
-        console.log(
-          `Skill ${skill.title}: classId=${skill.classId}, isClassSkill=${isClassSkill}, isNotLearned=${isNotLearned}`
-        );
-        return isClassSkill && isNotLearned;
+        if (skill.classId !== classId) return false;
+        const isLearned = learnedSkillIds.has(skill.id);
+        if (isLearned && !skill.canBeTakenMultiple) return false;
+        return true;
       });
-
-      console.log(
-        `Available skills for tier ${currentTier}:`,
-        availableSkillsForTier.length
-      );
       allSkills.push(...availableSkillsForTier);
     }
-
-    return allSkills;
+    return sortSkillsByTier(allSkills);
   };
 
   const allAvailableSkills = getAllAvailableSkills();
 
-  // Debug logging
-  const classId = targetClass?.id;
-  console.log("Debug - Class Skills:", {
-    className: targetClass?.Title,
-    classId,
-    allAvailableSkills: allAvailableSkills.length,
-    tier,
-    skillDataExists: !!skillData,
-    skillsByTierKeys: skillData ? Object.keys(skillData.skillsByTier) : [],
-    targetClass,
-  });
+  const handleLearn = async (skillId: string) => {
+    setPendingSkillId(skillId);
+    try {
+      const isPrimary =
+        targetClass?.id === character.primaryClass?.id;
+      await addSkillToCharacterAction(
+        character.id,
+        skillId,
+        isPrimary
+      );
+      onSkillAdded?.();
+      router.refresh();
+    } finally {
+      setPendingSkillId(null);
+    }
+  };
 
   const toggleTier = (tierValue: number) => {
     setActiveTiers((current) =>
@@ -98,12 +98,12 @@ export function SkillSearchDialog({
         skill.descriptionShort.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const tierFilteredSkills =
+  const tierFilteredSkills = sortSkillsByTier(
     activeTiers.length === 0
       ? filteredSkills
-      : filteredSkills.filter((skill: any) => activeTiers.includes(skill.tier));
+      : filteredSkills.filter((skill: any) => activeTiers.includes(skill.tier))
+  );
 
-  // Group filtered skills by tier
   const groupedFilteredSkills = tierFilteredSkills.reduce(
     (acc: { [tier: number]: any[] }, skill: any) => {
       if (!acc[skill.tier]) {
@@ -217,33 +217,32 @@ export function SkillSearchDialog({
                         : ""}
                     </div>
                   </div>
-                  <form
-                    action={async () => {
-                      // Determine if this is primary or secondary based on the target class
-                      const isPrimary =
-                        targetClass?.id === character.primaryClass?.id;
-                      await addSkillToCharacterAction(
-                        character.id,
-                        skill.id,
-                        isPrimary
-                      );
-                    }}
-                  >
+                  <div className="flex items-center gap-2 ml-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setViewSkill(skill)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="default"
-                      type="submit"
-                      className="ml-2"
+                      type="button"
+                      disabled={!!pendingSkillId}
+                      onClick={() => handleLearn(skill.id)}
                     >
-                      Learn
+                      {pendingSkillId === skill.id ? "..." : "Learn"}
                     </Button>
-                  </form>
+                  </div>
                 </div>
               ))
             ) : (
               // Show grouped by tier when not searching
               Object.entries(groupedFilteredSkills)
-                .sort(([tierA], [tierB]) => parseInt(tierA) - parseInt(tierB))
+                .sort(([tierA], [tierB]) => Number(tierA) - Number(tierB))
                 .map(([currentTier, skills]) => (
                   <div key={currentTier}>
                     <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">
@@ -279,27 +278,26 @@ export function SkillSearchDialog({
                               : ""}
                           </div>
                         </div>
-                        <form
-                          action={async () => {
-                            // Determine if this is primary or secondary based on the target class
-                            const isPrimary =
-                              targetClass?.id === character.primaryClass?.id;
-                            await addSkillToCharacterAction(
-                              character.id,
-                              skill.id,
-                              isPrimary
-                            );
-                          }}
-                        >
+                        <div className="flex items-center gap-2 ml-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            type="button"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setViewSkill(skill)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="default"
-                            type="submit"
-                            className="ml-2"
+                            type="button"
+                            disabled={!!pendingSkillId}
+                            onClick={() => handleLearn(skill.id)}
                           >
-                            Learn
+                            {pendingSkillId === skill.id ? "..." : "Learn"}
                           </Button>
-                        </form>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -307,6 +305,12 @@ export function SkillSearchDialog({
             )}
           </div>
         </ScrollArea>
+
+        <SkillViewer
+          skill={viewSkill}
+          isOpen={!!viewSkill}
+          onClose={() => setViewSkill(null)}
+        />
       </DialogContent>
     </Dialog>
   );

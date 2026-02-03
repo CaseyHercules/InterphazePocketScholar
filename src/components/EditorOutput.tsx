@@ -147,8 +147,8 @@ const EditorOutput: FC<EditorOutputProps> = ({
   }, [content]);
 
   return (
-    <div className="quill">
-      <div ref={containerRef} className="ql-container ql-snow read-only" />
+    <div className="quill read-only">
+      <div ref={containerRef} className="ql-container ql-snow" />
     </div>
   );
 };

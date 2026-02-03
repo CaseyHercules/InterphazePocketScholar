@@ -48,6 +48,7 @@ const gbp = Gentium_Book_Plus({
   subsets: ["latin"],
   weight: ["400", "700"],
   style: ["normal", "italic"],
+  variable: "--font-gentium-book-plus",
 });
 
 export default function RootLayout({
@@ -63,7 +64,8 @@ export default function RootLayout({
       className={cn(
         "bg-white text-stone-900 antialias light",
         inter.className,
-        gbp.className
+        gbp.className,
+        gbp.variable
       )}
     >
       <body className="min-h-screen antialiased flex flex-col aesthetic-bg">

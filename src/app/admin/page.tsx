@@ -19,6 +19,11 @@ const ADMIN_LINKS = [
     description: "View, create, and manage events.",
   },
   {
+    href: "/admin/users",
+    title: "User Management",
+    description: "View and edit registered users. Only SUPERADMIN can change roles.",
+  },
+  {
     href: "/admin/classTool",
     title: "Class Tool",
     description: "Update and create classes.",

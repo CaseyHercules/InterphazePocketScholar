@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Plus, Check, Minus, Lock, Unlock, Eye } from "lucide-react";
+import { BookOpen, Plus, Minus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,26 +19,50 @@ import { SkillViewer } from "@/components/SkillViewer";
 import {
   addSkillToCharacter,
   removeSkillFromCharacter,
+  getAvailableSkillsForCharacter,
 } from "@/lib/actions/passport";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getEffectiveSkillValue } from "@/lib/utils/character-stats";
+import { sortSkillsByTier } from "@/lib/utils";
+
+type SkillData = {
+  primarySkillTiers: { [level: number]: number };
+  secondarySkillTiers: { [level: number]: number };
+  skillsByTier: { [tier: number]: any[] };
+  learnedSkillIds: string[] | Set<string>;
+  maxPrimaryTier: number;
+  maxSecondaryTier: number;
+};
 
 interface CharacterSkillsCardProps {
   character: any;
-  skillData?: {
-    primarySkillTiers: { [level: number]: number };
-    secondarySkillTiers: { [level: number]: number };
-    skillsByTier: { [tier: number]: any[] };
-    learnedSkillIds: Set<string>;
-    maxPrimaryTier: number;
-    maxSecondaryTier: number;
-  };
+  skillData?: SkillData | null;
 }
 
 export function CharacterSkillsCard({
   character,
-  skillData,
+  skillData: skillDataProp,
 }: CharacterSkillsCardProps) {
+  const [fetchedSkillData, setFetchedSkillData] = useState<SkillData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const skillData = skillDataProp ?? fetchedSkillData;
+
+  useEffect(() => {
+    if (!character?.id) return;
+    let cancelled = false;
+    setIsLoading(true);
+    getAvailableSkillsForCharacter(character.id)
+      .then((data) => {
+        if (!cancelled) setFetchedSkillData(data);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [character?.id, skillDataProp, refreshTrigger]);
+
+  const [isEditMode, setIsEditMode] = useState(true);
   const [selectedAvailableClass, setSelectedAvailableClass] = useState<
     "primary" | "secondary"
   >("primary");
@@ -50,7 +74,8 @@ export function CharacterSkillsCard({
   const totalSkills =
     character.primarySkills.length + character.secondarySkills.length;
 
-  // Get skill slots organized by class as a single list
+  const getSkillClassId = (s: any) => s.classId ?? s.class?.id;
+
   const getClassSkillSlots = (isPrimary: boolean) => {
     if (!skillData) return { slots: [], maxTier: 0 };
 
@@ -74,8 +99,12 @@ export function CharacterSkillsCard({
     // Sort slots by level
     slots.sort((a, b) => a.level - b.level);
 
-    // Fill slots with learned skills (match by tier preference)
+    const classId = isPrimary
+      ? character.primaryClass?.id
+      : character.secondaryClass?.id;
+
     learnedSkills.forEach((skill: any) => {
+      if (getSkillClassId(skill) !== classId) return;
       const emptySlot = slots.find(
         (slot) => !slot.skill && slot.tier >= skill.tier
       );
@@ -90,16 +119,73 @@ export function CharacterSkillsCard({
   const primarySlots = getClassSkillSlots(true);
   const secondarySlots = getClassSkillSlots(false);
 
+  const primaryClassId = character.primaryClass?.id;
+  const secondaryClassId = character.secondaryClass?.id;
+  const learnedMiscellaneousSkills = [
+    ...(character.primarySkills || []),
+    ...(character.secondarySkills || []),
+  ].filter((s: any) => {
+    const cid = getSkillClassId(s);
+    return cid !== primaryClassId && cid !== secondaryClassId;
+  });
+
+  const adjustments = Array.isArray(character?.adjustments)
+    ? character.adjustments
+    : [];
+
+  const allSkillsFromTier = skillData
+    ? Object.values(skillData.skillsByTier || {}).flat()
+    : [];
+  const skillsGrantedByAdjustments = allSkillsFromTier.filter((s: any) => {
+    const cid = getSkillClassId(s);
+    return cid !== primaryClassId && cid !== secondaryClassId;
+  });
+
+  const learnedMiscIds = new Set(learnedMiscellaneousSkills.map((s: any) => s.id));
+  const dingusSkills = sortSkillsByTier([
+    ...learnedMiscellaneousSkills,
+    ...skillsGrantedByAdjustments.filter(
+      (s: any) => !learnedMiscIds.has(s.id)
+    ),
+  ]);
+  const learnedSkillIdsSet = new Set(
+    Array.isArray(skillData?.learnedSkillIds)
+      ? skillData.learnedSkillIds
+      : skillData?.learnedSkillIds instanceof Set
+        ? Array.from(skillData.learnedSkillIds)
+        : []
+  );
+
   return (
     <Card className="shadow-sm flex-1 flex flex-col">
       <CardHeader className="p-3 sm:p-4">
-        <CardTitle className="flex items-center text-base sm:text-lg">
-          <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-          Character Skills
-        </CardTitle>
-        <CardDescription className="text-xs sm:text-sm">
-          Skills learned and available for this character
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center text-base sm:text-lg">
+              <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              Character Skills
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Skills learned and available for this character
+            </CardDescription>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant={!isEditMode ? "default" : "outline"}
+              onClick={() => setIsEditMode(false)}
+            >
+              View
+            </Button>
+            <Button
+              size="sm"
+              variant={isEditMode ? "default" : "outline"}
+              onClick={() => setIsEditMode(true)}
+            >
+              Edit
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-3 sm:p-4 pt-0 flex-1 flex flex-col">
         {skillData ? (
@@ -137,6 +223,8 @@ export function CharacterSkillsCard({
                           character={character}
                           skillData={skillData}
                           maxTier={primarySlots.maxTier}
+                          isEditMode={isEditMode}
+                          onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                         />
                       </div>
                     )}
@@ -162,6 +250,8 @@ export function CharacterSkillsCard({
                             character={character}
                             skillData={skillData}
                             maxTier={secondarySlots.maxTier}
+                            isEditMode={isEditMode}
+                            onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                           />
                         </div>
                       )}
@@ -181,6 +271,64 @@ export function CharacterSkillsCard({
                       </div>
                     )}
                   </div>
+
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Badge variant="outline" className="font-medium">
+                        Dingues
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        Unique attributes and skills granted by adjustments
+                      </span>
+                      <div className="h-px bg-border flex-1" />
+                    </div>
+                    {dingusSkills.length > 0 ? (
+                      <div className="border rounded-lg overflow-hidden">
+                        {dingusSkills.map((skill: any, index: number) => {
+                          const isLearned = learnedMiscIds.has(skill.id);
+                          return (
+                            <SkillSlot
+                              key={skill.id}
+                              skill={skill}
+                              isLearned={isLearned}
+                              showRemoveButton={isEditMode && isLearned}
+                              characterId={character.id}
+                              character={character}
+                              isLastItem={index === dingusSkills.length - 1}
+                              onViewSkill={(s) => {
+                                setSelectedSkill(s);
+                                setIsSkillViewerOpen(true);
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-3">
+                        No unique attributes about your character.
+                      </p>
+                    )}
+                  </div>
+
+                  {adjustments.length > 0 && (
+                    <details className="mt-6">
+                      <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                        Debug: Raw effects JSON
+                      </summary>
+                      <div className="mt-2 p-3 rounded-lg bg-muted/50 text-xs font-mono overflow-auto max-h-64">
+                        <pre className="whitespace-pre-wrap break-words">
+                          {JSON.stringify(
+                            adjustments.map((e: any) => ({
+                              title: e?.adjustment?.title ?? e?.title,
+                              effectsJson: e?.adjustment?.effectsJson ?? e?.effectsJson,
+                            })),
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </div>
+                    </details>
+                  )}
                 </ScrollArea>
               </div>
             </TabsContent>
@@ -227,7 +375,7 @@ export function CharacterSkillsCard({
                 <div className="space-y-6">
                   {Object.entries(skillData.skillsByTier)
                     .sort(
-                      ([tierA], [tierB]) => parseInt(tierA) - parseInt(tierB)
+                      ([tierA], [tierB]) => Number(tierA) - Number(tierB)
                     )
                     .map(([tier, skills]) => {
                       const selectedClassObj =
@@ -235,9 +383,16 @@ export function CharacterSkillsCard({
                           ? character.primaryClass
                           : character.secondaryClass;
 
-                      // Filter skills for the selected class
-                      const classSkills = (skills as any[]).filter(
-                        (skill: any) => skill.classId === selectedClassObj?.id
+                      const classSkills = sortSkillsByTier(
+                        (skills as any[]).filter((skill: any) => {
+                          if (skill.classId !== selectedClassObj?.id)
+                            return false;
+                          const learned =
+                            learnedSkillIdsSet.has(skill.id);
+                          if (learned && !skill.canBeTakenMultiple)
+                            return false;
+                          return true;
+                        })
                       );
 
                       if (classSkills.length === 0) return null;
@@ -255,20 +410,18 @@ export function CharacterSkillsCard({
                           </div>
                           <div className="border rounded-lg overflow-hidden">
                             {classSkills.map((skill: any, index: number) => {
-                              const isLearned = skillData.learnedSkillIds.has(
-                                skill.id
-                              );
+                              const isLearned =
+                                learnedSkillIdsSet.has(skill.id);
                               return (
                                 <SkillSlot
                                   key={skill.id}
                                   skill={skill}
                                   isLearned={isLearned}
-                                  showViewButton={true}
                                   characterId={character.id}
                                   character={character}
                                   isLastItem={index === classSkills.length - 1}
-                                  onViewSkill={(skill) => {
-                                    setSelectedSkill(skill);
+                                  onViewSkill={(s) => {
+                                    setSelectedSkill(s);
                                     setIsSkillViewerOpen(true);
                                   }}
                                 />
@@ -282,24 +435,31 @@ export function CharacterSkillsCard({
               </ScrollArea>
             </TabsContent>
           </Tabs>
+        ) : isLoading ? (
+          <div className="flex-1 flex items-center justify-center py-12">
+            <p className="text-sm text-muted-foreground">Loading skills...</p>
+          </div>
         ) : (
-          // Fallback for when skillData is not available
           <ScrollArea className="flex-1">
             {hasSkills ? (
               <div className="space-y-4">
                 <div className="border rounded-lg overflow-hidden">
-                  {[
+                  {sortSkillsByTier([
                     ...character.primarySkills,
                     ...character.secondarySkills,
-                  ].map((skill: any, index: number, array: any[]) => (
+                  ]).map((skill: any, index: number, array: any[]) => (
                     <SkillSlot
                       key={skill.id}
                       skill={skill}
                       isLearned={true}
+                      showRemoveButton={isEditMode}
                       characterId={character.id}
                       character={character}
-                      showRemoveButton={true}
                       isLastItem={index === array.length - 1}
+                      onViewSkill={(s) => {
+                        setSelectedSkill(s);
+                        setIsSkillViewerOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -339,19 +499,22 @@ export function CharacterSkillsCard({
   );
 }
 
-// New component for class slot sections
 function ClassSlotSection({
   slots,
   isPrimary,
   character,
   skillData,
   maxTier,
+  isEditMode,
+  onSkillAdded,
 }: {
   slots: { level: number; tier: number; skill?: any }[];
   isPrimary: boolean;
   character: any;
   skillData: any;
   maxTier: number;
+  isEditMode: boolean;
+  onSkillAdded?: () => void;
 }) {
   // Get the specific class for this section
   const classObj = isPrimary
@@ -382,12 +545,7 @@ function ClassSlotSection({
                   <Badge variant="outline" className="text-xs">
                     Tier {slot.skill.tier}
                   </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs hover:bg-green-300"
-                  >
-                    Learned
-                  </Badge>
+                  
                 </div>
                 {slot.skill.descriptionShort && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
@@ -395,20 +553,22 @@ function ClassSlotSection({
                   </p>
                 )}
               </div>
-              <form
-                action={async () => {
-                  await removeSkillFromCharacter(character.id, slot.skill.id);
-                }}
-              >
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="submit"
-                  className="h-8 w-8 p-0 ml-2"
+              {isEditMode && (
+                <form
+                  action={async () => {
+                    await removeSkillFromCharacter(character.id, slot.skill.id);
+                  }}
                 >
-                  <Minus className="h-3 w-3" />
-                </Button>
-              </form>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="submit"
+                    className="h-8 w-8 p-0 ml-2"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                </form>
+              )}
             </>
           ) : (
             <>
@@ -420,12 +580,15 @@ function ClassSlotSection({
                   {classObj?.Title} skills only
                 </div>
               </div>
-              <SkillSearchDialog
-                tier={slot.tier}
-                targetClass={classObj}
-                character={character}
-                skillData={skillData}
-              />
+              {isEditMode && (
+                <SkillSearchDialog
+                  tier={slot.tier}
+                  targetClass={classObj}
+                  character={character}
+                  skillData={skillData}
+                  onSkillAdded={onSkillAdded}
+                />
+              )}
             </>
           )}
         </div>
@@ -440,7 +603,6 @@ function SkillSlot({
   canLearn = false,
   showAddButton = false,
   showRemoveButton = false,
-  showViewButton = false,
   characterId,
   character,
   isLastItem = false,
@@ -451,7 +613,6 @@ function SkillSlot({
   canLearn?: boolean;
   showAddButton?: boolean;
   showRemoveButton?: boolean;
-  showViewButton?: boolean;
   characterId?: string;
   character?: any;
   isLastItem?: boolean;
@@ -465,14 +626,35 @@ function SkillSlot({
     ? getEffectiveSkillValue(skill, character, "epCost")
     : skill.epCost;
 
+  const epDisplay =
+    Number(effectiveEpReduction) > 0
+      ? `Permanent EP -${effectiveEpReduction}`
+      : effectiveEpCost && String(effectiveEpCost).trim() !== "" && Number(effectiveEpCost) > 0
+        ? `EP Cost: ${effectiveEpCost}`
+        : null;
+
   return (
     <div
+      role={onViewSkill ? "button" : undefined}
+      tabIndex={onViewSkill ? 0 : undefined}
       className={`
         flex items-center justify-between p-3 min-h-[3rem]
         ${!isLastItem ? "border-b" : ""}
         ${"bg-background hover:bg-muted/50"}
+        ${onViewSkill ? "cursor-pointer" : ""}
         transition-colors
       `}
+      onClick={onViewSkill ? () => onViewSkill(skill) : undefined}
+      onKeyDown={
+        onViewSkill
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onViewSkill(skill);
+              }
+            }
+          : undefined
+      }
     >
       <div className="flex-1 min-w-[60%] pr-4">
         <div className="flex items-center gap-2 flex-wrap">
@@ -488,19 +670,18 @@ function SkillSlot({
         )}
       </div>
 
-      <div className="flex items-center gap-3 flex-shrink-0 min-w-0 ">
-        <div className="text-right min-w-0">
-          <div className="text-sm font-medium whitespace-nowrap">
-            {Number(effectiveEpReduction) > 0
-              ? `Permanent EP -${effectiveEpReduction}`
-              : effectiveEpCost && String(effectiveEpCost).trim() !== ""
-              ? effectiveEpCost
-              : ""}
+      <div className="flex items-center gap-3 flex-shrink-0 min-w-0">
+        {epDisplay && (
+          <div className="text-right min-w-0">
+            <div className="text-sm font-medium whitespace-nowrap">
+              {epDisplay}
+            </div>
           </div>
-        </div>
+        )}
 
         {showAddButton && canLearn && characterId && (
           <form
+            onClick={(e) => e.stopPropagation()}
             action={async () => {
               await addSkillToCharacter(characterId, skill.id, true);
             }}
@@ -518,6 +699,7 @@ function SkillSlot({
 
         {showRemoveButton && isLearned && characterId && (
           <form
+            onClick={(e) => e.stopPropagation()}
             action={async () => {
               await removeSkillFromCharacter(characterId, skill.id);
             }}
@@ -531,17 +713,6 @@ function SkillSlot({
               <Minus className="h-3 w-3" />
             </Button>
           </form>
-        )}
-
-        {showViewButton && onViewSkill && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => onViewSkill(skill)}
-          >
-            <Eye className="h-3 w-3" />
-          </Button>
         )}
       </div>
     </div>

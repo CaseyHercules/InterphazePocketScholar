@@ -34,6 +34,43 @@ function getStatFromClass(classStat: any, level: number): number {
   return 0;
 }
 
+function hasValidSecondaryClass(character: any): boolean {
+  return !!(
+    character.secondaryClass &&
+    character.secondaryClassLvl > 0 &&
+    !String(character.secondaryClass.Title || "").toLowerCase().includes("none")
+  );
+}
+
+function getStatValues(
+  character: any,
+  statName: string
+): { primary: number; secondary: number } {
+  let primary = 0;
+  let secondary = 0;
+
+  if (character.primaryClass?.[statName]) {
+    primary = getStatFromClass(
+      character.primaryClass[statName],
+      character.primaryClassLvl
+    );
+  }
+
+  if (
+    hasValidSecondaryClass(character) &&
+    character.secondaryClass?.[statName]
+  ) {
+    const secondaryValue =
+      getStatFromClass(
+        character.secondaryClass[statName],
+        character.secondaryClassLvl
+      ) - getStatFromClass(character.secondaryClass[statName], 1);
+    secondary = Math.ceil(secondaryValue / 2);
+  }
+
+  return { primary, secondary };
+}
+
 export type StatAdjustmentBreakdown = {
   title: string;
   value: number;
@@ -64,39 +101,18 @@ export type EPBreakdown = {
 };
 
 export function calculateStatValue(character: any, statName: string): number {
-  let value = 0;
-
   const normalizedStat = statName.trim().toLowerCase();
   const adjustmentValue = getAdjustmentStatBonus(character, normalizedStat).total;
   const skillBonusValue = getSkillStatBonuses(character, normalizedStat).total;
+  const { primary, secondary } = getStatValues(
+    character,
+    statName
+  );
 
-  // Primary class - full value
-  if (character.primaryClass?.[statName]) {
-    value += getStatFromClass(
-      character.primaryClass[statName],
-      character.primaryClassLvl
-    );
-  }
-
-  // EP is handled separately - don't combine primary and secondary
   if (statName === "EP") {
-    return value + adjustmentValue + skillBonusValue;
+    return primary + adjustmentValue + skillBonusValue;
   }
-
-  // Secondary class - half value (multiclass penalty), rounded up
-  if (
-    character.secondaryClass?.[statName] &&
-    character.secondaryClassLvl > 0 &&
-    !character.secondaryClass.Title?.toLowerCase().includes("none")
-  ) {
-    const secondaryValue =
-      getStatFromClass(
-        character.secondaryClass[statName],
-        character.secondaryClassLvl
-      ) - getStatFromClass(character.secondaryClass[statName], 1);
-    value += Math.ceil(secondaryValue / 2);
-  }
-  return value + adjustmentValue + skillBonusValue;
+  return primary + secondary + adjustmentValue + skillBonusValue;
 }
 
 export function getEPValues(character: any): {
@@ -108,9 +124,7 @@ export function getEPValues(character: any): {
     : 0;
 
   const secondaryEP =
-    character.secondaryClass?.EP &&
-    character.secondaryClassLvl > 0 &&
-    !character.secondaryClass.Title?.toLowerCase().includes("none")
+    hasValidSecondaryClass(character) && character.secondaryClass?.EP
       ? getStatFromClass(
           character.secondaryClass.EP,
           character.secondaryClassLvl
@@ -187,30 +201,10 @@ export function getStatBreakdown(
   const normalizedStat = statName.trim().toLowerCase();
   const adjustments = getAdjustmentStatBonus(character, normalizedStat);
   const skillBonuses = getSkillStatBonuses(character, normalizedStat);
-
-  let primary = 0;
-  let secondary = 0;
-
-  if (character.primaryClass?.[statName]) {
-    primary = getStatFromClass(
-      character.primaryClass[statName],
-      character.primaryClassLvl
-    );
-  }
-
-  if (
-    character.secondaryClass?.[statName] &&
-    character.secondaryClassLvl > 0 &&
-    !character.secondaryClass.Title?.toLowerCase().includes("none")
-  ) {
-    const secondaryValue =
-      getStatFromClass(
-        character.secondaryClass[statName],
-        character.secondaryClassLvl
-      ) - getStatFromClass(character.secondaryClass[statName], 1);
-    secondary = Math.ceil(secondaryValue / 2);
-  }
-
+  const { primary, secondary } = getStatValues(
+    character,
+    statName
+  );
   const total = primary + secondary + adjustments.total + skillBonuses.total;
 
   return {

@@ -12,8 +12,12 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const visibilityWhere = getVisibilityWhere(session?.user?.role);
     const items = await db.item.findMany({
-      where: getVisibilityWhere(session?.user?.role),
+      where: {
+        ...visibilityWhere,
+        archived: false,
+      },
       orderBy: {
         title: "asc",
       },

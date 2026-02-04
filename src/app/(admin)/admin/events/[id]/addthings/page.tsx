@@ -15,12 +15,11 @@ export const metadata = {
 };
 
 interface AddThingsPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function AddThingsPage({ params }: AddThingsPageProps) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !["ADMIN", "SUPERADMIN"].includes(session.user.role)) {
@@ -28,9 +27,7 @@ export default async function AddThingsPage({ params }: AddThingsPageProps) {
   }
 
   const event = await db.event.findUnique({
-    where: {
-      id: params.id,
-    },
+    where: { id },
   });
 
   if (!event) {

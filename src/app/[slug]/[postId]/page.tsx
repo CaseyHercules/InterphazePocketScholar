@@ -123,7 +123,6 @@ const page = async ({ params }: pageProps) => {
               UserObj?.role === Role.MODERATOR ? (
                 <span className="hidden md:inline-block">
                   <EditButtonOnPosts
-                    //@ts-expect-error
                     topictitle={post.Topic.title}
                     postId={postId}
                   />

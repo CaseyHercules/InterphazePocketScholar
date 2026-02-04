@@ -9,14 +9,13 @@ import { EventDisplay } from "@/components/EventDisplay";
 import { PenSquare, ArrowLeft } from "lucide-react";
 
 interface EventPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: EventPageProps) {
+  const { id } = await params;
   const event = await db.event.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { title: true },
   });
 
@@ -27,6 +26,7 @@ export async function generateMetadata({ params }: EventPageProps) {
 }
 
 export default async function EventPage({ params }: EventPageProps) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -37,11 +37,8 @@ export default async function EventPage({ params }: EventPageProps) {
     redirect("/unauthorized");
   }
 
-  // Fetch the event
   const event = await db.event.findUnique({
-    where: {
-      id: params.id,
-    },
+    where: { id },
   });
 
   if (!event) {
@@ -83,7 +80,7 @@ export default async function EventPage({ params }: EventPageProps) {
             </Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href={`/admin/events/${params.id}/edit`}>
+            <Link href={`/admin/events/${id}/edit`}>
               <PenSquare className="h-4 w-4 mr-1" />
               Edit Event
             </Link>
@@ -124,19 +121,19 @@ export default async function EventPage({ params }: EventPageProps) {
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="space-y-2">
             <Button className="w-full justify-start" size="sm" asChild>
-              <Link href={`/admin/events/${params.id}/edit`}>
+              <Link href={`/admin/events/${id}/edit`}>
                 <PenSquare className="h-4 w-4 mr-2" />
                 Edit Event Details
               </Link>
             </Button>
             <Button className="w-full justify-start" size="sm" asChild>
-              <Link href={`/admin/events/${params.id}/addthings`}>
+              <Link href={`/admin/events/${id}/addthings`}>
                 <PenSquare className="h-4 w-4 mr-2" />
                 Add Items & Spells
               </Link>
             </Button>
             <Button className="w-full justify-start" size="sm" asChild>
-              <Link href={`/events/${params.id}`}>
+              <Link href={`/events/${id}`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 View Public Page
               </Link>

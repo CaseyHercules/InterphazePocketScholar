@@ -225,16 +225,19 @@ model Event {
 }
 
 model Item {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  type        ItemType?
-  quantity    Int
-  visibilityRoles Role[] @default([])
-  characterId String?
-  character   Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id               String     @id @default(cuid())
+  title            String
+  description      String?
+  type             ItemType?
+  quantity         Int
+  data             Json?
+  archived         Boolean    @default(false)
+  visibilityRoles  Role[]     @default([])
+  characterId      String?
+  character        Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
+  @@index([archived])
 }
 
 model Spell {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Menubar,
   MenubarContent,
@@ -104,14 +105,14 @@ const MenuItem = ({ item }: { item: any }) => {
   if (item.subItems) {
     return (
       <MenubarSub>
-        <a href={item.href}>
-          <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
-        </a>
+        <MenubarSubTrigger asChild>
+          <Link href={item.href}>{item.label}</Link>
+        </MenubarSubTrigger>
         <MenubarSubContent>
           {item.subItems.map((subItem: any) => (
-            <a key={subItem.href} href={subItem.href}>
-              <MenubarItem>{subItem.label}</MenubarItem>
-            </a>
+            <MenubarItem key={subItem.href} asChild>
+              <Link href={subItem.href}>{subItem.label}</Link>
+            </MenubarItem>
           ))}
         </MenubarSubContent>
       </MenubarSub>
@@ -119,9 +120,9 @@ const MenuItem = ({ item }: { item: any }) => {
   }
 
   return (
-    <a href={item.href}>
-      <MenubarItem>{item.label}</MenubarItem>
-    </a>
+    <MenubarItem asChild>
+      <Link href={item.href}>{item.label}</Link>
+    </MenubarItem>
   );
 };
 

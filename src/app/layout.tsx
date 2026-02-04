@@ -68,7 +68,10 @@ export default function RootLayout({
         gbp.variable
       )}
     >
-      <body className="min-h-screen antialiased flex flex-col aesthetic-bg">
+      <body
+        className="min-h-screen antialiased flex flex-col aesthetic-bg"
+        suppressHydrationWarning
+      >
         <Analytics />
         <Providers>
           {/* Fixed navbar at the top */}

@@ -17,8 +17,11 @@ export async function EventItemsTab({ eventId }: EventItemsTabProps) {
     return <div>Event not found</div>;
   }
 
-  // Fetch all available items from the database
   const dbItems = await db.item.findMany({
+    where: {
+      characterId: null,
+      archived: false,
+    },
     select: {
       id: true,
       title: true,

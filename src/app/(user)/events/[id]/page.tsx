@@ -7,14 +7,13 @@ import { EventRegistrationSection } from "./components/EventRegistrationSection"
 import { SignInPrompt } from "./components/SignInPrompt";
 
 interface EventPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: EventPageProps) {
+  const { id } = await params;
   const event = await db.event.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { title: true },
   });
 
@@ -25,15 +24,13 @@ export async function generateMetadata({ params }: EventPageProps) {
 }
 
 export default async function EventPage({ params }: EventPageProps) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   const isAdmin =
     session?.user?.role === "ADMIN" || session?.user?.role === "SUPERADMIN";
 
-  // Fetch the event
   const event = await db.event.findUnique({
-    where: {
-      id: params.id,
-    },
+    where: { id },
   });
 
   if (!event) {

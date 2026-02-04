@@ -6,14 +6,13 @@ import { redirect } from "next/navigation";
 import { EventForm } from "../../components/EventForm";
 
 interface EditEventPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: EditEventPageProps) {
+  const { id } = await params;
   const event = await db.event.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { title: true },
   });
 
@@ -23,6 +22,7 @@ export async function generateMetadata({ params }: EditEventPageProps) {
 }
 
 export default async function EditEventPage({ params }: EditEventPageProps) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -34,9 +34,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
   }
 
   const event = await db.event.findUnique({
-    where: {
-      id: params.id,
-    },
+    where: { id },
   });
 
   if (!event) {

@@ -45,7 +45,9 @@ function RegistrationButton({
       )}
 
       {!isRegistered ? (
-        <Button onClick={onRegister}>Register Now</Button>
+        <Button type="button" onClick={onRegister}>
+          Register Now
+        </Button>
       ) : (
         <Button disabled>Already Registered</Button>
       )}

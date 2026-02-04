@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { EventDisplay } from "@/components/EventDisplay";
-import { EventRegistrationSection } from "./components/EventRegistrationSection";
+import { EventPageContent } from "./components/EventPageContent";
 import { SignInPrompt } from "./components/SignInPrompt";
 
 interface EventPageProps {
@@ -95,23 +95,21 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <div className="container max-w-5xl mx-auto py-8">
-      <EventDisplay
-        event={{
-          ...eventWithCount,
-          isRegistered,
-        }}
-        isAdmin={isAdmin}
-      />
-
       {session?.user ? (
-        <EventRegistrationSection
-          eventId={eventWithCount.id}
+        <EventPageContent
+          event={{ ...eventWithCount, isRegistered }}
+          isAdmin={isAdmin}
           isRegistered={isRegistered}
           characters={characters}
-          hasCharacters={characters.length > 0}
         />
       ) : (
-        <SignInPrompt eventId={eventWithCount.id} />
+        <>
+          <EventDisplay
+            event={{ ...eventWithCount, isRegistered }}
+            isAdmin={isAdmin}
+          />
+          <SignInPrompt eventId={eventWithCount.id} />
+        </>
       )}
     </div>
   );

@@ -54,10 +54,11 @@ export async function EventItemsTab({ eventId }: EventItemsTabProps) {
           title: true,
           description: true,
           type: true,
+          archived: true,
         },
       });
 
-      if (item) {
+      if (item && !item.archived) {
         initialItems.push({
           id: item.id,
           title: item.title,

@@ -16,6 +16,8 @@ interface EventRegistrationSectionProps {
   isRegistered: boolean;
   characters: Character[];
   hasCharacters: boolean;
+  showRegistrationModal?: boolean;
+  onShowRegistrationModalChange?: (open: boolean) => void;
 }
 
 export function EventRegistrationSection({
@@ -23,8 +25,16 @@ export function EventRegistrationSection({
   isRegistered,
   characters,
   hasCharacters,
+  showRegistrationModal: controlledOpen,
+  onShowRegistrationModalChange,
 }: EventRegistrationSectionProps) {
-  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const showRegistrationModal =
+    onShowRegistrationModalChange !== undefined
+      ? controlledOpen ?? false
+      : internalOpen;
+  const setShowRegistrationModal =
+    onShowRegistrationModalChange ?? setInternalOpen;
 
   return (
     <div className="mt-8 p-6 border rounded-lg">

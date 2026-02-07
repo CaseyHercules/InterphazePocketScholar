@@ -45,19 +45,23 @@ export async function PATCH(req: Request) {
     const classIdValue =
       classId && typeof classId === "string" ? classId : null;
 
-    const updateData: Record<string, unknown> = {};
     if (slot === "primary") {
-      updateData.primaryClassId = classIdValue;
-      updateData.primarySkills = { set: [] };
+      await db.characterPrimarySkill.deleteMany({
+        where: { characterId },
+      });
+      await db.character.update({
+        where: { id: characterId },
+        data: { primaryClassId: classIdValue },
+      });
     } else {
-      updateData.secondaryClassId = classIdValue;
-      updateData.secondarySkills = { set: [] };
+      await db.characterSecondarySkill.deleteMany({
+        where: { characterId },
+      });
+      await db.character.update({
+        where: { id: characterId },
+        data: { secondaryClassId: classIdValue },
+      });
     }
-
-    await db.character.update({
-      where: { id: characterId },
-      data: updateData,
-    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

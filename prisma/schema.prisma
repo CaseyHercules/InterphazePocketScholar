@@ -103,8 +103,8 @@ model Skill {
   childSkills          Skill[]     @relation("RelatedSkills")
   skillGrouping        SkillGroup? @relation(fields: [skillGroupId], references: [id])
   class                Class?      @relation("ClassSkills", fields: [classId], references: [id])
-  primaryCharacters    Character[] @relation("PrimarySkills")
-  secondaryCharacters  Character[] @relation("SecondarySkills")
+  primaryCharacterEntries  CharacterPrimarySkill[]
+  secondaryCharacterEntries CharacterSecondarySkill[]
 
   @@index([skillGroupId])
   @@index([parentSkillId])
@@ -161,8 +161,8 @@ model Character {
   user              User?                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   primaryClass      Class?                @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   secondaryClass    Class?                @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  primarySkills     Skill[]               @relation("PrimarySkills")
-  secondarySkills   Skill[]               @relation("SecondarySkills")
+  primarySkillEntries   CharacterPrimarySkill[]
+  secondarySkillEntries CharacterSecondarySkill[]
   inventory         Item[]
   spells            Spell[]
   events            Event[]
@@ -331,22 +331,26 @@ model PromoCode {
   @@index([eventId])
 }
 
-model PrimarySkills {
-  A String
-  B String
+model CharacterPrimarySkill {
+  id          String   @id @default(cuid())
+  characterId String
+  skillId     String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
-  @@id([A, B], map: "_PrimarySkills_AB_pkey")
-  @@index([B], map: "_PrimarySkills_B_index")
-  @@map("_PrimarySkills")
+  @@index([characterId])
+  @@index([skillId])
 }
 
-model SecondarySkills {
-  A String
-  B String
+model CharacterSecondarySkill {
+  id          String   @id @default(cuid())
+  characterId String
+  skillId     String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
-  @@id([A, B], map: "_SecondarySkills_AB_pkey")
-  @@index([B], map: "_SecondarySkills_B_index")
-  @@map("_SecondarySkills")
+  @@index([characterId])
+  @@index([skillId])
 }
 
 enum Role {

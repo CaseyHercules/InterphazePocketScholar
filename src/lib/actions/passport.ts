@@ -23,22 +23,28 @@ import {
 const characterPassportInclude = {
   primaryClass: true,
   secondaryClass: true,
-  primarySkills: {
-    orderBy: { title: "asc" as const },
-    include: { class: true },
+  primarySkillEntries: {
+    include: { skill: { include: { class: true } } },
   },
-  secondarySkills: {
-    orderBy: { title: "asc" as const },
-    include: { class: true },
+  secondarySkillEntries: {
+    include: { skill: { include: { class: true } } },
   },
   inventory: { orderBy: { title: "asc" as const } },
   spells: { orderBy: { level: "asc" as const } },
   user: { select: { id: true, UnallocatedLevels: true } },
 } as const;
 
-export type CharacterForPassport = Prisma.CharacterGetPayload<{
+type CharacterPassportPayload = Prisma.CharacterGetPayload<{
   include: typeof characterPassportInclude;
 }>;
+
+export type CharacterForPassport = Omit<
+  CharacterPassportPayload,
+  "primarySkillEntries" | "secondarySkillEntries"
+> & {
+  primarySkills: NonNullable<CharacterPassportPayload["primarySkillEntries"]>[number]["skill"][];
+  secondarySkills: NonNullable<CharacterPassportPayload["secondarySkillEntries"]>[number]["skill"][];
+};
 
 export const getCharacterForPassport = cache(async function getCharacterForPassport(
   characterId: string
@@ -53,17 +59,11 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
   const baseInclude = {
     primaryClass: true,
     secondaryClass: true,
-    primarySkills: {
-      orderBy: {
-        title: "asc",
-      },
-      include: { class: true },
+    primarySkillEntries: {
+      include: { skill: { include: { class: true } } },
     },
-    secondarySkills: {
-      orderBy: {
-        title: "asc",
-      },
-      include: { class: true },
+    secondarySkillEntries: {
+      include: { skill: { include: { class: true } } },
     },
     inventory: {
       orderBy: {
@@ -127,16 +127,27 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     notFound();
   }
 
-  // Verify ownership unless the user is an admin
+  const primarySkills = (character.primarySkillEntries ?? [])
+    .map((e) => e.skill)
+    .filter(Boolean);
+  const secondarySkills = (character.secondarySkillEntries ?? [])
+    .map((e) => e.skill)
+    .filter(Boolean);
+  const characterForReturn = {
+    ...character,
+    primarySkills,
+    secondarySkills,
+  };
+
   if (
-    character.userId !== session.user.id &&
+    characterForReturn.userId !== session.user.id &&
     session.user.role !== "ADMIN" &&
     session.user.role !== "SUPERADMIN"
   ) {
     redirect("/unauthorized");
   }
 
-  const inventory = Array.isArray(character.inventory) ? character.inventory : [];
+  const inventory = Array.isArray(characterForReturn.inventory) ? characterForReturn.inventory : [];
   const adjustmentIds = inventory
     .map((item) => {
       const data = item?.data as { adjustmentId?: string; inlineEffects?: { effects?: unknown[] } } | null | undefined;
@@ -164,7 +175,7 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     }
   }
 
-  return character as CharacterForPassport;
+  return characterForReturn as CharacterForPassport;
 });
 
 /**
@@ -414,12 +425,11 @@ export async function addSkillToCharacter(
   }
 
   try {
-    // Get character to verify ownership
     const character = await db.character.findUnique({
       where: { id: characterId },
       include: {
-        primarySkills: true,
-        secondarySkills: true,
+        primarySkillEntries: { select: { skillId: true } },
+        secondarySkillEntries: { select: { skillId: true } },
       },
     });
 
@@ -427,7 +437,6 @@ export async function addSkillToCharacter(
       throw new Error("Character not found");
     }
 
-    // Verify ownership unless the user is an admin
     if (
       character.userId !== session.user.id &&
       session.user.role !== "ADMIN" &&
@@ -436,12 +445,13 @@ export async function addSkillToCharacter(
       throw new Error("Unauthorized");
     }
 
-    const skillAlreadyExists = [
-      ...character.primarySkills.map((s) => s.id),
-      ...character.secondarySkills.map((s) => s.id),
-    ].includes(skillId);
+    const primaryIds = character.primarySkillEntries.map((e) => e.skillId);
+    const secondaryIds = character.secondarySkillEntries.map((e) => e.skillId);
+    const alreadyLearned = isPrimary
+      ? primaryIds.includes(skillId)
+      : secondaryIds.includes(skillId);
 
-    if (skillAlreadyExists) {
+    if (alreadyLearned) {
       const skill = await db.skill.findUnique({
         where: { id: skillId },
         select: { canBeTakenMultiple: true },
@@ -451,24 +461,13 @@ export async function addSkillToCharacter(
       }
     }
 
-    // Add skill to character
     if (isPrimary) {
-      await db.character.update({
-        where: { id: characterId },
-        data: {
-          primarySkills: {
-            connect: { id: skillId },
-          },
-        },
+      await db.characterPrimarySkill.create({
+        data: { characterId, skillId },
       });
     } else {
-      await db.character.update({
-        where: { id: characterId },
-        data: {
-          secondarySkills: {
-            connect: { id: skillId },
-          },
-        },
+      await db.characterSecondarySkill.create({
+        data: { characterId, skillId },
       });
     }
 
@@ -516,18 +515,21 @@ export async function removeSkillFromCharacter(
       throw new Error("Unauthorized");
     }
 
-    // Remove skill from both primary and secondary (one will succeed)
-    await db.character.update({
-      where: { id: characterId },
-      data: {
-        primarySkills: {
-          disconnect: { id: skillId },
-        },
-        secondarySkills: {
-          disconnect: { id: skillId },
-        },
-      },
+    const primaryEntry = await db.characterPrimarySkill.findFirst({
+      where: { characterId, skillId },
     });
+    if (primaryEntry) {
+      await db.characterPrimarySkill.delete({ where: { id: primaryEntry.id } });
+    } else {
+      const secondaryEntry = await db.characterSecondarySkill.findFirst({
+        where: { characterId, skillId },
+      });
+      if (secondaryEntry) {
+        await db.characterSecondarySkill.delete({
+          where: { id: secondaryEntry.id },
+        });
+      }
+    }
 
     // Refresh the passport page to show the updated skills
     revalidatePath(`/passport/${characterId}`);

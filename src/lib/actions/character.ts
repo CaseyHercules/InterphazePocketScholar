@@ -238,8 +238,8 @@ export async function getCharacter(characterId: string) {
     include: {
       primaryClass: true,
       secondaryClass: true,
-      primarySkills: true,
-      secondarySkills: true,
+      primarySkillEntries: { include: { skill: { include: { class: true } } } },
+      secondarySkillEntries: { include: { skill: { include: { class: true } } } },
       inventory: true,
       spells: true,
       user: true,
@@ -254,7 +254,17 @@ export async function getCharacter(characterId: string) {
     throw new Error("You don't have permission to view this character");
   }
 
-  return character;
+  const primarySkills = (character.primarySkillEntries ?? [])
+    .map((e) => e.skill)
+    .filter(Boolean);
+  const secondarySkills = (character.secondarySkillEntries ?? [])
+    .map((e) => e.skill)
+    .filter(Boolean);
+  return {
+    ...character,
+    primarySkills,
+    secondarySkills,
+  };
 }
 
 export async function levelUpCharacterClass(

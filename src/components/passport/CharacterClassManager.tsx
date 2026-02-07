@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -184,6 +184,54 @@ export function CharacterClassManager({
     }
   };
 
+  const handleAddLevel = async (
+    slot: "primary" | "secondary",
+    levels: number
+  ) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/admin/character-level-grant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          characterId,
+          slot,
+          levelsToAdd: levels,
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Failed to add levels");
+      }
+
+      const data = (await response.json()) as {
+        newLevel: number;
+        levelsAdded: number;
+      };
+      if (slot === "primary") {
+        setPrimaryLvl(data.newLevel);
+      } else {
+        setSecondaryLvl(data.newLevel);
+      }
+
+      toast({
+        title: "Levels added",
+        description: `${data.levelsAdded} level(s) added to ${slot} class.`,
+      });
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: "Failed to add levels",
+        description:
+          error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const canRefundPrimary = primaryLvl > 1;
   const canRefundSecondary =
     secondaryClassId && secondaryLvl > 0;
@@ -231,25 +279,36 @@ export function CharacterClassManager({
                   ))}
                 </SelectContent>
               </Select>
-                {canRefundPrimary && (
+                <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => handleRefund("primary", 1)}
-                    disabled={isSaving}
-                    title="Refund 1 level"
+                    onClick={() => handleAddLevel("primary", 1)}
+                    disabled={isSaving || !primaryClassId}
+                    title="Add 1 level"
                   >
-                    <ArrowDown className="h-3 w-3 mr-1" />
-                    Refund 1
+                    <ArrowUp className="h-3 w-3 mr-1" />
+                    Add 1
                   </Button>
-                )}
+                  {canRefundPrimary && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRefund("primary", 1)}
+                      disabled={isSaving}
+                      title="Refund 1 level"
+                    >
+                      <ArrowDown className="h-3 w-3 mr-1" />
+                      Refund 1
+                    </Button>
+                  )}
+                </div>
               </div>
-              {canRefundPrimary && (
-                <p className="text-xs text-muted-foreground">
-                  Level {primaryLvl} (min 1)
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Level {primaryLvl} (min 1)
+              </p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Secondary Class</label>
@@ -274,25 +333,36 @@ export function CharacterClassManager({
                   ))}
                 </SelectContent>
               </Select>
-                {canRefundSecondary && (
+                <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => handleRefund("secondary", 1)}
-                    disabled={isSaving}
-                    title="Refund 1 level"
+                    onClick={() => handleAddLevel("secondary", 1)}
+                    disabled={isSaving || !secondaryClassId}
+                    title="Add 1 level"
                   >
-                    <ArrowDown className="h-3 w-3 mr-1" />
-                    Refund 1
+                    <ArrowUp className="h-3 w-3 mr-1" />
+                    Add 1
                   </Button>
-                )}
+                  {canRefundSecondary && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRefund("secondary", 1)}
+                      disabled={isSaving}
+                      title="Refund 1 level"
+                    >
+                      <ArrowDown className="h-3 w-3 mr-1" />
+                      Refund 1
+                    </Button>
+                  )}
+                </div>
               </div>
-              {canRefundSecondary && (
-                <p className="text-xs text-muted-foreground">
-                  Level {secondaryLvl} (min 0)
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Level {secondaryLvl} (min 0)
+              </p>
             </div>
           </div>
         )}

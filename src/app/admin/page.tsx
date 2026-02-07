@@ -24,6 +24,11 @@ const ADMIN_LINKS = [
     description: "View and edit registered users. Only SUPERADMIN can change roles.",
   },
   {
+    href: "/admin/passports",
+    title: "Passport Management",
+    description: "Create, assign, and edit character passports. Assign passports to users by email or username.",
+  },
+  {
     href: "/admin/classTool",
     title: "Class Tool",
     description: "Update and create classes.",

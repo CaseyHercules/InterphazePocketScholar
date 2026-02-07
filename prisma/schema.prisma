@@ -157,6 +157,7 @@ model Character {
   updatedAt         DateTime              @updatedAt
   phazians          Int
   inlineEffectsJson Json?
+  alignmentJson     Json?
   user              User?                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   primaryClass      Class?                @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   secondaryClass    Class?                @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)

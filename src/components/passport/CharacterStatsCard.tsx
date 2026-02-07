@@ -9,6 +9,10 @@ import {
   type StatBreakdownExtended,
 } from "@/lib/utils/character-stats";
 import { HoverBreakdown } from "@/components/passport/HoverBreakdown";
+import {
+  parseAlignmentFromJson,
+  ALIGNMENT_MAX_TICKS,
+} from "@/types/alignment";
 
 interface CharacterStatsCardProps {
   character: any;
@@ -282,6 +286,23 @@ function DesignGrid({ character }: { character: any }) {
   );
 }
 
+function AlignmentLine({ character }: { character: any }) {
+  const data = parseAlignmentFromJson(character.alignmentJson);
+  if (!data) return null;
+  const [alignment, upTicks, downTicks] = data;
+  const downStr = Array.from({ length: ALIGNMENT_MAX_TICKS }, (_, i) =>
+    i < ALIGNMENT_MAX_TICKS - downTicks ? "O" : "X"
+  ).join(" ");
+  const upStr = Array.from({ length: ALIGNMENT_MAX_TICKS }, (_, i) =>
+    i < upTicks ? "X" : "O"
+  ).join(" ");
+  return (
+    <p className="font-mono text-sm tracking-wider text-right text-stone-700 dark:text-stone-300 shrink-0">
+      {downStr} | {alignment} | {upStr}
+    </p>
+  );
+}
+
 export function CharacterStatsCard({
   character,
   label,
@@ -293,16 +314,19 @@ export function CharacterStatsCard({
       aria-labelledby="character-stats-heading"
       className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-4"
     >
-      <div className="mb-3 pb-2 border-b border-stone-300 dark:border-stone-600">
-        <h2
-          id="character-stats-heading"
-          className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"
-        >
-          {heading}
-        </h2>
-        <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
-          HP, EP, combat stats, and saves
-        </p>
+      <div className="mb-3 pb-2 border-b border-stone-300 dark:border-stone-600 flex flex-row justify-between items-start gap-4">
+        <div className="min-w-0">
+          <h2
+            id="character-stats-heading"
+            className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"
+          >
+            {heading}
+          </h2>
+          <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
+            HP, EP, combat stats, and saves
+          </p>
+        </div>
+        <AlignmentLine character={character} />
       </div>
       <DesignGrid character={character} />
     </section>

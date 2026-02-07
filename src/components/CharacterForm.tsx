@@ -51,6 +51,7 @@ type CharacterFormProps = {
   races?: { id: string; name: string }[];
   character?: any;
   isEditing?: boolean;
+  adminMode?: boolean;
 };
 
 export function CharacterForm({
@@ -58,14 +59,25 @@ export function CharacterForm({
   races,
   character,
   isEditing,
+  adminMode,
 }: CharacterFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<{ id: string; name: string | null; email: string | null; username: string | null }[]>([]);
   const quillRef = useRef<Quill>();
   const editorRef = useRef<HTMLDivElement>(null);
   const isEditMode = Boolean(isEditing && character?.id);
+
+  useEffect(() => {
+    if (adminMode && !isEditMode) {
+      fetch("/api/admin/user")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => setAdminUsers(Array.isArray(data) ? data : []));
+    }
+  }, [adminMode, isEditMode]);
 
   // Default values for the form
   const defaultValues: Partial<CharacterFormValues> = {
@@ -188,6 +200,46 @@ export function CharacterForm({
         phazians: character?.phazians ?? 0,
       };
 
+      if (adminMode && !isEditMode) {
+        const res = await fetch("/api/admin/characters", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...formData, userId: ownerUserId ?? null }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(typeof json === "object" && json?.message ? json.message : "Failed to create");
+        }
+        toast({ title: "Character created" });
+        router.push(json.characterId ? `/passport/${json.characterId}` : "/admin/passports");
+        return;
+      }
+
+      if (adminMode && isEditMode && character?.id) {
+        const res = await fetch(`/api/admin/characters/${character.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            primaryClassId: formData.primaryClassId || null,
+            primaryClassLvl: formData.primaryClassLvl,
+            secondaryClassId: formData.secondaryClassId === "none" ? null : formData.secondaryClassId || null,
+            secondaryClassLvl: formData.secondaryClassLvl,
+            Attributes: formData.attributes,
+            notes: formData.notes,
+            phazians: formData.phazians,
+          }),
+        });
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          throw new Error(typeof json === "object" && json?.message ? json.message : "Failed to update");
+        }
+        toast({ title: "Character updated" });
+        router.push(`/passport/${character.id}`);
+        router.refresh();
+        return;
+      }
+
       const result = isEditMode
         ? await updateCharacter(character.id, formData)
         : await createCharacter(formData);
@@ -306,6 +358,35 @@ export function CharacterForm({
               </FormItem>
             )}
           />
+
+          {adminMode && !isEditMode && (
+            <FormItem>
+              <FormLabel>Owner</FormLabel>
+              <Select
+                value={ownerUserId ?? "__unassigned__"}
+                onValueChange={(v) =>
+                  setOwnerUserId(v === "__unassigned__" ? null : v)
+                }
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {adminUsers.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name || u.email || u.username || u.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Leave unassigned to assign to a user later.
+              </FormDescription>
+            </FormItem>
+          )}
 
           <div className="flex justify-end space-x-4">
             <Button

@@ -102,6 +102,8 @@ export default async function PassportPage({ params }: PassportPageProps) {
                   primaryClassLvl: character.primaryClassLvl,
                   secondaryClassLvl: character.secondaryClassLvl,
                   inlineEffectsJson: (character as { inlineEffectsJson?: unknown }).inlineEffectsJson,
+                  alignmentJson: (character as { alignmentJson?: unknown }).alignmentJson,
+                  userId: character.userId ?? undefined,
                 }}
                 existingAdjustments={existingAdjustments}
               />

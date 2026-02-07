@@ -42,7 +42,6 @@ export function CharacterTraitsCard({
   const dingusesContent = (
     <CharacterDingusesCard character={character} skillData={skillData} embedded />
   );
-
   const sections = [
     { id: "racial", label: "Racial Traits", icon: Sparkles, content: racialContent },
     { id: "abilities", label: "Special Abilities", icon: Zap, content: abilitiesContent },

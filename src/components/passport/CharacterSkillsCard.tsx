@@ -37,11 +37,15 @@ type SkillData = {
 interface CharacterSkillsCardProps {
   character: any;
   skillData?: SkillData | null;
+  embedded?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export function CharacterSkillsCard({
   character,
   skillData: skillDataProp,
+  embedded = false,
+  isSuperAdmin = false,
 }: CharacterSkillsCardProps) {
   const [fetchedSkillData, setFetchedSkillData] = useState<SkillData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -132,38 +136,10 @@ export function CharacterSkillsCard({
         : []
   );
 
-  return (
-    <Card className="shadow-sm flex-1 flex flex-col">
-      <CardHeader className="p-3 sm:p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <CardTitle className="flex items-center text-base sm:text-lg">
-              <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Character Skills
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Skills learned and available for this character
-            </CardDescription>
-          </div>
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant={!isEditMode ? "default" : "outline"}
-              onClick={() => setIsEditMode(false)}
-            >
-              View
-            </Button>
-            <Button
-              size="sm"
-              variant={isEditMode ? "default" : "outline"}
-              onClick={() => setIsEditMode(true)}
-            >
-              Edit
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-3 sm:p-4 pt-0 flex-1 flex flex-col">
+  const isEditing = embedded || isEditMode;
+
+  const content = (
+    <>
         {skillData ? (
           <Tabs defaultValue="slots" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -199,7 +175,7 @@ export function CharacterSkillsCard({
                           character={character}
                           skillData={skillData}
                           maxTier={primarySlots.maxTier}
-                          isEditMode={isEditMode}
+                          isEditMode={isEditing}
                           onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                         />
                       </div>
@@ -226,7 +202,7 @@ export function CharacterSkillsCard({
                             character={character}
                             skillData={skillData}
                             maxTier={secondarySlots.maxTier}
-                            isEditMode={isEditMode}
+                            isEditMode={isEditing}
                             onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                           />
                         </div>
@@ -248,7 +224,7 @@ export function CharacterSkillsCard({
                     )}
                   </div>
 
-                  {adjustments.length > 0 && (
+                  {isSuperAdmin && adjustments.length > 0 && (
                     <details className="mt-6">
                       <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                         Debug: Raw effects JSON
@@ -390,7 +366,7 @@ export function CharacterSkillsCard({
                       key={skill.id}
                       skill={skill}
                       isLearned={true}
-                      showRemoveButton={isEditMode}
+                      showRemoveButton={isEditing}
                       characterId={character.id}
                       character={character}
                       isLastItem={index === array.length - 1}
@@ -411,6 +387,58 @@ export function CharacterSkillsCard({
             )}
           </ScrollArea>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        {content}
+        <SkillViewer
+          skill={selectedSkill}
+          isOpen={isSkillViewerOpen}
+          onClose={() => {
+            setIsSkillViewerOpen(false);
+            setSelectedSkill(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <Card className="shadow-sm flex-1 flex flex-col">
+      <CardHeader className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center text-base sm:text-lg">
+              <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              Character Skills
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Skills learned and available for this character
+            </CardDescription>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant={!isEditMode ? "default" : "outline"}
+              onClick={() => setIsEditMode(false)}
+            >
+              View
+            </Button>
+            <Button
+              size="sm"
+              variant={isEditMode ? "default" : "outline"}
+              onClick={() => setIsEditMode(true)}
+            >
+              Edit
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-3 sm:p-4 pt-0 flex-1 flex flex-col">
+        {content}
       </CardContent>
       <CardFooter className="p-3 sm:p-4 pt-0">
         <p className="text-xs sm:text-sm text-muted-foreground">
@@ -423,8 +451,6 @@ export function CharacterSkillsCard({
           )}
         </p>
       </CardFooter>
-
-      {/* Skill Viewer Dialog */}
       <SkillViewer
         skill={selectedSkill}
         isOpen={isSkillViewerOpen}

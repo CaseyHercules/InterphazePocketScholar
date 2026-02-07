@@ -65,7 +65,7 @@ function RacialTraitsContent(
       )}
       <div className="divide-y divide-stone-200 dark:divide-stone-700">
         {pairs.map(([a, b], i) => (
-          <div key={i} className="grid grid-cols-2 gap-x-4 py-2.5 text-xs">
+          <div key={i} className="grid grid-cols-2 gap-x-4 py-2.5 text-sm">
             <div>{a ? <ItemContent item={a} /> : null}</div>
             <div>{b ? <ItemContent item={b} /> : null}</div>
           </div>

@@ -95,14 +95,29 @@ export function createInlineEffectsJson(effects: InlineEffect[]): {
 }
 
 export function getDingusTitlesFromInlineEffects(json: unknown): string[] {
+  return getDingusItemsFromInlineEffects(json).map((item) => item.title);
+}
+
+export type DingusDisplayItem = { title: string; note?: string };
+
+export function getDingusItemsFromInlineEffects(json: unknown): DingusDisplayItem[] {
   const effects = getInlineEffectsFromJson(json);
-  const titles = new Set<string>();
+  const seen = new Set<string>();
+  const items: DingusDisplayItem[] = [];
   for (const e of effects) {
-    if (e.type !== "special_ability" && e.title.trim()) {
-      titles.add(e.title.trim());
-    }
+    if (e.type === "special_ability") continue;
+    const note = e.type === "dingus" ? (e as { note?: string }).note : undefined;
+    const title = e.title.trim() || (note && note.trim()) || "Effect";
+    if (!title.trim()) continue;
+    const key = title + "|" + (note || "");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({
+      title: title.trim(),
+      note: note && note.trim() && note.trim() !== title.trim() ? note.trim() : undefined,
+    });
   }
-  return Array.from(titles).sort();
+  return items.sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export function getSpecialAbilitiesFromInlineEffects(

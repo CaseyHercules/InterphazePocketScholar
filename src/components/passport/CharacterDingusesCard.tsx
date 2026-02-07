@@ -2,7 +2,7 @@
 
 import { getAvailableSkillsForCharacter } from "@/lib/actions/passport";
 import { sortSkillsByTier } from "@/lib/utils";
-import { getDingusTitlesFromInlineEffects } from "@/types/inline-effects";
+import { getDingusItemsFromInlineEffects } from "@/types/inline-effects";
 import { SkillSlot } from "@/components/passport/CharacterSkillsCard";
 import { SkillViewer } from "@/components/SkillViewer";
 import { useState, useEffect } from "react";
@@ -63,12 +63,12 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp, emb
     ...skillsGrantedByAdjustments.filter((s: any) => !learnedMiscIds.has(s.id)),
   ]);
 
-  const inlineDingusTitles = getDingusTitlesFromInlineEffects(character.inlineEffectsJson);
-  const hasDingusContent = dingusSkills.length > 0 || inlineDingusTitles.length > 0;
+  const inlineDingusItems = getDingusItemsFromInlineEffects(character.inlineEffectsJson);
+  const hasDingusContent = dingusSkills.length > 0 || inlineDingusItems.length > 0;
 
   const dingusContent = (
     <div className="space-y-4">
-      {skillData === null && inlineDingusTitles.length === 0 ? (
+      {skillData === null && inlineDingusItems.length === 0 ? (
         <p className="text-sm text-muted-foreground py-3">Loading…</p>
       ) : (
         <>
@@ -94,14 +94,19 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp, emb
               })}
             </div>
           )}
-          {inlineDingusTitles.length > 0 && (
+          {inlineDingusItems.length > 0 && (
             <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
-              {inlineDingusTitles.map((title) => (
+              {inlineDingusItems.map((item, idx) => (
                 <div
-                  key={title}
-                  className="flex items-center justify-between px-3 py-2.5 text-sm font-medium"
+                  key={`dingus-${idx}-${item.title}`}
+                  className="px-3 py-2.5"
                 >
-                  {title}
+                  <div className="text-base font-bold text-stone-800 dark:text-stone-200">{item.title}</div>
+                  {item.note && (
+                    <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5 whitespace-pre-wrap break-words">
+                      {item.note}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

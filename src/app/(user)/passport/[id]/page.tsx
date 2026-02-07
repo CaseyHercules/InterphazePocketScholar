@@ -7,7 +7,6 @@ import { SpellsTab } from "@/components/SpellsTab";
 import { CharacterClassCards } from "@/components/passport/CharacterClassCards";
 import { CharacterStatsCard } from "@/components/passport/CharacterStatsCard";
 import { CharacterAttributesCard } from "@/components/passport/CharacterAttributesCard";
-import { CharacterSkillsCard } from "@/components/passport/CharacterSkillsCard";
 import { CharacterSkillsView } from "@/components/passport/CharacterSkillsView";
 import { CharacterInventoryCard } from "@/components/passport/CharacterInventoryCard";
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
@@ -54,6 +53,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
   const unallocatedLevels = character.user?.UnallocatedLevels ?? 0;
   const isAdmin =
     session?.user?.role === "ADMIN" || session?.user?.role === "SUPERADMIN";
+  const isSuperAdmin = session?.user?.role === "SUPERADMIN";
   const existingAdjustments = Array.isArray((character as any).adjustments)
     ? (character as any).adjustments
         .map((entry: any) => entry?.adjustment ?? entry)
@@ -114,20 +114,17 @@ export default async function PassportPage({ params }: PassportPageProps) {
 
         {/* Tabs Section */}
         <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid grid-cols-5 mb-4 sm:mb-6 h-auto rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-1.5 gap-1">
-            <TabsTrigger value="overview" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
+          <TabsList className="grid grid-cols-4 mb-4 sm:mb-6 h-auto rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-1.5 gap-1">
+            <TabsTrigger value="overview" className="py-2.5 text-xs sm:text-sm rounded-md font-medium data-[state=active]:bg-stone-200 dark:data-[state=active]:bg-stone-700 data-[state=active]:text-stone-900 dark:data-[state=active]:text-stone-100 data-[state=active]:shadow-md data-[state=inactive]:text-stone-600 dark:data-[state=inactive]:text-stone-400">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="skills" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
-              Skills
-            </TabsTrigger>
-            <TabsTrigger value="spells" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
+            <TabsTrigger value="spells" className="py-2.5 text-xs sm:text-sm rounded-md font-medium data-[state=active]:bg-stone-200 dark:data-[state=active]:bg-stone-700 data-[state=active]:text-stone-900 dark:data-[state=active]:text-stone-100 data-[state=active]:shadow-md data-[state=inactive]:text-stone-600 dark:data-[state=inactive]:text-stone-400">
               Spells
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
+            <TabsTrigger value="inventory" className="py-2.5 text-xs sm:text-sm rounded-md font-medium data-[state=active]:bg-stone-200 dark:data-[state=active]:bg-stone-700 data-[state=active]:text-stone-900 dark:data-[state=active]:text-stone-100 data-[state=active]:shadow-md data-[state=inactive]:text-stone-600 dark:data-[state=inactive]:text-stone-400">
               Inventory
             </TabsTrigger>
-            <TabsTrigger value="notes" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
+            <TabsTrigger value="notes" className="py-2.5 text-xs sm:text-sm rounded-md font-medium data-[state=active]:bg-stone-200 dark:data-[state=active]:bg-stone-700 data-[state=active]:text-stone-900 dark:data-[state=active]:text-stone-100 data-[state=active]:shadow-md data-[state=inactive]:text-stone-600 dark:data-[state=inactive]:text-stone-400">
               Backstory
             </TabsTrigger>
           </TabsList>
@@ -144,13 +141,12 @@ export default async function PassportPage({ params }: PassportPageProps) {
               character={character}
               skillData={initialSkillData}
             />
-            <CharacterSkillsView character={character} skillData={initialSkillData} />
+            <CharacterSkillsView
+              character={character}
+              skillData={initialSkillData}
+              isSuperAdmin={isSuperAdmin}
+            />
             <CharacterAttributesCard character={character} />
-          </TabsContent>
-
-          {/* Skills Tab */}
-          <TabsContent value="skills" className="space-y-4">
-            <CharacterSkillsCard character={character} skillData={initialSkillData} />
           </TabsContent>
 
           {/* Spells Tab */}

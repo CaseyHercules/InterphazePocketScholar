@@ -28,11 +28,13 @@ type SkillData = {
 interface CharacterSkillsViewProps {
   character: any;
   skillData?: SkillData | null;
+  isSuperAdmin?: boolean;
 }
 
 export function CharacterSkillsView({
   character,
   skillData,
+  isSuperAdmin = false,
 }: CharacterSkillsViewProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -144,15 +146,23 @@ export function CharacterSkillsView({
       )}
 
       <Dialog open={editOpen} onOpenChange={handleEditClose}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-            <DialogTitle>Edit Skills</DialogTitle>
+        <DialogContent className="fixed left-[50%] top-[50%] z-50 w-[90vw] max-w-5xl h-[90dvh] max-h-[90dvh] translate-x-[-50%] translate-y-[-50%] flex flex-col p-0 rounded-lg duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4">
+          <DialogHeader className="px-4 pt-4 pb-2 shrink-0 border-b border-stone-200 dark:border-stone-700">
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Character Skills
+            </DialogTitle>
+            <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
+              Skills learned and available for this character
+            </p>
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0">
-            <div className="px-6 pb-6 pr-4">
+            <div className="px-4 py-4 pr-4">
               <CharacterSkillsCard
                 character={character}
                 skillData={skillData}
+                embedded
+                isSuperAdmin={isSuperAdmin}
               />
             </div>
           </ScrollArea>

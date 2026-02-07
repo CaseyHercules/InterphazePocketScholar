@@ -119,35 +119,10 @@ export function CharacterSkillsCard({
   const primarySlots = getClassSkillSlots(true);
   const secondarySlots = getClassSkillSlots(false);
 
-  const primaryClassId = character.primaryClass?.id;
-  const secondaryClassId = character.secondaryClass?.id;
-  const learnedMiscellaneousSkills = [
-    ...(character.primarySkills || []),
-    ...(character.secondarySkills || []),
-  ].filter((s: any) => {
-    const cid = getSkillClassId(s);
-    return cid !== primaryClassId && cid !== secondaryClassId;
-  });
-
   const adjustments = Array.isArray(character?.adjustments)
     ? character.adjustments
     : [];
 
-  const allSkillsFromTier = skillData
-    ? Object.values(skillData.skillsByTier || {}).flat()
-    : [];
-  const skillsGrantedByAdjustments = allSkillsFromTier.filter((s: any) => {
-    const cid = getSkillClassId(s);
-    return cid !== primaryClassId && cid !== secondaryClassId;
-  });
-
-  const learnedMiscIds = new Set(learnedMiscellaneousSkills.map((s: any) => s.id));
-  const dingusSkills = sortSkillsByTier([
-    ...learnedMiscellaneousSkills,
-    ...skillsGrantedByAdjustments.filter(
-      (s: any) => !learnedMiscIds.has(s.id)
-    ),
-  ]);
   const learnedSkillIdsSet = new Set(
     Array.isArray(skillData?.learnedSkillIds)
       ? skillData.learnedSkillIds
@@ -269,44 +244,6 @@ export function CharacterSkillsCard({
                           </p>
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b">
-                      <Badge variant="outline" className="font-medium">
-                        Dingues
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        Unique attributes and skills granted by adjustments
-                      </span>
-                      <div className="h-px bg-border flex-1" />
-                    </div>
-                    {dingusSkills.length > 0 ? (
-                      <div className="border rounded-lg overflow-hidden">
-                        {dingusSkills.map((skill: any, index: number) => {
-                          const isLearned = learnedMiscIds.has(skill.id);
-                          return (
-                            <SkillSlot
-                              key={skill.id}
-                              skill={skill}
-                              isLearned={isLearned}
-                              showRemoveButton={isEditMode && isLearned}
-                              characterId={character.id}
-                              character={character}
-                              isLastItem={index === dingusSkills.length - 1}
-                              onViewSkill={(s) => {
-                                setSelectedSkill(s);
-                                setIsSkillViewerOpen(true);
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground py-3">
-                        No unique attributes about your character.
-                      </p>
                     )}
                   </div>
 
@@ -597,7 +534,7 @@ function ClassSlotSection({
   );
 }
 
-function SkillSlot({
+export function SkillSlot({
   skill,
   isLearned,
   canLearn = false,

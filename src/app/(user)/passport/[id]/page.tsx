@@ -12,6 +12,7 @@ import { CharacterSkillsCard } from "@/components/passport/CharacterSkillsCard";
 import { CharacterInventoryCard } from "@/components/passport/CharacterInventoryCard";
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
 import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
+import { CharacterDingusesCard } from "@/components/passport/CharacterDingusesCard";
 import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
 import { CharacterInlineEffectsEditor } from "@/components/passport/CharacterInlineEffectsEditor";
 import { CharacterClassManager } from "@/components/passport/CharacterClassManager";
@@ -126,6 +127,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
             />
             <CharacterStatsCard character={character} />
             <CharacterAdjustmentsCard character={character} />
+            <CharacterDingusesCard character={character} />
             {isAdmin && (
               <>
                 <CharacterInlineEffectsEditor

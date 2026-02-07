@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   getRacialAdjustmentData,
   type RacialAdjustmentData,
@@ -11,8 +10,8 @@ import {
 
 type CharacterAdjustmentsCardProps = {
   character: any;
-  variant?: "table" | "grouped" | "compact" | "table-a" | "table-b" | "table-c";
-  label?: string;
+  embedded?: boolean;
+  showSectionTitle?: boolean;
 };
 
 function flattenToPairs(data: RacialAdjustmentData): Array<[StatDisplayItem | AbilityDisplayItem | null, StatDisplayItem | AbilityDisplayItem | null]> {
@@ -40,53 +39,26 @@ function ItemContent({
   return <span className={`${optionalClass} ${className}`}>{display}</span>;
 }
 
-function DesignTableA(data: RacialAdjustmentData) {
+function RacialTraitsContent(
+  data: RacialAdjustmentData,
+  opts?: { showTitle?: boolean }
+) {
   const pairs = flattenToPairs(data);
   return (
-    <div className="space-y-1">
-      {data.race && (
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-          {data.race}
+    <div className="space-y-3">
+      {opts?.showTitle && (
+        <div>
+          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
+            Racial Traits
+          </h3>
+          {data.race && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {data.race}
+            </p>
+          )}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-        {pairs.map(([a, b], i) => (
-          <div key={i} className="contents">
-            <div className="py-0.5">{a ? <ItemContent item={a} /> : null}</div>
-            <div className="py-0.5">{b ? <ItemContent item={b} /> : null}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DesignTableB(data: RacialAdjustmentData) {
-  const pairs = flattenToPairs(data);
-  return (
-    <div className="space-y-1.5">
-      {data.race && (
-        <Badge variant="outline" className="text-xs font-medium">
-          {data.race}
-        </Badge>
-      )}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs border-l-2 border-muted pl-2.5">
-        {pairs.map(([a, b], i) => (
-          <div key={i} className="contents">
-            <div className="py-0.5">{a ? <ItemContent item={a} /> : null}</div>
-            <div className="py-0.5">{b ? <ItemContent item={b} /> : null}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DesignTableC(data: RacialAdjustmentData) {
-  const pairs = flattenToPairs(data);
-  return (
-    <div className="space-y-2">
-      {data.race && (
+      {!opts?.showTitle && data.race && (
         <Badge variant="outline" className="text-xs font-medium text-stone-600 dark:text-stone-400">
           {data.race}
         </Badge>
@@ -103,120 +75,27 @@ function DesignTableC(data: RacialAdjustmentData) {
   );
 }
 
-function DesignTable(data: RacialAdjustmentData) {
-  const pairs = flattenToPairs(data);
-  return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-x-6">
-      {pairs.map(([a, b], i) => (
-        <div key={i} className="contents">
-          <div className="text-sm py-1">
-            {a ? <ItemContent item={a} /> : null}
-          </div>
-          <div className="text-sm py-1">
-            {b ? <ItemContent item={b} /> : null}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DesignGrouped(data: RacialAdjustmentData) {
-  return (
-    <div className="space-y-4">
-      {data.statItems.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground mb-2">
-            Stat Adjustments
-          </div>
-          <div className="space-y-1.5">
-            {data.statItems.map((item, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center text-sm"
-              >
-                <span
-                  className={
-                    item.optional ? "italic text-muted-foreground" : ""
-                  }
-                >
-                  {item.label}
-                </span>
-                <span className="font-medium tabular-nums">
-                  {item.value >= 0 ? `+${item.value}` : item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {data.statItems.length > 0 && data.abilityItems.length > 0 && (
-        <Separator />
-      )}
-      {data.abilityItems.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground mb-2">
-            Special Abilities
-          </div>
-          <div className="space-y-1.5">
-            {data.abilityItems.map((item, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2 text-sm ${item.optional ? "italic text-muted-foreground" : ""}`}
-              >
-                <Badge variant="secondary" className="text-[10px] py-0 shrink-0">
-                  Included
-                </Badge>
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DesignCompact(data: RacialAdjustmentData) {
-  const all = [
-    ...data.statItems.map((s) => ({ ...s, formatted: s.formatted })),
-    ...data.abilityItems.map((a) => ({ ...a, formatted: a.text })),
-  ];
-  return (
-    <div className="space-y-1">
-      {all.map((item, i) => (
-        <div
-          key={i}
-          className="flex items-center justify-between gap-2 text-sm py-0.5"
-        >
-          <Badge variant="secondary" className="text-[10px] py-0 shrink-0">
-            Included
-          </Badge>
-          <span
-            className={
-              item.optional ? "italic text-muted-foreground flex-1 text-right" : "flex-1 text-right"
-            }
-          >
-            {item.formatted}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function CharacterAdjustmentsCard({
   character,
-  variant = "grouped",
-  label,
+  embedded = false,
+  showSectionTitle = false,
 }: CharacterAdjustmentsCardProps) {
   const data = getRacialAdjustmentData(character);
 
-  if (!data.hasContent) {
+  if (!data.hasContent && !embedded) {
     return null;
   }
 
   const headerTitle = data.race ? `Racial Traits: ${data.race}` : "Racial Traits & Adjustments";
+  const content = RacialTraitsContent(data, { showTitle: showSectionTitle });
+
+  if (embedded) {
+    return (
+      <div className="min-h-[4rem]">
+        {data.hasContent ? content : <p className="text-sm text-muted-foreground py-3">No racial traits.</p>}
+      </div>
+    );
+  }
 
   return (
     <section
@@ -244,14 +123,7 @@ export function CharacterAdjustmentsCard({
             </span>
           </div>
         </summary>
-        <div className="space-y-2">
-          {variant === "table" && DesignTable(data)}
-          {variant === "table-a" && DesignTableA(data)}
-          {variant === "table-b" && DesignTableB(data)}
-          {variant === "table-c" && DesignTableC(data)}
-          {variant === "grouped" && DesignGrouped(data)}
-          {variant === "compact" && DesignCompact(data)}
-        </div>
+        {content}
       </details>
     </section>
   );

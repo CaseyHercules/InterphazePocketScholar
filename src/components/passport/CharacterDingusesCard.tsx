@@ -19,11 +19,12 @@ type SkillData = {
 interface CharacterDingusesCardProps {
   character: any;
   skillData?: SkillData | null;
+  embedded?: boolean;
 }
 
 const getSkillClassId = (s: any) => s.classId ?? s.class?.id;
 
-export function CharacterDingusesCard({ character, skillData: skillDataProp }: CharacterDingusesCardProps) {
+export function CharacterDingusesCard({ character, skillData: skillDataProp, embedded = false }: CharacterDingusesCardProps) {
   const [fetchedSkillData, setFetchedSkillData] = useState<SkillData | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<any | null>(null);
   const [isSkillViewerOpen, setIsSkillViewerOpen] = useState(false);
@@ -65,6 +66,78 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
   const inlineDingusTitles = getDingusTitlesFromInlineEffects(character.inlineEffectsJson);
   const hasDingusContent = dingusSkills.length > 0 || inlineDingusTitles.length > 0;
 
+  const dingusContent = (
+    <div className="space-y-4">
+      {skillData === null && inlineDingusTitles.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-3">Loading…</p>
+      ) : (
+        <>
+          {dingusSkills.length > 0 && (
+            <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+              {dingusSkills.map((skill: any, index: number) => {
+                const isLearned = learnedMiscIds.has(skill.id);
+                return (
+                  <SkillSlot
+                    key={skill.id}
+                    skill={skill}
+                    isLearned={isLearned}
+                    showRemoveButton={false}
+                    characterId={character.id}
+                    character={character}
+                    isLastItem={index === dingusSkills.length - 1}
+                    onViewSkill={(s) => {
+                      setSelectedSkill(s);
+                      setIsSkillViewerOpen(true);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+          {inlineDingusTitles.length > 0 && (
+            <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
+              {inlineDingusTitles.map((title) => (
+                <div
+                  key={title}
+                  className="flex items-center justify-between px-3 py-2.5 text-sm font-medium"
+                >
+                  {title}
+                </div>
+              ))}
+            </div>
+          )}
+          {!hasDingusContent && (
+            <p className="text-sm text-muted-foreground py-3 pl-3">
+              No Dinguses yet...
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        <div className="min-h-[4rem]">
+          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 mb-3">
+            Dinguses
+          </h3>
+          {dingusContent}
+        </div>
+
+        <SkillViewer
+          skill={selectedSkill}
+          isOpen={isSkillViewerOpen}
+          onClose={() => {
+            setIsSkillViewerOpen(false);
+            setSelectedSkill(null);
+          }}
+        />
+      </>
+    );
+  }
+
   const chevron = (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9" />
@@ -95,53 +168,7 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
             </span>
           </div>
         </summary>
-        <div className="space-y-4">
-        {skillData === null && inlineDingusTitles.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-3">Loading…</p>
-        ) : (
-          <>
-            {dingusSkills.length > 0 && (
-              <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
-                {dingusSkills.map((skill: any, index: number) => {
-                  const isLearned = learnedMiscIds.has(skill.id);
-                  return (
-                    <SkillSlot
-                      key={skill.id}
-                      skill={skill}
-                      isLearned={isLearned}
-                      showRemoveButton={false}
-                      characterId={character.id}
-                      character={character}
-                      isLastItem={index === dingusSkills.length - 1}
-                      onViewSkill={(s) => {
-                        setSelectedSkill(s);
-                        setIsSkillViewerOpen(true);
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-            {inlineDingusTitles.length > 0 && (
-              <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
-                {inlineDingusTitles.map((title) => (
-                  <div
-                    key={title}
-                    className="flex items-center justify-between px-3 py-2.5 text-sm font-medium"
-                  >
-                    {title}
-                  </div>
-                ))}
-              </div>
-            )}
-            {!hasDingusContent && (
-              <p className="text-sm text-muted-foreground py-3 pl-3">
-                No Dinguses yet...
-              </p>
-            )}
-          </>
-        )}
-        </div>
+        {dingusContent}
       </details>
       <SkillViewer
         skill={selectedSkill}

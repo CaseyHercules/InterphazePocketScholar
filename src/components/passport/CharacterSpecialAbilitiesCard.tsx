@@ -4,14 +4,44 @@ import { getSpecialAbilitiesFromInlineEffects } from "@/types/inline-effects";
 
 interface CharacterSpecialAbilitiesCardProps {
   character: any;
+  embedded?: boolean;
 }
 
 export function CharacterSpecialAbilitiesCard({
   character,
+  embedded = false,
 }: CharacterSpecialAbilitiesCardProps) {
   const abilities = getSpecialAbilitiesFromInlineEffects(character.inlineEffectsJson);
 
-  if (abilities.length === 0) return null;
+  if (abilities.length === 0 && !embedded) return null;
+
+  const content = (
+    <div className="divide-y divide-stone-200 dark:divide-stone-700">
+      {abilities.map((ability, index) => (
+        <div key={`${ability.title}-${index}`} className="py-2.5 first:pt-0 last:pb-0">
+          <h3 className="font-semibold text-sm sm:text-base">
+            {ability.title || "Special ability"}
+          </h3>
+          {ability.note?.trim() && (
+            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+              {ability.note.trim()}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="min-h-[4rem]">
+        <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 mb-3">
+          Special Abilities
+        </h3>
+        {abilities.length > 0 ? content : <p className="text-sm text-muted-foreground py-3">No special abilities.</p>}
+      </div>
+    );
+  }
 
   const chevron = (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,20 +73,7 @@ export function CharacterSpecialAbilitiesCard({
             </span>
           </div>
         </summary>
-        <div className="divide-y divide-stone-200 dark:divide-stone-700">
-          {abilities.map((ability, index) => (
-            <div key={`${ability.title}-${index}`} className="py-2.5 first:pt-0 last:pb-0">
-              <h3 className="font-semibold text-sm sm:text-base">
-                {ability.title || "Special ability"}
-              </h3>
-              {ability.note?.trim() && (
-                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                  {ability.note.trim()}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+        {content}
       </details>
     </section>
   );

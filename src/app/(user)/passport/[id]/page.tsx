@@ -4,21 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpellsTab } from "@/components/SpellsTab";
 
-// Import our new components
 import { CharacterClassCards } from "@/components/passport/CharacterClassCards";
 import { CharacterStatsCard } from "@/components/passport/CharacterStatsCard";
 import { CharacterAttributesCard } from "@/components/passport/CharacterAttributesCard";
 import { CharacterSkillsCard } from "@/components/passport/CharacterSkillsCard";
+import { CharacterSkillsView } from "@/components/passport/CharacterSkillsView";
 import { CharacterInventoryCard } from "@/components/passport/CharacterInventoryCard";
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
-import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
-import { CharacterSpecialAbilitiesCard } from "@/components/passport/CharacterSpecialAbilitiesCard";
-import { CharacterDingusesCard } from "@/components/passport/CharacterDingusesCard";
+import { CharacterTraitsCard } from "@/components/passport/CharacterTraitsCard";
 import { PassportAdminDialog } from "@/components/passport/PassportAdminDialog";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// Import server actions
 import {
   getCharacterForPassport,
   getAvailableClasses,
@@ -117,20 +114,20 @@ export default async function PassportPage({ params }: PassportPageProps) {
 
         {/* Tabs Section */}
         <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid grid-cols-5 mb-4 sm:mb-6 h-auto">
-            <TabsTrigger value="overview" className="py-2 text-xs sm:text-sm">
+          <TabsList className="grid grid-cols-5 mb-4 sm:mb-6 h-auto rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-1.5 gap-1">
+            <TabsTrigger value="overview" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="skills" className="py-2 text-xs sm:text-sm">
+            <TabsTrigger value="skills" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
               Skills
             </TabsTrigger>
-            <TabsTrigger value="spells" className="py-2 text-xs sm:text-sm">
+            <TabsTrigger value="spells" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
               Spells
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="py-2 text-xs sm:text-sm">
+            <TabsTrigger value="inventory" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
               Inventory
             </TabsTrigger>
-            <TabsTrigger value="notes" className="py-2 text-xs sm:text-sm">
+            <TabsTrigger value="notes" className="py-2 text-xs sm:text-sm rounded-md data-[state=active]:bg-stone-100 dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-sm">
               Backstory
             </TabsTrigger>
           </TabsList>
@@ -143,9 +140,11 @@ export default async function PassportPage({ params }: PassportPageProps) {
               availableClasses={availableClasses}
             />
             <CharacterStatsCard character={character} />
-            <CharacterAdjustmentsCard character={character} variant="table-c" />
-            <CharacterSpecialAbilitiesCard character={character} />
-            <CharacterDingusesCard character={character} skillData={initialSkillData} />
+            <CharacterTraitsCard
+              character={character}
+              skillData={initialSkillData}
+            />
+            <CharacterSkillsView character={character} skillData={initialSkillData} />
             <CharacterAttributesCard character={character} />
           </TabsContent>
 

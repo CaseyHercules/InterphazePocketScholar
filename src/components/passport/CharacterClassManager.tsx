@@ -285,7 +285,7 @@ export function CharacterClassManager({
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddLevel("primary", 1)}
-                    disabled={isSaving || !primaryClassId}
+                    disabled={isSaving || !primaryValue}
                     title="Add 1 level"
                   >
                     <ArrowUp className="h-3 w-3 mr-1" />
@@ -339,7 +339,7 @@ export function CharacterClassManager({
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddLevel("secondary", 1)}
-                    disabled={isSaving || !secondaryClassId}
+                    disabled={isSaving || !secondaryValue}
                     title="Add 1 level"
                   >
                     <ArrowUp className="h-3 w-3 mr-1" />

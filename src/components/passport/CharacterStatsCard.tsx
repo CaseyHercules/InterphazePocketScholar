@@ -297,9 +297,14 @@ function AlignmentLine({ character }: { character: any }) {
     i < upTicks ? "X" : "O"
   ).join(" ");
   return (
-    <p className="font-mono text-sm tracking-wider text-right text-stone-700 dark:text-stone-300 shrink-0">
-      {downStr} | {alignment} | {upStr}
-    </p>
+    <div className="flex-1 min-w-0 flex justify-end items-center gap-2">
+      <span className="text-sm font-medium text-stone-600 dark:text-stone-400 shrink-0">
+        Alignment:
+      </span>
+      <p className="font-mono text-base sm:text-lg font-semibold tracking-wider text-right text-stone-800 dark:text-stone-200">
+        {downStr} | {alignment} | {upStr}
+      </p>
+    </div>
   );
 }
 
@@ -314,8 +319,8 @@ export function CharacterStatsCard({
       aria-labelledby="character-stats-heading"
       className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-4"
     >
-      <div className="mb-3 pb-2 border-b border-stone-300 dark:border-stone-600 flex flex-row justify-between items-start gap-4">
-        <div className="min-w-0">
+      <div className="mb-3 pb-2 border-b border-stone-300 dark:border-stone-600 flex flex-row justify-between items-center gap-4">
+        <div className="min-w-0 shrink-0">
           <h2
             id="character-stats-heading"
             className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"

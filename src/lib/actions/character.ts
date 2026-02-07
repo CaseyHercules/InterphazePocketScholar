@@ -28,8 +28,7 @@ export async function createCharacter(formData: CharacterFormData) {
     throw new Error("You must be logged in to create a character");
   }
 
-  let inlineEffectsJson: Record<string, unknown> | null =
-    formData.inlineEffectsJson ?? null;
+  let inlineEffectsJson: Record<string, unknown> | null = null;
 
   if (formData.race?.trim()) {
     const adjustmentClient = (db as unknown as { adjustment?: any }).adjustment;

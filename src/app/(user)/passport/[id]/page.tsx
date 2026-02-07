@@ -129,9 +129,11 @@ export default async function PassportPage({ params }: PassportPageProps) {
               availableClasses={availableClasses}
             />
             <CharacterStatsCard character={character} />
-            <CharacterAdjustmentsCard character={character} variant="table-c" />
-            <CharacterSpecialAbilitiesCard character={character} />
-            <CharacterDingusesCard character={character} skillData={initialSkillData} />
+            <div className="space-y-6 mt-6">
+              <CharacterAdjustmentsCard character={character} variant="table-c" />
+              <CharacterSpecialAbilitiesCard character={character} />
+              <CharacterDingusesCard character={character} skillData={initialSkillData} />
+            </div>
             {isAdmin && (
               <>
                 <CharacterInlineEffectsEditor

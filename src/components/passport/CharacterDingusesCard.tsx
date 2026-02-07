@@ -65,20 +65,34 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
   const inlineDingusTitles = getDingusTitlesFromInlineEffects(character.inlineEffectsJson);
   const hasDingusContent = dingusSkills.length > 0 || inlineDingusTitles.length > 0;
 
+  const chevron = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+
   return (
     <section aria-labelledby="dingues-heading" className="space-y-3">
-      <div className="pl-3">
-        <h2
-          id="dingues-heading"
-          className="text-lg font-semibold leading-tight tracking-tight"
-        >
-          Dingues
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Attributes from adjustments and Dingus effects
-        </p>
-      </div>
-      <div className="space-y-4">
+      <details className="group">
+        <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
+          <div className="flex flex-row items-center justify-between gap-2 pl-3">
+            <div>
+              <h2
+                id="dingues-heading"
+                className="text-lg font-semibold leading-tight tracking-tight"
+              >
+                Dingues
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Attributes from adjustments and Dingus effects
+              </p>
+            </div>
+            <span className="text-muted-foreground shrink-0 pr-3 group-open:rotate-180 transition-transform">
+              {chevron}
+            </span>
+          </div>
+        </summary>
+        <div className="space-y-4 pt-2">
         {skillData === null && inlineDingusTitles.length === 0 ? (
           <p className="text-sm text-muted-foreground py-3">Loading…</p>
         ) : (
@@ -124,7 +138,8 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
             )}
           </>
         )}
-      </div>
+        </div>
+      </details>
       <SkillViewer
         skill={selectedSkill}
         isOpen={isSkillViewerOpen}

@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -86,7 +85,7 @@ function DesignTableB(data: RacialAdjustmentData) {
 function DesignTableC(data: RacialAdjustmentData) {
   const pairs = flattenToPairs(data);
   return (
-    <div className="rounded-md border bg-muted/20 p-2">
+    <div className="rounded-md border bg-background p-3">
       <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
         {pairs.map(([a, b], i) => (
           <div key={i} className="contents">
@@ -215,21 +214,29 @@ export function CharacterAdjustmentsCard({
   const headerTitle = data.race ? `Racial Traits: ${data.race}` : "Racial Traits & Adjustments";
 
   return (
-    <Card className="shadow-sm overflow-hidden">
+    <section aria-labelledby="racial-traits-heading" className="space-y-3">
       <details className="group">
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-          <div className="flex flex-row items-center justify-between gap-2 px-4 py-2 sm:px-4 sm:py-3">
-            <CardTitle className="text-base sm:text-lg leading-tight m-0 py-0">
-              {headerTitle}
-            </CardTitle>
-            <span className="text-muted-foreground shrink-0 group-open:rotate-180 transition-transform">
+          <div className="flex flex-row items-center justify-between gap-2 pl-3">
+            <div>
+              <h2
+                id="racial-traits-heading"
+                className="text-lg font-semibold leading-tight tracking-tight"
+              >
+                {headerTitle}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Stat bonuses and abilities from race
+              </p>
+            </div>
+            <span className="text-muted-foreground shrink-0 pr-3 group-open:rotate-180 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </span>
           </div>
         </summary>
-        <div className="border-t px-4 py-2 sm:px-4 sm:py-3 pt-2">
+        <div className="space-y-2 pt-2">
           {variant === "table" && DesignTable(data)}
           {variant === "table-a" && DesignTableA(data)}
           {variant === "table-b" && DesignTableB(data)}
@@ -238,6 +245,6 @@ export function CharacterAdjustmentsCard({
           {variant === "compact" && DesignCompact(data)}
         </div>
       </details>
-    </Card>
+    </section>
   );
 }

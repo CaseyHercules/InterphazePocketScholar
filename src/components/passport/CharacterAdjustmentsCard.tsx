@@ -85,12 +85,17 @@ function DesignTableB(data: RacialAdjustmentData) {
 function DesignTableC(data: RacialAdjustmentData) {
   const pairs = flattenToPairs(data);
   return (
-    <div className="rounded-md border bg-background p-3">
-      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+    <div className="space-y-2">
+      {data.race && (
+        <Badge variant="outline" className="text-xs font-medium text-stone-600 dark:text-stone-400">
+          {data.race}
+        </Badge>
+      )}
+      <div className="divide-y divide-stone-200 dark:divide-stone-700">
         {pairs.map(([a, b], i) => (
-          <div key={i} className="contents">
-            <div className="py-0.5">{a ? <ItemContent item={a} /> : null}</div>
-            <div className="py-0.5">{b ? <ItemContent item={b} /> : null}</div>
+          <div key={i} className="grid grid-cols-2 gap-x-4 py-2.5 text-xs">
+            <div>{a ? <ItemContent item={a} /> : null}</div>
+            <div>{b ? <ItemContent item={b} /> : null}</div>
           </div>
         ))}
       </div>
@@ -214,29 +219,32 @@ export function CharacterAdjustmentsCard({
   const headerTitle = data.race ? `Racial Traits: ${data.race}` : "Racial Traits & Adjustments";
 
   return (
-    <section aria-labelledby="racial-traits-heading" className="space-y-3">
-      <details className="group">
+    <section
+      aria-labelledby="racial-traits-heading"
+      className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-3"
+    >
+      <details className="group" open>
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-          <div className="flex flex-row items-center justify-between gap-2 pl-3">
-            <div>
+          <div className="flex flex-row items-center justify-between gap-2 py-1 group-open:py-2 group-open:pb-3 group-open:mb-3 group-open:border-b group-open:border-stone-300 dark:group-open:border-stone-600">
+            <div className="min-w-0">
               <h2
                 id="racial-traits-heading"
-                className="text-lg font-semibold leading-tight tracking-tight"
+                className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"
               >
                 {headerTitle}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
                 Stat bonuses and abilities from race
               </p>
             </div>
-            <span className="text-muted-foreground shrink-0 pr-3 group-open:rotate-180 transition-transform">
+            <span className="text-muted-foreground shrink-0 group-open:rotate-180 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </span>
           </div>
         </summary>
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2">
           {variant === "table" && DesignTable(data)}
           {variant === "table-a" && DesignTableA(data)}
           {variant === "table-b" && DesignTableB(data)}

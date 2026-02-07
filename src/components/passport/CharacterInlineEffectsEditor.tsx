@@ -140,7 +140,7 @@ export function CharacterInlineEffectsEditor({
   const byTitle = groupEffectsByTitle(effects);
 
   return (
-    <Card className="shadow-sm bg-gradient-to-r from-slate-50/70 via-stone-50/70 to-zinc-50/70">
+    <Card className="shadow-sm bg-gradient-to-r from-amber-50/70 via-orange-50/70 to-rose-50/70">
       <CardHeader className="p-1 sm:p-4 sm:pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <CardTitle className="text-base sm:text-lg pb-0">

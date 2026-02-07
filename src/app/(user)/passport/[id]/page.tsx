@@ -14,9 +14,7 @@ import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstory
 import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
 import { CharacterSpecialAbilitiesCard } from "@/components/passport/CharacterSpecialAbilitiesCard";
 import { CharacterDingusesCard } from "@/components/passport/CharacterDingusesCard";
-import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
-import { CharacterInlineEffectsEditor } from "@/components/passport/CharacterInlineEffectsEditor";
-import { CharacterClassManager } from "@/components/passport/CharacterClassManager";
+import { PassportAdminDialog } from "@/components/passport/PassportAdminDialog";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -96,9 +94,25 @@ export default async function PassportPage({ params }: PassportPageProps) {
             </p>
           </div>
 
-          <Button size="sm" className="sm:mt-0" asChild>
-            <Link href="/characters">Back to Characters</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <PassportAdminDialog
+                character={{
+                  id: character.id,
+                  name: character.name,
+                  primaryClassId: character.primaryClassId,
+                  secondaryClassId: character.secondaryClassId,
+                  primaryClassLvl: character.primaryClassLvl,
+                  secondaryClassLvl: character.secondaryClassLvl,
+                  inlineEffectsJson: (character as { inlineEffectsJson?: unknown }).inlineEffectsJson,
+                }}
+                existingAdjustments={existingAdjustments}
+              />
+            )}
+            <Button size="sm" className="sm:mt-0" asChild>
+              <Link href="/characters">Back to Characters</Link>
+            </Button>
+          </div>
         </div>
 
         {/* Tabs Section */}
@@ -122,38 +136,16 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-2">
+          <TabsContent value="overview" className="space-y-6">
             <CharacterClassCards
               character={character}
               unallocatedLevels={unallocatedLevels}
               availableClasses={availableClasses}
             />
             <CharacterStatsCard character={character} />
-            <div className="space-y-6 mt-6">
-              <CharacterAdjustmentsCard character={character} variant="table-c" />
-              <CharacterSpecialAbilitiesCard character={character} />
-              <CharacterDingusesCard character={character} skillData={initialSkillData} />
-            </div>
-            {isAdmin && (
-              <>
-                <CharacterInlineEffectsEditor
-                  characterId={character.id}
-                  characterName={character.name}
-                  inlineEffectsJson={(character as { inlineEffectsJson?: unknown }).inlineEffectsJson}
-                />
-                <CharacterClassManager
-                  characterId={character.id}
-                  primaryClassId={character.primaryClassId}
-                  secondaryClassId={character.secondaryClassId}
-                  primaryClassLvl={character.primaryClassLvl}
-                  secondaryClassLvl={character.secondaryClassLvl}
-                />
-                <CharacterAdjustmentManager
-                  characterId={character.id}
-                  existingAdjustments={existingAdjustments}
-                />
-              </>
-            )}
+            <CharacterAdjustmentsCard character={character} variant="table-c" />
+            <CharacterSpecialAbilitiesCard character={character} />
+            <CharacterDingusesCard character={character} skillData={initialSkillData} />
             <CharacterAttributesCard character={character} />
           </TabsContent>
 

@@ -72,33 +72,36 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
   );
 
   return (
-    <section aria-labelledby="dingues-heading" className="space-y-3">
-      <details className="group">
+    <section
+      aria-labelledby="dingues-heading"
+      className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-3"
+    >
+      <details className="group" open>
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-          <div className="flex flex-row items-center justify-between gap-2 pl-3">
-            <div>
+          <div className="flex flex-row items-center justify-between gap-2 py-1 group-open:py-2 group-open:pb-3 group-open:mb-3 group-open:border-b group-open:border-stone-300 dark:group-open:border-stone-600">
+            <div className="min-w-0">
               <h2
                 id="dingues-heading"
-                className="text-lg font-semibold leading-tight tracking-tight"
+                className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"
               >
                 Dingues
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
                 Attributes from adjustments and Dingus effects
               </p>
             </div>
-            <span className="text-muted-foreground shrink-0 pr-3 group-open:rotate-180 transition-transform">
+            <span className="text-muted-foreground shrink-0 group-open:rotate-180 transition-transform">
               {chevron}
             </span>
           </div>
         </summary>
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4">
         {skillData === null && inlineDingusTitles.length === 0 ? (
           <p className="text-sm text-muted-foreground py-3">Loading…</p>
         ) : (
           <>
             {dingusSkills.length > 0 && (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
                 {dingusSkills.map((skill: any, index: number) => {
                   const isLearned = learnedMiscIds.has(skill.id);
                   return (
@@ -120,11 +123,11 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp }: C
               </div>
             )}
             {inlineDingusTitles.length > 0 && (
-              <div className="space-y-1">
+              <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
                 {inlineDingusTitles.map((title) => (
                   <div
                     key={title}
-                    className="flex items-center justify-between p-3 min-h-[3rem] border rounded-md bg-background text-sm font-medium"
+                    className="flex items-center justify-between px-3 py-2.5 text-sm font-medium"
                   >
                     {title}
                   </div>

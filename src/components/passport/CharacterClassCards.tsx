@@ -20,10 +20,9 @@ export function CharacterClassCards({
     character.secondaryClassLvl > 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-      {/* Primary Class Card */}
-      <Card className="shadow-sm">
-        <CardHeader className="p-1 sm:p-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <Card className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm overflow-hidden">
+        <CardHeader className="p-3 sm:p-4">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Sword className="mr-2 h-4 w-4" />
@@ -51,8 +50,8 @@ export function CharacterClassCards({
 
       {/* Secondary Class Card */}
       {hasSecondaryClass ? (
-        <Card className="shadow-sm">
-          <CardHeader className="p-1 sm:p-2">
+        <Card className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm overflow-hidden">
+          <CardHeader className="p-3 sm:p-4">
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center">
                 <ShieldCheck className="mr-2 h-4 w-4" />
@@ -78,8 +77,8 @@ export function CharacterClassCards({
           </CardHeader>
         </Card>
       ) : (
-        <Card className="shadow-sm">
-          <CardHeader className="p-1 sm:p-2">
+        <Card className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm overflow-hidden">
+          <CardHeader className="p-3 sm:p-4">
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center">
                 <ShieldCheck className="mr-2 h-4 w-4" />
@@ -87,7 +86,7 @@ export function CharacterClassCards({
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-1 sm:p-2">
+          <CardContent className="p-3 sm:p-4 pt-0">
             <p className="text-sm text-muted-foreground mb-2">
               {character.secondaryClass?.Title.toLowerCase().includes("none")
                 ? "No Secondary Class"

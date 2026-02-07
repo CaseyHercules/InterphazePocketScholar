@@ -1,0 +1,114 @@
+export type InlineEffectKind = "stat_adjustment" | "special_ability" | "dingus";
+
+export type InlineEffect =
+  | {
+      type: "stat_adjustment";
+      title: string;
+      stat: string;
+      value: number;
+      condition?: string;
+      applyToTotal?: boolean;
+    }
+  | {
+      type: "special_ability";
+      title: string;
+      note?: string;
+    }
+  | {
+      type: "dingus";
+      title: string;
+      note?: string;
+    };
+
+export const INLINE_EFFECT_KINDS: { value: InlineEffectKind; label: string }[] = [
+  { value: "stat_adjustment", label: "Stat Adjustment" },
+  { value: "special_ability", label: "Special Ability" },
+  { value: "dingus", label: "Dingus" },
+];
+
+export function getInlineEffectsFromJson(json: unknown): InlineEffect[] {
+  if (!json || typeof json !== "object") return [];
+  const obj = json as Record<string, unknown>;
+  const effects = obj.effects;
+  if (!Array.isArray(effects)) return [];
+  return effects
+    .map((e): InlineEffect | null => {
+      if (!e || typeof e !== "object") return null;
+      const effect = e as Record<string, unknown>;
+      const type = effect.type as string | undefined;
+      const title = typeof effect.title === "string" ? effect.title.trim() : "";
+
+      if (type === "stat_adjustment") {
+        const stat = (effect.stat as string) || (effect.target as string) || "Tough";
+        return {
+          type: "stat_adjustment",
+          title: title || "Stat adjustment",
+          stat,
+          value: Number(effect.value) || 0,
+          condition: effect.condition as string | undefined,
+          applyToTotal: effect.applyToTotal as boolean | undefined,
+        };
+      }
+      if (type === "special_ability") {
+        return {
+          type: "special_ability",
+          title: title || "Special ability",
+          note: effect.note as string | undefined,
+        };
+      }
+      if (type === "dingus") {
+        return {
+          type: "dingus",
+          title: title || "Dingus",
+          note: effect.note as string | undefined,
+        };
+      }
+
+      const legacyType = (type || "").toLowerCase();
+      if (legacyType === "stat_bonus") {
+        const stat = (effect.stat as string) || (effect.target as string) || "Tough";
+        return {
+          type: "stat_adjustment",
+          title: title || "Stat adjustment",
+          stat,
+          value: Number(effect.value) || 0,
+          condition: effect.condition as string | undefined,
+          applyToTotal: effect.applyToTotal as boolean | undefined,
+        };
+      }
+      if (title || effect.note) {
+        return {
+          type: "dingus",
+          title: title || String(effect.note || "Effect"),
+          note: effect.note as string | undefined,
+        };
+      }
+      return null;
+    })
+    .filter((x): x is InlineEffect => x !== null);
+}
+
+export function createInlineEffectsJson(effects: InlineEffect[]): {
+  effects: InlineEffect[];
+} {
+  return { effects };
+}
+
+export function getDingusTitlesFromInlineEffects(json: unknown): string[] {
+  const effects = getInlineEffectsFromJson(json);
+  const titles = new Set<string>();
+  for (const e of effects) {
+    if (e.type !== "special_ability" && e.title.trim()) {
+      titles.add(e.title.trim());
+    }
+  }
+  return Array.from(titles).sort();
+}
+
+export function getSpecialAbilitiesFromInlineEffects(
+  json: unknown
+): (InlineEffect & { type: "special_ability" })[] {
+  return getInlineEffectsFromJson(json).filter(
+    (e): e is InlineEffect & { type: "special_ability" } => e.type === "special_ability"
+  );
+}

@@ -12,6 +12,7 @@ import { CharacterSkillsCard } from "@/components/passport/CharacterSkillsCard";
 import { CharacterInventoryCard } from "@/components/passport/CharacterInventoryCard";
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
 import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
+import { CharacterSpecialAbilitiesCard } from "@/components/passport/CharacterSpecialAbilitiesCard";
 import { CharacterDingusesCard } from "@/components/passport/CharacterDingusesCard";
 import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
 import { CharacterInlineEffectsEditor } from "@/components/passport/CharacterInlineEffectsEditor";
@@ -23,6 +24,7 @@ import { authOptions } from "@/lib/auth";
 import {
   getCharacterForPassport,
   getAvailableClasses,
+  getAvailableSkillsForCharacter,
 } from "@/lib/actions/passport";
 
 interface PassportPageProps {
@@ -47,10 +49,11 @@ export async function generateMetadata({ params }: PassportPageProps) {
 
 export default async function PassportPage({ params }: PassportPageProps) {
   const { id } = await params;
-  const [character, availableClasses, session] = await Promise.all([
+  const [character, availableClasses, session, initialSkillData] = await Promise.all([
     getCharacterForPassport(id),
     getAvailableClasses(),
     getServerSession(authOptions),
+    getAvailableSkillsForCharacter(id),
   ]);
 
   const unallocatedLevels = character.user?.UnallocatedLevels ?? 0;
@@ -126,8 +129,9 @@ export default async function PassportPage({ params }: PassportPageProps) {
               availableClasses={availableClasses}
             />
             <CharacterStatsCard character={character} />
-            <CharacterAdjustmentsCard character={character} />
-            <CharacterDingusesCard character={character} />
+            <CharacterAdjustmentsCard character={character} variant="table-c" />
+            <CharacterSpecialAbilitiesCard character={character} />
+            <CharacterDingusesCard character={character} skillData={initialSkillData} />
             {isAdmin && (
               <>
                 <CharacterInlineEffectsEditor
@@ -153,7 +157,7 @@ export default async function PassportPage({ params }: PassportPageProps) {
 
           {/* Skills Tab */}
           <TabsContent value="skills" className="space-y-4">
-            <CharacterSkillsCard character={character} />
+            <CharacterSkillsCard character={character} skillData={initialSkillData} />
           </TabsContent>
 
           {/* Spells Tab */}

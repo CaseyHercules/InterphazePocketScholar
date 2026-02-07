@@ -178,6 +178,7 @@ export function getEPAvailableValues(character: any): {
 
 type AdjustmentEffect = {
   type?: unknown;
+  title?: unknown;
   target?: unknown;
   value?: unknown;
   stat?: unknown;
@@ -254,7 +255,7 @@ function processEffectSources(
       if (!effect || typeof effect !== "object") continue;
       const type =
         typeof effect.type === "string" ? effect.type.toLowerCase() : "";
-      if (type !== "stat_bonus") continue;
+      if (type !== "stat_bonus" && type !== "stat_adjustment") continue;
 
       const statRaw = typeof effect.stat === "string" ? effect.stat.trim() : "";
       if (!statRaw) continue;
@@ -272,8 +273,9 @@ function processEffectSources(
       const applyToTotal =
         typeof effect.applyToTotal === "boolean" ? effect.applyToTotal : true;
 
+      const effectTitle = typeof effect.title === "string" && effect.title.trim() ? effect.title.trim() : null;
       const breakdownItem = {
-        title: typeof title === "string" && title.trim() ? title.trim() : "Adjustment",
+        title: effectTitle ?? (typeof title === "string" && title.trim() ? title.trim() : "Adjustment"),
         value,
         condition,
       };

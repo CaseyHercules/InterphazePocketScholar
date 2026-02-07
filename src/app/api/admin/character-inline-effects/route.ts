@@ -49,6 +49,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(character);
   } catch (error) {
-    return new NextResponse("Failed to update inline effects", { status: 500 });
+    return new NextResponse("Failed to update Dinguses", { status: 500 });
   }
 }

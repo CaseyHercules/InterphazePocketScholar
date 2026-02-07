@@ -50,6 +50,7 @@ export function CharacterSkillsCard({
 
   useEffect(() => {
     if (!character?.id) return;
+    if (skillDataProp != null && refreshTrigger === 0) return;
     let cancelled = false;
     setIsLoading(true);
     getAvailableSkillsForCharacter(character.id)

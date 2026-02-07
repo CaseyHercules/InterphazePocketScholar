@@ -286,7 +286,7 @@ export function ItemForm({
               name="data.inlineEffects"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Inline Effects</FormLabel>
+                  <FormLabel>Item Effects</FormLabel>
                   <FormControl>
                     <div className="rounded-md border p-4 min-h-[120px]">
                       <SkillEffectsEditor

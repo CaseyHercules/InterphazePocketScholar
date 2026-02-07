@@ -12,24 +12,22 @@ export const metadata = {
 };
 
 interface EditCharacterPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function EditCharacterPage({
   params,
 }: EditCharacterPageProps) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/auth/signin");
   }
 
-  // Fetch the character and verify ownership
   const character = await db.character.findUnique({
     where: {
-      id: params.id,
+      id,
     },
     include: {
       primaryClass: true,

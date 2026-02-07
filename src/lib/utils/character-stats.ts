@@ -237,25 +237,17 @@ export function getEPBreakdown(character: any): EPBreakdown {
   };
 }
 
-function getAdjustmentStatBonus(
-  character: any,
-  normalizedStat: string
-): {
-  total: number;
-  items: StatAdjustmentBreakdown[];
-  conditionalItems: StatAdjustmentBreakdown[];
-} {
-  const adjustments = Array.isArray(character?.adjustments)
-    ? character.adjustments
-    : [];
-
-  let total = 0;
-  const items: StatAdjustmentBreakdown[] = [];
-  const conditionalItems: StatAdjustmentBreakdown[] = [];
-
-  for (const entry of adjustments) {
-    const adjustment = entry?.adjustment ?? entry;
-    const effects = (adjustment?.effectsJson as { effects?: unknown })?.effects;
+function processEffectSources(
+  sources: Array<{ effectsJson: unknown; title: string }>,
+  normalizedStat: string,
+  result: {
+    total: number;
+    items: StatAdjustmentBreakdown[];
+    conditionalItems: StatAdjustmentBreakdown[];
+  }
+): void {
+  for (const { effectsJson, title } of sources) {
+    const effects = (effectsJson as { effects?: unknown })?.effects;
     if (!Array.isArray(effects)) continue;
 
     for (const effect of effects as AdjustmentEffect[]) {
@@ -281,24 +273,81 @@ function getAdjustmentStatBonus(
         typeof effect.applyToTotal === "boolean" ? effect.applyToTotal : true;
 
       const breakdownItem = {
-        title:
-          typeof adjustment?.title === "string" && adjustment.title.trim()
-            ? adjustment.title.trim()
-            : "Adjustment",
+        title: typeof title === "string" && title.trim() ? title.trim() : "Adjustment",
         value,
         condition,
       };
 
       if (condition || !applyToTotal) {
-        conditionalItems.push(breakdownItem);
+        result.conditionalItems.push(breakdownItem);
       } else {
-        total += value;
-        items.push(breakdownItem);
+        result.total += value;
+        result.items.push(breakdownItem);
+      }
+    }
+  }
+}
+
+function getAdjustmentStatBonus(
+  character: any,
+  normalizedStat: string
+): {
+  total: number;
+  items: StatAdjustmentBreakdown[];
+  conditionalItems: StatAdjustmentBreakdown[];
+} {
+  let total = 0;
+  const items: StatAdjustmentBreakdown[] = [];
+  const conditionalItems: StatAdjustmentBreakdown[] = [];
+  const result = { total, items, conditionalItems };
+
+  const adjustments = Array.isArray(character?.adjustments)
+    ? character.adjustments
+    : [];
+
+  const sources: Array<{ effectsJson: unknown; title: string }> = [];
+
+  for (const entry of adjustments) {
+    const adjustment = entry?.adjustment ?? entry;
+    if (!adjustment?.effectsJson) continue;
+    sources.push({
+      effectsJson: adjustment.effectsJson,
+      title: (adjustment.title as string) ?? "Adjustment",
+    });
+  }
+
+  if (character?.inlineEffectsJson) {
+    sources.push({
+      effectsJson: character.inlineEffectsJson,
+      title: (character.name as string) ?? "Inline",
+    });
+  }
+
+  const inventory = Array.isArray(character?.inventory) ? character.inventory : [];
+  for (const item of inventory) {
+    const data = item?.data as Record<string, unknown> | null | undefined;
+    if (!data) continue;
+    const inlineEffects = data.inlineEffects as { effects?: unknown } | undefined;
+    if (Array.isArray(inlineEffects?.effects) && inlineEffects.effects.length > 0) {
+      sources.push({
+        effectsJson: { effects: inlineEffects.effects },
+        title: (item.title as string) ?? "Item",
+      });
+    } else {
+      const resolved = (item as { _resolvedAdjustmentEffects?: unknown })
+        ._resolvedAdjustmentEffects;
+      if (resolved) {
+        sources.push({
+          effectsJson: resolved,
+          title: (item.title as string) ?? "Item",
+        });
       }
     }
   }
 
-  return { total, items, conditionalItems };
+  processEffectSources(sources, normalizedStat, result);
+
+  return result;
 }
 
 /**
@@ -434,15 +483,37 @@ export function getEffectiveSkillValue(
     }
   }
 
-  // Apply skill_modifier effects from adjustments
-  const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
-  for (const entry of adjustments) {
-    const adjustment = entry?.adjustment ?? entry;
-    const effects = getEffectsFromJson(adjustment?.effectsJson);
+  const applyEffectsFromSource = (effectsJson: unknown) => {
+    const effects = getEffectsFromJson(effectsJson);
     for (const effect of effects) {
       if (!isSkillModifierEffect(effect)) continue;
       if (effect.targetSkillId !== skillId || effect.targetField !== field) continue;
       modifiedValue = applySkillModifier(modifiedValue, effect, field);
+    }
+  };
+
+  const adjustments = Array.isArray(character?.adjustments) ? character.adjustments : [];
+  for (const entry of adjustments) {
+    const adjustment = entry?.adjustment ?? entry;
+    applyEffectsFromSource(adjustment?.effectsJson);
+  }
+
+  if (character?.inlineEffectsJson) {
+    applyEffectsFromSource(character.inlineEffectsJson);
+  }
+
+  const inventory = Array.isArray(character?.inventory) ? character.inventory : [];
+  for (const item of inventory) {
+    const data = item?.data as Record<string, unknown> | null | undefined;
+    if (!data) continue;
+    const inlineEffects = data.inlineEffects as { effects?: unknown } | undefined;
+    if (Array.isArray(inlineEffects?.effects) && inlineEffects.effects.length > 0) {
+      applyEffectsFromSource({ effects: inlineEffects.effects });
+    } else {
+      const resolved = (item as { _resolvedAdjustmentEffects?: unknown })._resolvedAdjustmentEffects;
+      if (resolved) {
+        applyEffectsFromSource(resolved);
+      }
     }
   }
 

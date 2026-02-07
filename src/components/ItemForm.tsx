@@ -31,6 +31,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SkillEffectsEditor } from "@/components/SkillEffectsEditor";
+import { getEffectsFromJson, type SkillEffect } from "@/types/skill-effects";
 
 const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
 
@@ -42,6 +44,7 @@ const ItemFormSchema = z.object({
   data: z
     .object({
       adjustmentId: z.string().optional(),
+      inlineEffects: z.object({ effects: z.array(z.any()) }).optional(),
       weapon: z
         .object({
           damage: z.string().optional(),
@@ -83,6 +86,9 @@ export function ItemForm({
   onCancel,
 }: ItemFormProps) {
   const data = initialItem?.data as ItemData | undefined;
+  const initialEffects: SkillEffect[] = Array.isArray(data?.inlineEffects?.effects)
+    ? (getEffectsFromJson({ effects: data.inlineEffects.effects }) ?? [])
+    : [];
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(ItemFormSchema),
@@ -93,6 +99,7 @@ export function ItemForm({
       quantity: initialItem?.quantity ?? 1,
       data: {
         adjustmentId: data?.adjustmentId ?? "",
+        inlineEffects: { effects: initialEffects },
         weapon: data?.weapon ?? {},
         consumable: data?.consumable ?? {},
       },
@@ -116,6 +123,11 @@ export function ItemForm({
             values.data.adjustmentId !== "none"
               ? values.data.adjustmentId
               : undefined,
+        inlineEffects:
+          Array.isArray(values.data?.inlineEffects?.effects) &&
+          values.data.inlineEffects.effects.length > 0
+            ? { effects: values.data.inlineEffects.effects }
+            : undefined,
         weapon:
             values.data?.weapon &&
             (values.data.weapon.damage ||
@@ -269,6 +281,30 @@ export function ItemForm({
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="data.inlineEffects"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Inline Effects</FormLabel>
+                  <FormControl>
+                    <div className="rounded-md border p-4 min-h-[120px]">
+                      <SkillEffectsEditor
+                        value={Array.isArray(field.value?.effects) ? field.value.effects : []}
+                        onChange={(newEffects) =>
+                          field.onChange({ effects: newEffects })
+                        }
+                        mode="adjustment"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Stat bonuses and notes stored on this item. Preferred over linked adjustment when both exist.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {adjustments.length > 0 && (
               <FormField
                 control={form.control}

@@ -17,9 +17,16 @@ const ITEM_TYPE_VALUES = [
   "INCARNATE_ITEM",
 ] as const;
 
+const InlineEffectsSchema = z
+  .object({
+    effects: z.array(z.any()).optional(),
+  })
+  .optional();
+
 const ItemDataSchema = z
   .object({
     adjustmentId: z.string().optional(),
+    inlineEffects: InlineEffectsSchema,
     weapon: z
       .object({
         damage: z.string().optional(),

@@ -13,6 +13,7 @@ import { CharacterInventoryCard } from "@/components/passport/CharacterInventory
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
 import { CharacterAdjustmentsCard } from "@/components/passport/CharacterAdjustmentsCard";
 import { CharacterAdjustmentManager } from "@/components/passport/CharacterAdjustmentManager";
+import { CharacterInlineEffectsEditor } from "@/components/passport/CharacterInlineEffectsEditor";
 import { CharacterClassManager } from "@/components/passport/CharacterClassManager";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -127,6 +128,11 @@ export default async function PassportPage({ params }: PassportPageProps) {
             <CharacterAdjustmentsCard character={character} />
             {isAdmin && (
               <>
+                <CharacterInlineEffectsEditor
+                  characterId={character.id}
+                  characterName={character.name}
+                  inlineEffectsJson={(character as { inlineEffectsJson?: unknown }).inlineEffectsJson}
+                />
                 <CharacterClassManager
                   characterId={character.id}
                   primaryClassId={character.primaryClassId}

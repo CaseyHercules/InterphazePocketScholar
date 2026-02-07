@@ -136,6 +136,34 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     redirect("/unauthorized");
   }
 
+  const inventory = Array.isArray(character.inventory) ? character.inventory : [];
+  const adjustmentIds = inventory
+    .map((item) => {
+      const data = item?.data as { adjustmentId?: string; inlineEffects?: { effects?: unknown[] } } | null | undefined;
+      if (!data?.adjustmentId) return null;
+      if (Array.isArray(data.inlineEffects?.effects) && data.inlineEffects.effects.length > 0) return null;
+      return data.adjustmentId;
+    })
+    .filter(Boolean) as string[];
+  const uniqueIds = Array.from(new Set(adjustmentIds));
+
+  if (uniqueIds.length > 0) {
+    const adjustments = await db.adjustment.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true, effectsJson: true },
+    });
+    const adjMap = new Map(adjustments.map((a) => [a.id, a.effectsJson]));
+    for (const item of inventory) {
+      const data = item?.data as { adjustmentId?: string; inlineEffects?: { effects?: unknown[] } } | null | undefined;
+      if (!data?.adjustmentId) continue;
+      if (Array.isArray(data.inlineEffects?.effects) && data.inlineEffects.effects.length > 0) continue;
+      const effects = adjMap.get(data.adjustmentId);
+      if (effects != null) {
+        (item as { _resolvedAdjustmentEffects?: unknown })._resolvedAdjustmentEffects = effects;
+      }
+    }
+  }
+
   return character as CharacterForPassport;
 });
 
@@ -274,6 +302,28 @@ export async function getAvailableSkillsForCharacter(characterId: string) {
   for (const entry of charAdjustments) {
     const adjustment = entry?.adjustment ?? entry;
     processEffects(getEffectsFromJson((adjustment as { effectsJson?: unknown })?.effectsJson));
+  }
+
+  const inlineEffectsJson = (character as Record<string, unknown>).inlineEffectsJson;
+  if (inlineEffectsJson) {
+    processEffects(getEffectsFromJson(inlineEffectsJson));
+  }
+
+  const inventory = Array.isArray((character as Record<string, unknown>).inventory)
+    ? ((character as Record<string, unknown>).inventory as { data?: { adjustmentId?: string; inlineEffects?: { effects?: unknown[] } } }[])
+    : [];
+  for (const item of inventory) {
+    const data = item?.data;
+    if (!data) continue;
+    const inlineEffects = data.inlineEffects;
+    if (Array.isArray(inlineEffects?.effects) && inlineEffects.effects.length > 0) {
+      processEffects(getEffectsFromJson({ effects: inlineEffects.effects }));
+    } else if (data.adjustmentId) {
+      const resolved = (item as { _resolvedAdjustmentEffects?: unknown })._resolvedAdjustmentEffects;
+      if (resolved) {
+        processEffects(getEffectsFromJson(resolved));
+      }
+    }
   }
 
   const visibilityWhere = getSkillVisibilityWhere(session?.user?.role);

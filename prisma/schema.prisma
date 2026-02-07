@@ -153,6 +153,7 @@ model Character {
   secondaryClassLvl Int
   Attributes        Json?
   notes             Json?
+  inlineEffectsJson Json?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
   phazians          Int

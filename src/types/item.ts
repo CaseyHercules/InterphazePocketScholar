@@ -18,8 +18,13 @@ export interface ItemConsumableData {
   uses?: number;
 }
 
+export interface ItemInlineEffects {
+  effects?: Array<Record<string, unknown>>;
+}
+
 export interface ItemData {
   adjustmentId?: string;
+  inlineEffects?: ItemInlineEffects;
   weapon?: ItemWeaponData;
   consumable?: ItemConsumableData;
   magicItem?: Record<string, string>;

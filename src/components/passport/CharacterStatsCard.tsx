@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
 import {
   calculateStatValue,
   getEPAvailableValues,
@@ -11,327 +12,299 @@ import { HoverBreakdown } from "@/components/passport/HoverBreakdown";
 
 interface CharacterStatsCardProps {
   character: any;
+  label?: string;
 }
 
-export function CharacterStatsCard({ character }: CharacterStatsCardProps) {
-  const renderAdjustmentLines = (items: StatAdjustmentBreakdown[]) => {
-    if (!items.length) {
-      return (
-        <div className="text-sm text-muted-foreground">
-          No active adjustments
+function renderAdjustmentLines(items: StatAdjustmentBreakdown[]) {
+  if (!items.length) return null;
+  return (
+    <div className="space-y-1">
+      {items.map((item, index) => (
+        <div key={`${item.title}-${index}`} className="flex justify-between">
+          <span className="text-sm text-muted-foreground">{item.title}</span>
+          <span className="text-sm font-medium">
+            {item.value >= 0 ? `+${item.value}` : item.value}
+          </span>
         </div>
-      );
-    }
+      ))}
+    </div>
+  );
+}
 
-    return (
-      <div className="space-y-1">
-        {items.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="flex justify-between">
-            <span className="text-sm text-muted-foreground">{item.title}</span>
-            <span className="text-sm font-medium">
-              {item.value >= 0 ? `+${item.value}` : item.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderConditionalLines = (
-    items: StatAdjustmentBreakdown[],
-    conditionPrefix: string
-  ) => {
-    if (!items.length) {
-      return (
-        <div className="text-sm text-muted-foreground">
-          No conditional bonuses
+function renderConditionalLines(
+  items: StatAdjustmentBreakdown[],
+  conditionPrefix: string
+) {
+  if (!items.length) return null;
+  return (
+    <div className="space-y-1">
+      {items.map((item, index) => (
+        <div key={`${item.title}-${index}`} className="flex justify-between">
+          <span className="text-sm">
+            {item.condition
+              ? `${conditionPrefix} ${item.condition}`
+              : "Conditional"}
+          </span>
+          <span className="text-sm font-medium">
+            {item.value >= 0 ? `+${item.value}` : item.value}
+          </span>
         </div>
-      );
-    }
+      ))}
+    </div>
+  );
+}
 
-    return (
-      <div className="space-y-1">
-        {items.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="space-y-0.5">
-            {/* <div className="text-muted-foreground">{item.title}</div> */}
-            <div className="flex justify-between">
-              <span className="text-sm">
-                {item.condition
-                  ? `${conditionPrefix} ${item.condition}`
-                  : "Conditional"}
-              </span>
-              <span className="text-sm font-medium">
-                {item.value >= 0 ? `+${item.value}` : item.value}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
+function renderStatTooltip(label: string, breakdown: StatBreakdownExtended) {
+  const lowerLabel = label.toLowerCase();
+  const conditionPrefix =
+    lowerLabel === "attack" || lowerLabel === "accuracy" ? "with" : "vs";
+  const hasAdj =
+    breakdown.adjustments.length > 0 || breakdown.skillBonuses.length > 0;
+  const hasCond =
+    breakdown.conditionalAdjustments.length > 0 ||
+    breakdown.conditionalSkillBonuses.length > 0;
 
-  const renderStatTooltip = (
-    label: string,
-    breakdown: StatBreakdownExtended
-  ) => {
-    const lowerLabel = label.toLowerCase();
-    const conditionPrefix =
-      lowerLabel === "attack" || lowerLabel === "accuracy" ? "with" : "vs";
-    
-    const hasAdjustments = breakdown.adjustments.length > 0;
-    const hasSkillBonuses = breakdown.skillBonuses.length > 0;
-    const hasConditional = breakdown.conditionalAdjustments.length > 0 || breakdown.conditionalSkillBonuses.length > 0;
-
-    return (
-    <div className="w-56 space-y-2">
-      <div className="text-sm font-semibold">{label} breakdown</div>
+  return (
+    <div className="w-56 space-y-2 text-sm">
+      <div className="font-semibold">{label} breakdown</div>
       <div className="space-y-1">
         <div className="flex justify-between">
-          <span className="text-sm text-muted-foreground">Primary class</span>
-          <span className="text-sm font-medium">{breakdown.primary}</span>
+          <span className="text-muted-foreground">Primary class</span>
+          <span className="font-medium">{breakdown.primary}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm text-muted-foreground">Secondary class</span>
-          <span className="text-sm font-medium">{breakdown.secondary}</span>
+          <span className="text-muted-foreground">Secondary class</span>
+          <span className="font-medium">{breakdown.secondary}</span>
         </div>
       </div>
-      {(hasAdjustments || hasSkillBonuses) && (
+      {hasAdj && (
         <div className="border-t pt-2">
-          <div className="text-sm font-semibold mb-1">Bonuses</div>
-          {renderAdjustmentLines([...breakdown.adjustments, ...breakdown.skillBonuses])}
+          <div className="font-semibold mb-1">Bonuses</div>
+          {renderAdjustmentLines([
+            ...breakdown.adjustments,
+            ...breakdown.skillBonuses,
+          ])}
         </div>
       )}
-      {hasConditional && (
+      {hasCond && (
         <div className="border-t pt-2">
-          <div className="text-sm font-semibold">Conditional bonuses</div>
-          <div className="mt-1">
-            {renderConditionalLines(
-              [...breakdown.conditionalAdjustments, ...breakdown.conditionalSkillBonuses],
-              conditionPrefix
-            )}
-          </div>
+          <div className="font-semibold mb-1">Conditional bonuses</div>
+          {renderConditionalLines(
+            [
+              ...breakdown.conditionalAdjustments,
+              ...breakdown.conditionalSkillBonuses,
+            ],
+            conditionPrefix
+          )}
         </div>
       )}
-      <div className="flex justify-between border-t pt-2">
-        <span className="text-sm font-semibold">Total</span>
-        <span className="text-sm font-semibold">{breakdown.total}</span>
+      <div className="flex justify-between border-t pt-2 font-semibold">
+        <span>Total</span>
+        <span>{breakdown.total}</span>
       </div>
     </div>
-    );
-  };
+  );
+}
 
-  const renderEPTooltip = () => {
-    const breakdown = getEPBreakdown(character);
-    const hasAdjustments = breakdown.adjustments.length > 0;
-    const hasSkillBonuses = breakdown.skillBonuses.length > 0;
-    const hasConditional = breakdown.conditionalAdjustments.length > 0 || breakdown.conditionalSkillBonuses.length > 0;
+function renderEPTooltip(character: any) {
+  const breakdown = getEPBreakdown(character);
+  const hasAdj =
+    breakdown.adjustments.length > 0 || breakdown.skillBonuses.length > 0;
+  const hasCond =
+    breakdown.conditionalAdjustments.length > 0 ||
+    breakdown.conditionalSkillBonuses.length > 0;
 
-    return (
-      <div className="w-56 space-y-2">
-        <div className="text-sm font-semibold">Energy Points breakdown</div>
-        <div className="space-y-1">
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Primary class</span>
-            <span className="text-sm font-medium">{breakdown.primary}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Secondary class</span>
-            <span className="text-sm font-medium">{breakdown.secondary}</span>
-          </div>
+  return (
+    <div className="w-56 space-y-2 text-sm">
+      <div className="font-semibold">Energy Points breakdown</div>
+      <div className="space-y-1">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Primary class</span>
+          <span className="font-medium">{breakdown.primary}</span>
         </div>
-        <div className="border-t pt-2 space-y-1">
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">
-              Skill EP Cost (primary)
-            </span>
-            <span className="text-sm font-medium">
-              -{breakdown.skillReductions.primary}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">
-              Skill EP Cost (secondary)
-            </span>
-            <span className="text-sm font-medium">
-              -{breakdown.skillReductions.secondary}
-            </span>
-          </div>
-        </div>
-        {(hasAdjustments || hasSkillBonuses) && (
-          <div className="border-t pt-2">
-            <div className="text-sm font-semibold mb-1">Bonuses</div>
-            {renderAdjustmentLines([...breakdown.adjustments, ...breakdown.skillBonuses])}
-          </div>
-        )}
-        {hasConditional && (
-          <div className="border-t pt-2">
-            <div className="text-sm font-semibold">Conditional bonuses</div>
-            <div className="mt-1">
-              {renderConditionalLines(
-                [...breakdown.conditionalAdjustments, ...breakdown.conditionalSkillBonuses],
-                "vs"
-              )}
-            </div>
-          </div>
-        )}
-        <div className="flex justify-between border-t pt-2">
-          <span className="text-xs font-semibold">Total</span>
-          <span className="text-xs font-semibold">{breakdown.total}</span>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Secondary class</span>
+          <span className="font-medium">{breakdown.secondary}</span>
         </div>
       </div>
-    );
-  };
+      <div className="border-t pt-2 space-y-1">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Skill EP Cost (primary)</span>
+          <span className="font-medium">-{breakdown.skillReductions.primary}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Skill EP Cost (secondary)</span>
+          <span className="font-medium">
+            -{breakdown.skillReductions.secondary}
+          </span>
+        </div>
+      </div>
+      {hasAdj && (
+        <div className="border-t pt-2">
+          <div className="font-semibold mb-1">Bonuses</div>
+          {renderAdjustmentLines([
+            ...breakdown.adjustments,
+            ...breakdown.skillBonuses,
+          ])}
+        </div>
+      )}
+      {hasCond && (
+        <div className="border-t pt-2">
+          <div className="font-semibold mb-1">Conditional bonuses</div>
+          {renderConditionalLines(
+            [
+              ...breakdown.conditionalAdjustments,
+              ...breakdown.conditionalSkillBonuses,
+            ],
+            "vs"
+          )}
+        </div>
+      )}
+      <div className="flex justify-between border-t pt-2 font-semibold">
+        <span>Total</span>
+        <span>{breakdown.total}</span>
+      </div>
+    </div>
+  );
+}
 
-  const StatTile = ({
-    label,
-    value,
-    tooltip,
-  }: {
-    label: string;
-    value: number | string;
-    tooltip: React.ReactNode;
-  }) => (
-    <HoverBreakdown content={tooltip}>
-      <div className="flex items-center justify-between bg-background border rounded-lg p-2">
-        <span className="text-sm">{label}</span>
-        <span className="text-lg font-semibold">{value}</span>
+
+function getConditionPrefix(label: string): string {
+  const lower = label.toLowerCase();
+  return lower === "attack" || lower === "accuracy" ? "with" : "vs";
+}
+
+function StatWithInlineAdjustments({
+  label,
+  breakdown,
+}: {
+  label: string;
+  breakdown: StatBreakdownExtended;
+}) {
+  const conditionalOnly = [
+    ...breakdown.conditionalAdjustments,
+    ...breakdown.conditionalSkillBonuses,
+  ];
+  const prefix = getConditionPrefix(label);
+  return (
+    <HoverBreakdown content={renderStatTooltip(label, breakdown)}>
+      <div className="rounded-md border border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-900/60 p-3 text-base transition-colors cursor-default hover:bg-stone-100 dark:hover:bg-stone-800/80 hover:shadow-sm">
+        <div className="flex justify-between items-baseline font-semibold tabular-nums">
+          <span className="text-stone-800 dark:text-stone-200 text-base font-bold">{label}</span>
+          <span className="text-foreground text-xl">{breakdown.total}</span>
+        </div>
+        {conditionalOnly.length > 0 && (
+          <div className="mt-2 space-y-0.5 text-sm text-muted-foreground border-t border-stone-200 dark:border-stone-700 pt-2">
+            {conditionalOnly.map((item, i) => (
+              <div key={i} className="flex justify-between">
+                <span>{item.condition ? `${prefix} ${item.condition}` : item.title}</span>
+                <span className="tabular-nums font-medium">{item.value >= 0 ? `+${item.value}` : item.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </HoverBreakdown>
   );
+}
+
+function DesignGrid({ character }: { character: any }) {
+  const epValues = getEPAvailableValues(character);
+  const secondaryLabel =
+    character.secondaryClass &&
+    character.secondaryClassLvl > 0 &&
+    !character.secondaryClass.Title?.toLowerCase().includes("none")
+      ? character.secondaryClass.Title
+      : null;
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="p-1 sm:p-4 sm:pb-2">
-        <CardTitle className="text-base sm:text-lg pb-0">
-          Character Stats
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-1 sm:p-4 sm:pt-0">
-        {/* HP and EP in first row */}
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          {/* HP Stat Card */}
-          <HoverBreakdown
-            content={renderStatTooltip(
-              "Hit Points",
-              getStatBreakdown(character, "HP")
-            )}
-          >
-            <div className="bg-background border rounded-lg p-3">
-              <h4 className="font-medium text-sm mb-1">Hit Points</h4>
-              <p className="text-2xl font-bold">
-                {calculateStatValue(character, "HP")}
-              </p>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        <HoverBreakdown
+          content={renderStatTooltip("Hit Points", getStatBreakdown(character, "HP"))}
+        >
+          <div className="p-2.5 rounded-md border border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-900/60 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800/80 hover:shadow-sm border-l-4 border-l-stone-500 dark:border-l-stone-500">
+            <div className="text-base font-bold text-stone-800 dark:text-stone-200 mb-0.5">Hit Points</div>
+            <div className="text-3xl font-bold tabular-nums text-foreground">
+              {calculateStatValue(character, "HP")}
             </div>
-          </HoverBreakdown>
-
-          {/* EP Stat Card */}
-          <HoverBreakdown content={renderEPTooltip()}>
-            <div className="bg-background border rounded-lg p-3">
-              <h4 className="font-medium text-sm mb-1">Energy Points</h4>
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold">
-                    {character.primaryClass
-                      ? character.primaryClass.Title
-                      : "Primary"}
-                  </span>
-                  <span className="text-lg">
-                    {getEPAvailableValues(character).primary}
-                  </span>
-                </div>
-                {character.secondaryClass &&
-                  character.secondaryClassLvl > 0 &&
-                  !character.secondaryClass.Title.toLowerCase().includes(
-                    "none"
-                  ) && (
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-lg font-semibold">
-                        {character.secondaryClass.Title}
-                      </span>
-                      <span className="text-lg">
-                        {getEPAvailableValues(character).secondary}
-                      </span>
-                    </div>
-                  )}
+          </div>
+        </HoverBreakdown>
+        <HoverBreakdown content={renderEPTooltip(character)}>
+          <div className="p-2.5 rounded-md border border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-900/60 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800/80 hover:shadow-sm border-l-4 border-l-stone-400 dark:border-l-stone-500">
+            <div className="text-base font-bold text-stone-800 dark:text-stone-200 mb-1">Energy Points</div>
+            <div className="space-y-0.5 text-base">
+              <div className="flex justify-between">
+                <span className="text-stone-600 dark:text-stone-400">{character.primaryClass?.Title ?? "Primary"}</span>
+                <span className="font-semibold tabular-nums">{epValues.primary}</span>
               </div>
+              {secondaryLabel && (
+                <div className="flex justify-between">
+                  <span className="text-stone-600 dark:text-stone-400">{secondaryLabel}</span>
+                  <span className="font-semibold tabular-nums">{epValues.secondary}</span>
+                </div>
+              )}
             </div>
-          </HoverBreakdown>
-        </div>
-
-        {/* Combat Stats in second row */}
-        <div className="mb-3">
-          <h4 className="font-medium text-sm mb-2 text-muted-foreground">
-            Combat Stats
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <StatTile
-              label="Attack"
-              value={calculateStatValue(character, "Attack")}
-              tooltip={renderStatTooltip(
-                "Attack",
-                getStatBreakdown(character, "Attack")
-              )}
-            />
-            <StatTile
-              label="Accuracy"
-              value={calculateStatValue(character, "Accuracy")}
-              tooltip={renderStatTooltip(
-                "Accuracy",
-                getStatBreakdown(character, "Accuracy")
-              )}
-            />
-            <StatTile
-              label="Defense"
-              value={calculateStatValue(character, "Defense")}
-              tooltip={renderStatTooltip(
-                "Defense",
-                getStatBreakdown(character, "Defense")
-              )}
-            />
-            <StatTile
-              label="Resistance"
-              value={calculateStatValue(character, "Resistance")}
-              tooltip={renderStatTooltip(
-                "Resistance",
-                getStatBreakdown(character, "Resistance")
-              )}
-            />
+          </div>
+        </HoverBreakdown>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 space-y-2">
+          <div className="text-base font-semibold text-foreground pb-1.5 border-b-2 border-stone-400 dark:border-stone-600 tracking-wide">
+            Combat
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(["Attack", "Accuracy", "Defense", "Resistance"] as const).map((stat) => (
+              <StatWithInlineAdjustments
+                key={stat}
+                label={stat}
+                breakdown={getStatBreakdown(character, stat)}
+              />
+            ))}
           </div>
         </div>
-
-        {/* Saves in third row */}
-        <div>
-          <h4 className="font-medium text-sm mb-2 text-muted-foreground">
-            Saving Throws
-          </h4>
-          <div className="grid grid-cols-3 gap-2">
-            <StatTile
-              label="Tough"
-              value={calculateStatValue(character, "Tough")}
-              tooltip={renderStatTooltip(
-                "Tough",
-                getStatBreakdown(character, "Tough")
-              )}
-            />
-            <StatTile
-              label="Quick"
-              value={calculateStatValue(character, "Quick")}
-              tooltip={renderStatTooltip(
-                "Quick",
-                getStatBreakdown(character, "Quick")
-              )}
-            />
-            <StatTile
-              label="Mind"
-              value={calculateStatValue(character, "Mind")}
-              tooltip={renderStatTooltip(
-                "Mind",
-                getStatBreakdown(character, "Mind")
-              )}
-            />
+        <div className="md:col-span-1 space-y-2">
+          <div className="text-base font-semibold text-foreground pb-1.5 border-b-2 border-stone-400 dark:border-stone-600 tracking-wide">
+            Saves
+          </div>
+          <div className="space-y-2">
+            {(["Tough", "Quick", "Mind"] as const).map((stat) => (
+              <StatWithInlineAdjustments
+                key={stat}
+                label={stat}
+                breakdown={getStatBreakdown(character, stat)}
+              />
+            ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+export function CharacterStatsCard({
+  character,
+  label,
+}: CharacterStatsCardProps) {
+  const heading = label ? `${label} — Character Stats` : "Character Stats";
+
+  return (
+    <section
+      aria-labelledby="character-stats-heading"
+      className="rounded-lg border-2 border-stone-300 dark:border-stone-600 bg-gradient-to-b from-stone-50 to-stone-100/80 dark:from-stone-900 dark:to-stone-950 shadow-sm p-4"
+    >
+      <div className="mb-3 pb-2 border-b border-stone-300 dark:border-stone-600">
+        <h2
+          id="character-stats-heading"
+          className="text-xl font-semibold leading-tight text-stone-900 dark:text-stone-100 tracking-tight"
+        >
+          {heading}
+        </h2>
+        <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
+          HP, EP, combat stats, and saves
+        </p>
+      </div>
+      <DesignGrid character={character} />
+    </section>
   );
 }

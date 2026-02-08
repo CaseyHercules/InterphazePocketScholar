@@ -18,6 +18,7 @@ type AdjustmentEffect = {
 type AdjustmentEntry = {
   id?: string;
   title?: string;
+  sourceType?: string;
   effectsJson?: { effects?: AdjustmentEffect[] };
 };
 
@@ -106,13 +107,14 @@ export function getRacialAdjustmentData(character: {
   const statItems: StatDisplayItem[] = [];
   const abilityItems: AbilityDisplayItem[] = [];
 
-  const entries = Array.isArray(character?.adjustments)
+  const rawEntries = Array.isArray(character?.adjustments)
     ? character.adjustments
         .map((entry: { adjustment?: AdjustmentEntry } | AdjustmentEntry) =>
           "adjustment" in entry ? entry.adjustment : entry
         )
         .filter(Boolean) as AdjustmentEntry[]
     : [];
+  const entries = rawEntries.filter((adj) => adj.sourceType === "RACE");
 
   const race =
     getCharacterRace(character?.Attributes) ??

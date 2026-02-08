@@ -100,13 +100,31 @@ export function getDingusTitlesFromInlineEffects(json: unknown): string[] {
 
 export type DingusDisplayItem = { title: string; note?: string };
 
+function formatStatAdjustmentSubtitle(e: InlineEffect & { type: "stat_adjustment" }): string {
+  const sign = e.value >= 0 ? "+" : "";
+  const cond = e.condition?.trim();
+  const stat = (e.stat ?? "Tough").trim();
+  if (cond) {
+    const s = stat.toLowerCase();
+    const isAttAcc =
+      s.includes("attack") || s.includes("accuracy") || s.includes("att") || s.includes("acc");
+    return isAttAcc ? `${sign}${e.value} Att/Acc w/ ${cond}` : `${sign}${e.value} ${stat} vs ${cond}`;
+  }
+  return `${sign}${e.value} ${stat}`;
+}
+
 export function getDingusItemsFromInlineEffects(json: unknown): DingusDisplayItem[] {
   const effects = getInlineEffectsFromJson(json);
   const seen = new Set<string>();
   const items: DingusDisplayItem[] = [];
   for (const e of effects) {
     if (e.type === "special_ability") continue;
-    const note = e.type === "dingus" ? (e as { note?: string }).note : undefined;
+    let note: string | undefined;
+    if (e.type === "dingus") {
+      note = (e as { note?: string }).note;
+    } else if (e.type === "stat_adjustment") {
+      note = formatStatAdjustmentSubtitle(e);
+    }
     const title = e.title.trim() || (note && note.trim()) || "Effect";
     if (!title.trim()) continue;
     const key = title + "|" + (note || "");

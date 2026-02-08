@@ -28,7 +28,7 @@ export async function createCharacter(formData: CharacterFormData) {
     throw new Error("You must be logged in to create a character");
   }
 
-  let inlineEffectsJson: Record<string, unknown> | null = null;
+  let matchingRaceAdjustmentId: string | null = null;
 
   if (formData.race?.trim()) {
     const adjustmentClient = (db as unknown as { adjustment?: any }).adjustment;
@@ -42,9 +42,8 @@ export async function createCharacter(formData: CharacterFormData) {
       const matchingAdjustment = raceAdjustments.find((adjustment: any) =>
         adjustmentMatchesRace(adjustment, formData.race)
       );
-
-      if (matchingAdjustment?.effectsJson) {
-        inlineEffectsJson = matchingAdjustment.effectsJson as Record<string, unknown>;
+      if (matchingAdjustment?.id) {
+        matchingRaceAdjustmentId = matchingAdjustment.id;
       }
     }
   }
@@ -66,12 +65,23 @@ export async function createCharacter(formData: CharacterFormData) {
       notes: formData.notes || {},
       phazians: formData.phazians || 0,
       userId: session.user.id,
-      inlineEffectsJson:
-        inlineEffectsJson === null
-          ? Prisma.JsonNull
-          : (inlineEffectsJson as Prisma.InputJsonValue),
+      inlineEffectsJson: formData.inlineEffectsJson
+        ? (formData.inlineEffectsJson as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   });
+
+  if (matchingRaceAdjustmentId) {
+    const characterAdjustmentClient = (db as unknown as { characterAdjustment?: any }).characterAdjustment;
+    if (characterAdjustmentClient?.create) {
+      await characterAdjustmentClient.create({
+        data: {
+          characterId: character.id,
+          adjustmentId: matchingRaceAdjustmentId,
+        },
+      });
+    }
+  }
 
   revalidatePath("/characters");
   return { success: true, characterId: character.id };

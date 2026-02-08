@@ -290,11 +290,11 @@ function AlignmentLine({ character }: { character: any }) {
   const data = parseAlignmentFromJson(character.alignmentJson);
   if (!data) return null;
   const [alignment, upTicks, downTicks] = data;
-  const downStr = Array.from({ length: ALIGNMENT_MAX_TICKS }, (_, i) =>
-    i < ALIGNMENT_MAX_TICKS - downTicks ? "O" : "X"
-  ).join(" ");
   const upStr = Array.from({ length: ALIGNMENT_MAX_TICKS }, (_, i) =>
-    i < upTicks ? "X" : "O"
+    i >= ALIGNMENT_MAX_TICKS - upTicks ? "X" : "O"
+  ).join(" ");
+  const downStr = Array.from({ length: ALIGNMENT_MAX_TICKS }, (_, i) =>
+    i < downTicks ? "X" : "O"
   ).join(" ");
   return (
     <div className="flex-1 min-w-0 flex justify-end items-center gap-2">
@@ -302,7 +302,7 @@ function AlignmentLine({ character }: { character: any }) {
         Alignment:
       </span>
       <p className="font-mono text-base sm:text-lg font-semibold tracking-wider text-right text-stone-800 dark:text-stone-200">
-        {downStr} | {alignment} | {upStr}
+        {upStr} | {alignment} | {downStr}
       </p>
     </div>
   );

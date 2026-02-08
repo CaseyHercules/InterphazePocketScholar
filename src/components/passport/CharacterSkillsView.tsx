@@ -111,7 +111,7 @@ export function CharacterSkillsView({
             </p>
             <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
               {primarySkills.map((skill, index) => (
-                <SkillRow key={`primary-${skill.id}-${index}`} skill={skill} />
+                <SkillRow key={`primary-${index}`} skill={skill} />
               ))}
               {primarySkills.length === 0 && (
                 <div className="px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400">
@@ -129,7 +129,7 @@ export function CharacterSkillsView({
             </p>
             <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
               {secondarySkills.map((skill, index) => (
-                <SkillRow key={`secondary-${skill.id}-${index}`} skill={skill} />
+                <SkillRow key={`secondary-${index}`} skill={skill} />
               ))}
               {secondarySkills.length === 0 && (
                 <div className="px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400">

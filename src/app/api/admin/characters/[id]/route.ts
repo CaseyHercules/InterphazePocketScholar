@@ -2,6 +2,7 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Prisma, Role } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { adjustmentMatchesRace } from "@/lib/utils/adjustments";
 
 const requireAdmin = async () => {
   const session = await getAuthSession();
@@ -47,6 +48,23 @@ export async function PATCH(
     const body = await req.json();
     const data: Prisma.CharacterUpdateInput = {};
 
+    const nextRace =
+      body?.Attributes && typeof body.Attributes === "object" && typeof body.Attributes.race === "string"
+        ? body.Attributes.race.trim()
+        : null;
+
+    let matchingRaceAdjustmentId: string | null = null;
+    if (nextRace) {
+      const raceAdjustments = await db.adjustment.findMany({
+        where: { sourceType: "RACE", archived: false },
+        select: { id: true, title: true, tags: true },
+      });
+      const matching = raceAdjustments.find((a) =>
+        adjustmentMatchesRace(a, nextRace)
+      );
+      if (matching?.id) matchingRaceAdjustmentId = matching.id;
+    }
+
     if (body.userId !== undefined) {
       const uid = typeof body.userId === "string" ? body.userId.trim() : null;
       if (uid) {
@@ -59,6 +77,17 @@ export async function PATCH(
         }
       }
       data.user = uid ? { connect: { id: uid } } : { disconnect: true };
+      if (uid) data.claimEmail = null;
+    }
+
+    if (body.claimEmail !== undefined) {
+      const raw = body.claimEmail;
+      if (raw == null || (typeof raw === "string" && raw.trim() === "")) {
+        data.claimEmail = null;
+      } else if (typeof raw === "string") {
+        const t = raw.trim().toLowerCase();
+        data.claimEmail = t.includes("@") ? t : null;
+      }
     }
 
     if (body.name !== undefined && typeof body.name === "string") {
@@ -114,22 +143,49 @@ export async function PATCH(
         body.inlineEffectsJson === null ? Prisma.JsonNull : body.inlineEffectsJson;
     }
 
-    const updated = await db.character.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        name: true,
-        userId: true,
-        primaryClassId: true,
-        primaryClassLvl: true,
-        secondaryClassId: true,
-        secondaryClassLvl: true,
-        phazians: true,
-        user: {
-          select: { id: true, name: true, email: true, username: true },
+    const updated = await db.$transaction(async (tx) => {
+      const updatedCharacter = await tx.character.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          name: true,
+          userId: true,
+          primaryClassId: true,
+          primaryClassLvl: true,
+          secondaryClassId: true,
+          secondaryClassLvl: true,
+          phazians: true,
+          user: {
+            select: { id: true, name: true, email: true, username: true },
+          },
         },
-      },
+      });
+
+      if (body.Attributes !== undefined) {
+        await tx.characterAdjustment.deleteMany({
+          where: {
+            characterId: id,
+            adjustment: { sourceType: "RACE" },
+            ...(matchingRaceAdjustmentId ? { adjustmentId: { not: matchingRaceAdjustmentId } } : {}),
+          },
+        });
+
+        if (matchingRaceAdjustmentId) {
+          await tx.characterAdjustment.upsert({
+            where: {
+              characterId_adjustmentId: {
+                characterId: id,
+                adjustmentId: matchingRaceAdjustmentId,
+              },
+            },
+            create: { characterId: id, adjustmentId: matchingRaceAdjustmentId },
+            update: {},
+          });
+        }
+      }
+
+      return updatedCharacter;
     });
 
     return NextResponse.json(updated);

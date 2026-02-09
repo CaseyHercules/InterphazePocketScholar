@@ -3,6 +3,7 @@
 import { getAvailableSkillsForCharacter } from "@/lib/actions/passport";
 import { sortSkillsByTier } from "@/lib/utils";
 import { getDingusItemsFromInlineEffects } from "@/types/inline-effects";
+import { getEffectsFromJson, isGrantSkillEffect } from "@/types/skill-effects";
 import { SkillSlot } from "@/components/passport/CharacterSkillsCard";
 import { SkillViewer } from "@/components/SkillViewer";
 import { useState, useEffect } from "react";
@@ -52,10 +53,36 @@ export function CharacterDingusesCard({ character, skillData: skillDataProp, emb
   const allSkillsFromTier = skillData
     ? Object.values(skillData.skillsByTier || {}).flat()
     : [];
+
+  const rawAdjustments = Array.isArray(character?.adjustments)
+    ? character.adjustments.map((e: any) => e?.adjustment ?? e).filter(Boolean)
+    : [];
+  const raceAdjustments = rawAdjustments.filter((a: any) => a?.sourceType === "RACE");
+
+  const raceGrantedSkillIds = new Set<string>();
+  for (const adj of raceAdjustments) {
+    const effects = getEffectsFromJson(adj?.effectsJson);
+    for (const effect of effects) {
+      if (!isGrantSkillEffect(effect)) continue;
+      if (effect.skillId) raceGrantedSkillIds.add(effect.skillId);
+      if (Array.isArray(effect.skillIds)) {
+        for (const id of effect.skillIds) raceGrantedSkillIds.add(id);
+      }
+      if (effect.classId && typeof effect.maxTier === "number" && effect.maxTier > 0) {
+        for (const s of allSkillsFromTier) {
+          const cid = getSkillClassId(s);
+          if (cid === effect.classId && typeof s?.tier === "number" && s.tier <= effect.maxTier) {
+            raceGrantedSkillIds.add(s.id);
+          }
+        }
+      }
+    }
+  }
+
   const skillsGrantedByAdjustments = allSkillsFromTier.filter((s: any) => {
     const cid = getSkillClassId(s);
     return cid !== primaryClassId && cid !== secondaryClassId;
-  });
+  }).filter((s: any) => !raceGrantedSkillIds.has(s.id));
 
   const learnedMiscIds = new Set(learnedMiscellaneousSkills.map((s: any) => s.id));
   const dingusSkills = sortSkillsByTier([

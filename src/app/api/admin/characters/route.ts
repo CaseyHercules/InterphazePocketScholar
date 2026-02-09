@@ -79,10 +79,17 @@ const createBodySchema = {
   phazians: (v: unknown) =>
     typeof v === "number" && Number.isInteger(v) && v >= 0,
   userId: (v: unknown) => v == null || (typeof v === "string" && v.length > 0),
+  claimEmail: (v: unknown) => v == null || (typeof v === "string" && v.trim().length >= 0),
   attributes: (v: unknown) => v == null || typeof v === "object",
   notes: (v: unknown) => v == null || typeof v === "object",
   inlineEffectsJson: (v: unknown) => v == null || typeof v === "object",
 };
+
+function normalizeClaimEmail(v: unknown): string | null {
+  if (v == null || typeof v !== "string") return null;
+  const t = v.trim().toLowerCase();
+  return t.length > 0 && t.includes("@") ? t : null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -115,42 +122,63 @@ export async function POST(req: Request) {
       }
     }
 
-    let inlineEffectsJson: Record<string, unknown> | null = null;
+    let matchingRaceAdjustmentId: string | null = null;
     if (body.race?.trim()) {
       const raceAdjustments = await db.adjustment.findMany({
         where: { sourceType: "RACE", archived: false },
-        select: { id: true, title: true, effectsJson: true },
+        select: { id: true, title: true, tags: true },
       });
-      const matching = raceAdjustments.find((a: { title?: string; effectsJson?: unknown }) =>
+      const matching = raceAdjustments.find((a: { title?: string; tags?: unknown }) =>
         adjustmentMatchesRace(a, body.race)
       );
-      if (matching?.effectsJson) {
-        inlineEffectsJson = matching.effectsJson as Record<string, unknown>;
-      }
+      if (matching?.id) matchingRaceAdjustmentId = matching.id;
     }
 
-    const character = await db.character.create({
-      data: {
-        name: body.name.trim(),
-        primaryClassId: body.primaryClassId?.trim() || null,
-        primaryClassLvl: body.primaryClassLvl ?? 1,
-        secondaryClassId:
-          body.secondaryClassId === "none" || !body.secondaryClassId?.trim()
-            ? null
-            : body.secondaryClassId.trim(),
-        secondaryClassLvl: body.secondaryClassLvl ?? 0,
-        Attributes: {
-          ...(body.attributes || {}),
-          race: body.race.trim(),
+    const inlineEffectsJson =
+      body.inlineEffectsJson != null && typeof body.inlineEffectsJson === "object"
+        ? (body.inlineEffectsJson as Record<string, unknown>)
+        : null;
+
+    const character = await db.$transaction(async (tx) => {
+      const created = await tx.character.create({
+        data: {
+          name: body.name.trim(),
+          primaryClassId: body.primaryClassId?.trim() || null,
+          primaryClassLvl: body.primaryClassLvl ?? 1,
+          secondaryClassId:
+            body.secondaryClassId === "none" || !body.secondaryClassId?.trim()
+              ? null
+              : body.secondaryClassId.trim(),
+          secondaryClassLvl: body.secondaryClassLvl ?? 0,
+          Attributes: {
+            ...(body.attributes || {}),
+            race: body.race.trim(),
+          },
+          notes: body.notes || {},
+          phazians: body.phazians ?? 0,
+          userId: body.userId?.trim() || null,
+          claimEmail: normalizeClaimEmail(body.claimEmail),
+          inlineEffectsJson:
+            inlineEffectsJson === null
+              ? Prisma.JsonNull
+              : (inlineEffectsJson as Prisma.InputJsonValue),
         },
-        notes: body.notes || {},
-        phazians: body.phazians ?? 0,
-        userId: body.userId?.trim() || null,
-        inlineEffectsJson:
-          inlineEffectsJson === null
-            ? Prisma.JsonNull
-            : (inlineEffectsJson as Prisma.InputJsonValue),
-      },
+      });
+
+      if (matchingRaceAdjustmentId) {
+        await tx.characterAdjustment.upsert({
+          where: {
+            characterId_adjustmentId: {
+              characterId: created.id,
+              adjustmentId: matchingRaceAdjustmentId,
+            },
+          },
+          create: { characterId: created.id, adjustmentId: matchingRaceAdjustmentId },
+          update: {},
+        });
+      }
+
+      return created;
     });
 
     return NextResponse.json({

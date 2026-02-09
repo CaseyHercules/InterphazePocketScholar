@@ -35,11 +35,18 @@ import "quill/dist/quill.snow.css";
 import "@/styles/quill.css";
 import type Quill from "quill";
 
-// Define form schema
 const characterFormSchema = z.object({
   name: z.string().min(1, "Character name is required").max(100),
   race: z.string().min(1, "Race is required"),
   primaryClassId: z.string().min(1, "Primary class is required"),
+  secondaryClassId: z.string().default("cmaufwsx600004x0vo5v8afxu"),
+  backstory: z.any().optional(),
+});
+
+const characterFormSchemaAdminEdit = z.object({
+  name: z.string().min(1, "Character name is required").max(100),
+  race: z.string().optional(),
+  primaryClassId: z.string().optional(),
   secondaryClassId: z.string().default("cmaufwsx600004x0vo5v8afxu"),
   backstory: z.any().optional(),
 });
@@ -66,18 +73,19 @@ export function CharacterForm({
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const [claimEmail, setClaimEmail] = useState<string>("");
   const [adminUsers, setAdminUsers] = useState<{ id: string; name: string | null; email: string | null; username: string | null }[]>([]);
   const quillRef = useRef<Quill>();
   const editorRef = useRef<HTMLDivElement>(null);
   const isEditMode = Boolean(isEditing && character?.id);
 
   useEffect(() => {
-    if (adminMode && !isEditMode) {
+    if (adminMode) {
       fetch("/api/admin/user")
         .then((r) => (r.ok ? r.json() : []))
         .then((data) => setAdminUsers(Array.isArray(data) ? data : []));
     }
-  }, [adminMode, isEditMode]);
+  }, [adminMode]);
 
   // Default values for the form
   const defaultValues: Partial<CharacterFormValues> = {
@@ -89,7 +97,7 @@ export function CharacterForm({
   };
 
   const form = useForm<CharacterFormValues>({
-    resolver: zodResolver(characterFormSchema),
+    resolver: zodResolver(adminMode && isEditMode ? characterFormSchemaAdminEdit : characterFormSchema),
     defaultValues,
     mode: "onChange",
   });
@@ -145,6 +153,8 @@ export function CharacterForm({
         character.secondaryClassId ?? "cmaufwsx600004x0vo5v8afxu",
       backstory: null,
     });
+    setOwnerUserId(character.userId ?? null);
+    setClaimEmail(typeof character.claimEmail === "string" ? character.claimEmail : "");
   }, [form, isEditMode, character]);
 
   useEffect(() => {
@@ -182,16 +192,18 @@ export function CharacterForm({
           : {};
       const existingNotes =
         character && typeof character.notes === "object" ? character.notes : {};
+      const preserveRaceAndPrimary =
+        adminMode && isEditMode && character;
       const formData: CharacterFormData = {
         name: data.name,
-        race: data.race,
-        primaryClassId: data.primaryClassId,
+        race: preserveRaceAndPrimary ? (character.Attributes?.race ?? data.race) : data.race,
+        primaryClassId: preserveRaceAndPrimary ? (character.primaryClassId ?? data.primaryClassId) : data.primaryClassId,
         primaryClassLvl: character?.primaryClassLvl ?? 1,
         secondaryClassId: data.secondaryClassId,
         secondaryClassLvl: character?.secondaryClassLvl ?? 0,
         attributes: {
           ...existingAttributes,
-          race: data.race,
+          race: preserveRaceAndPrimary ? (character.Attributes?.race ?? data.race) : data.race,
         },
         notes: {
           ...existingNotes,
@@ -204,7 +216,11 @@ export function CharacterForm({
         const res = await fetch("/api/admin/characters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, userId: ownerUserId ?? null }),
+          body: JSON.stringify({
+            ...formData,
+            userId: ownerUserId ?? null,
+            claimEmail: claimEmail.trim() || null,
+          }),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -221,13 +237,15 @@ export function CharacterForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: formData.name,
-            primaryClassId: formData.primaryClassId || null,
+            primaryClassId: formData.primaryClassId?.trim() || null,
             primaryClassLvl: formData.primaryClassLvl,
             secondaryClassId: formData.secondaryClassId === "none" ? null : formData.secondaryClassId || null,
             secondaryClassLvl: formData.secondaryClassLvl,
             Attributes: formData.attributes,
             notes: formData.notes,
             phazians: formData.phazians,
+            userId: ownerUserId ?? null,
+            claimEmail: claimEmail.trim() || null,
           }),
         });
         if (!res.ok) {
@@ -284,62 +302,66 @@ export function CharacterForm({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="race"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Race</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a race" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {races?.map((race) => (
-                      <SelectItem key={race.id} value={race.id}>
-                        {race.name}
-                      </SelectItem>
-                    )) || <SelectItem value="human">Human</SelectItem>}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!(adminMode && isEditMode) && (
+            <>
+              <FormField
+                control={form.control}
+                name="race"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Race</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a race" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {races?.map((race) => (
+                          <SelectItem key={race.id} value={race.id}>
+                            {race.name}
+                          </SelectItem>
+                        )) || <SelectItem value="human">Human</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="primaryClassId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Primary Class</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a primary class" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {classes.map((classItem) => (
-                      <SelectItem key={classItem.id} value={classItem.id}>
-                        {classItem.Title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>You&apos;ll start at Level 1</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="primaryClassId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Primary Class</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a primary class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {classes.map((classItem) => (
+                          <SelectItem key={classItem.id} value={classItem.id}>
+                            {classItem.Title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>You&apos;ll start at Level 1</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
 
           <FormField
             control={form.control}
@@ -360,32 +382,89 @@ export function CharacterForm({
           />
 
           {adminMode && !isEditMode && (
-            <FormItem>
-              <FormLabel>Owner</FormLabel>
-              <Select
-                value={ownerUserId ?? "__unassigned__"}
-                onValueChange={(v) =>
-                  setOwnerUserId(v === "__unassigned__" ? null : v)
-                }
-              >
+            <>
+              <FormItem>
+                <FormLabel>Owner</FormLabel>
+                <Select
+                  value={ownerUserId ?? "__unassigned__"}
+                  onValueChange={(v) =>
+                    setOwnerUserId(v === "__unassigned__" ? null : v)
+                  }
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                    {adminUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name || u.email || u.username || u.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Leave unassigned to assign to a user later.
+                </FormDescription>
+              </FormItem>
+              <FormItem>
+                <FormLabel>Claim email</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Unassigned" />
-                  </SelectTrigger>
+                  <Input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={claimEmail}
+                    onChange={(e) => setClaimEmail(e.target.value)}
+                  />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {adminUsers.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name || u.email || u.username || u.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Leave unassigned to assign to a user later.
-              </FormDescription>
-            </FormItem>
+                <FormDescription>
+                  When unassigned, this email will receive this passport on first sign-in.
+                </FormDescription>
+              </FormItem>
+            </>
+          )}
+          {adminMode && isEditMode && (
+            <>
+              <FormItem>
+                <FormLabel>Owner</FormLabel>
+                <Select
+                  value={ownerUserId ?? "__unassigned__"}
+                  onValueChange={(v) =>
+                    setOwnerUserId(v === "__unassigned__" ? null : v)
+                  }
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                    {adminUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name || u.email || u.username || u.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+              <FormItem>
+                <FormLabel>Claim email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={claimEmail}
+                    onChange={(e) => setClaimEmail(e.target.value)}
+                  />
+                </FormControl>
+                <FormDescription>
+                  When owner is unassigned, this email will receive this passport on sign-in.
+                </FormDescription>
+              </FormItem>
+            </>
           )}
 
           <div className="flex justify-end space-x-4">

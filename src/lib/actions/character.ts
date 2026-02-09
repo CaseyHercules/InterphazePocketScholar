@@ -117,6 +117,26 @@ export async function updateCharacter(
     throw new Error("You don't have permission to update this character");
   }
 
+  let matchingRaceAdjustmentId: string | null = null;
+  if (formData.race?.trim()) {
+    const adjustmentClient = (db as unknown as { adjustment?: any }).adjustment;
+    if (adjustmentClient?.findMany) {
+      const raceAdjustments = await adjustmentClient.findMany({
+        where: {
+          sourceType: "RACE",
+          archived: false,
+        },
+        select: { id: true, title: true, tags: true },
+      });
+      const matchingAdjustment = raceAdjustments.find((adjustment: any) =>
+        adjustmentMatchesRace(adjustment, formData.race)
+      );
+      if (matchingAdjustment?.id) {
+        matchingRaceAdjustmentId = matchingAdjustment.id;
+      }
+    }
+  }
+
   // Check if user is adding a secondary class for the first time
   const isAddingSecondaryClass =
     !existingCharacter.secondaryClassId &&
@@ -141,8 +161,8 @@ export async function updateCharacter(
     }
 
     // Perform both updates in a transaction
-    await db.$transaction([
-      db.character.update({
+    await db.$transaction(async (tx) => {
+      await tx.character.update({
         where: { id: characterId },
         data: {
           name: formData.name,
@@ -165,40 +185,85 @@ export async function updateCharacter(
                 : (formData.inlineEffectsJson as Prisma.InputJsonValue),
           }),
         },
-      }),
-      db.user.update({
+      });
+
+      await tx.characterAdjustment.deleteMany({
+        where: {
+          characterId,
+          adjustment: { sourceType: "RACE" },
+          ...(matchingRaceAdjustmentId ? { adjustmentId: { not: matchingRaceAdjustmentId } } : {}),
+        },
+      });
+
+      if (matchingRaceAdjustmentId) {
+        await tx.characterAdjustment.upsert({
+          where: {
+            characterId_adjustmentId: {
+              characterId,
+              adjustmentId: matchingRaceAdjustmentId,
+            },
+          },
+          create: { characterId, adjustmentId: matchingRaceAdjustmentId },
+          update: {},
+        });
+      }
+
+      await tx.user.update({
         where: { id: session.user.id },
         data: {
           UnallocatedLevels: { decrement: 1 },
         },
-      }),
-    ]);
+      });
+    });
   } else {
     // Regular update without spending unallocated levels
-    await db.character.update({
-      where: { id: characterId },
-      data: {
-        name: formData.name,
-        primaryClassId:
-          formData.primaryClassId || existingCharacter.primaryClassId,
-        primaryClassLvl:
-          formData.primaryClassLvl || existingCharacter.primaryClassLvl,
-        secondaryClassId:
-          formData.secondaryClassId === "none"
-            ? null
-            : formData.secondaryClassId || existingCharacter.secondaryClassId,
-        secondaryClassLvl:
-          formData.secondaryClassLvl || existingCharacter.secondaryClassLvl,
-        Attributes: formData.attributes || {},
-        notes: formData.notes || {},
-        phazians: formData.phazians,
-        ...(formData.inlineEffectsJson !== undefined && {
-          inlineEffectsJson:
-            formData.inlineEffectsJson === null
-              ? Prisma.JsonNull
-              : (formData.inlineEffectsJson as Prisma.InputJsonValue),
-        }),
-      },
+    await db.$transaction(async (tx) => {
+      await tx.character.update({
+        where: { id: characterId },
+        data: {
+          name: formData.name,
+          primaryClassId:
+            formData.primaryClassId || existingCharacter.primaryClassId,
+          primaryClassLvl:
+            formData.primaryClassLvl || existingCharacter.primaryClassLvl,
+          secondaryClassId:
+            formData.secondaryClassId === "none"
+              ? null
+              : formData.secondaryClassId || existingCharacter.secondaryClassId,
+          secondaryClassLvl:
+            formData.secondaryClassLvl || existingCharacter.secondaryClassLvl,
+          Attributes: formData.attributes || {},
+          notes: formData.notes || {},
+          phazians: formData.phazians,
+          ...(formData.inlineEffectsJson !== undefined && {
+            inlineEffectsJson:
+              formData.inlineEffectsJson === null
+                ? Prisma.JsonNull
+                : (formData.inlineEffectsJson as Prisma.InputJsonValue),
+          }),
+        },
+      });
+
+      await tx.characterAdjustment.deleteMany({
+        where: {
+          characterId,
+          adjustment: { sourceType: "RACE" },
+          ...(matchingRaceAdjustmentId ? { adjustmentId: { not: matchingRaceAdjustmentId } } : {}),
+        },
+      });
+
+      if (matchingRaceAdjustmentId) {
+        await tx.characterAdjustment.upsert({
+          where: {
+            characterId_adjustmentId: {
+              characterId,
+              adjustmentId: matchingRaceAdjustmentId,
+            },
+          },
+          create: { characterId, adjustmentId: matchingRaceAdjustmentId },
+          update: {},
+        });
+      }
     });
   }
 

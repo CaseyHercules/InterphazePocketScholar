@@ -23,6 +23,7 @@ import {
 } from "@/lib/actions/passport";
 import { useState, useEffect } from "react";
 import { getEffectiveSkillValue } from "@/lib/utils/character-stats";
+import { getCharacterSkillsWithGranted, sortSkillsWithGrantedFirst } from "@/lib/utils/character-skills";
 import { sortSkillsByTier } from "@/lib/utils";
 
 type SkillData = {
@@ -90,18 +91,17 @@ export function CharacterSkillsCard({
     const maxTier = isPrimary
       ? skillData.maxPrimaryTier
       : skillData.maxSecondaryTier;
-    const learnedSkills = isPrimary
-      ? character.primarySkills
-      : character.secondarySkills;
+    const learnedSkills = sortSkillsWithGrantedFirst(
+      isPrimary ? character.primarySkills : character.secondarySkills,
+      grantedIds
+    );
 
-    // Create all slots in order
     const slots: { level: number; tier: number; skill?: any }[] = [];
 
     Object.entries(skillTiers).forEach(([level, tier]) => {
       slots.push({ level: parseInt(level), tier });
     });
 
-    // Sort slots by level
     slots.sort((a, b) => a.level - b.level);
 
     const classId = isPrimary
@@ -135,6 +135,7 @@ export function CharacterSkillsCard({
         ? Array.from(skillData.learnedSkillIds)
         : []
   );
+  const { grantedIds } = getCharacterSkillsWithGranted(character);
 
   const isEditing = embedded || isEditMode;
 
@@ -176,6 +177,7 @@ export function CharacterSkillsCard({
                           skillData={skillData}
                           maxTier={primarySlots.maxTier}
                           isEditMode={isEditing}
+                          grantedIds={grantedIds}
                           onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                         />
                       </div>
@@ -203,6 +205,7 @@ export function CharacterSkillsCard({
                             skillData={skillData}
                             maxTier={secondarySlots.maxTier}
                             isEditMode={isEditing}
+                            grantedIds={grantedIds}
                             onSkillAdded={() => setRefreshTrigger((t: number) => t + 1)}
                           />
                         </div>
@@ -331,6 +334,7 @@ export function CharacterSkillsCard({
                                   key={skill.id}
                                   skill={skill}
                                   isLearned={isLearned}
+                                  isGranted={grantedIds.has(skill.id)}
                                   characterId={character.id}
                                   character={character}
                                   isLastItem={index === classSkills.length - 1}
@@ -358,15 +362,16 @@ export function CharacterSkillsCard({
             {hasSkills ? (
               <div className="space-y-4">
                 <div className="border rounded-lg overflow-hidden">
-                  {sortSkillsByTier([
-                    ...character.primarySkills,
-                    ...character.secondarySkills,
-                  ]).map((skill: any, index: number, array: any[]) => (
+                  {sortSkillsWithGrantedFirst(
+                    [...character.primarySkills, ...character.secondarySkills],
+                    grantedIds
+                  ).map((skill: any, index: number, array: any[]) => (
                     <SkillSlot
                       key={skill.id}
                       skill={skill}
                       isLearned={true}
-                      showRemoveButton={isEditing}
+                      isGranted={grantedIds.has(skill.id)}
+                      showRemoveButton={isEditing && !grantedIds.has(skill.id)}
                       characterId={character.id}
                       character={character}
                       isLastItem={index === array.length - 1}
@@ -470,6 +475,7 @@ function ClassSlotSection({
   skillData,
   maxTier,
   isEditMode,
+  grantedIds,
   onSkillAdded,
 }: {
   slots: { level: number; tier: number; skill?: any }[];
@@ -478,9 +484,9 @@ function ClassSlotSection({
   skillData: any;
   maxTier: number;
   isEditMode: boolean;
+  grantedIds: Set<string>;
   onSkillAdded?: () => void;
 }) {
-  // Get the specific class for this section
   const classObj = isPrimary
     ? character.primaryClass
     : character.secondaryClass;
@@ -506,10 +512,14 @@ function ClassSlotSection({
                   <span className="text-sm font-medium">
                     {slot.skill.title}
                   </span>
+                  {grantedIds.has(slot.skill.id) && (
+                    <Badge variant="secondary" className="text-xs">
+                      Granted
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="text-xs">
                     Tier {slot.skill.tier}
                   </Badge>
-                  
                 </div>
                 {slot.skill.descriptionShort && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
@@ -517,7 +527,7 @@ function ClassSlotSection({
                   </p>
                 )}
               </div>
-              {isEditMode && (
+              {isEditMode && !grantedIds.has(slot.skill.id) && (
                 <form
                   action={async () => {
                     await removeSkillFromCharacter(character.id, slot.skill.id);
@@ -564,6 +574,7 @@ function ClassSlotSection({
 export function SkillSlot({
   skill,
   isLearned,
+  isGranted = false,
   canLearn = false,
   showAddButton = false,
   showRemoveButton = false,
@@ -574,6 +585,7 @@ export function SkillSlot({
 }: {
   skill: any;
   isLearned: boolean;
+  isGranted?: boolean;
   canLearn?: boolean;
   showAddButton?: boolean;
   showRemoveButton?: boolean;
@@ -623,6 +635,11 @@ export function SkillSlot({
       <div className="flex-1 min-w-[60%] pr-4">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-medium text-sm">{skill.title}</h3>
+          {isGranted && (
+            <Badge variant="secondary" className="text-xs flex-shrink-0">
+              Granted
+            </Badge>
+          )}
           <Badge variant="outline" className="text-xs flex-shrink-0">
             Tier {skill.tier}
           </Badge>

@@ -7,6 +7,7 @@ import {
   type StatBonusEffect,
   type SkillModifierEffect,
 } from "@/types/skill-effects";
+import { getCharacterSkillsWithGranted } from "@/lib/utils/character-skills";
 
 function getStatFromClass(classStat: any, level: number): number {
   if (!classStat) return 0;
@@ -139,12 +140,8 @@ export function getSkillEpReductions(character: any): {
   secondary: number;
   total: number;
 } {
-  const primarySkills = Array.isArray(character?.primarySkills)
-    ? character.primarySkills
-    : [];
-  const secondarySkills = Array.isArray(character?.secondarySkills)
-    ? character.secondarySkills
-    : [];
+  const primarySkills = Array.isArray(character?.primarySkills) ? character.primarySkills : [];
+  const secondarySkills = Array.isArray(character?.secondarySkills) ? character.secondarySkills : [];
 
   const sumReduction = (skills: any[]) =>
     skills.reduce((sum, skill) => {
@@ -363,13 +360,7 @@ function getSkillStatBonuses(
   items: StatAdjustmentBreakdown[];
   conditionalItems: StatAdjustmentBreakdown[];
 } {
-  const primarySkills = Array.isArray(character?.primarySkills)
-    ? character.primarySkills
-    : [];
-  const secondarySkills = Array.isArray(character?.secondarySkills)
-    ? character.secondarySkills
-    : [];
-  const allSkills = [...primarySkills, ...secondarySkills];
+  const { skills: allSkills } = getCharacterSkillsWithGranted(character);
 
   let total = 0;
   const items: StatAdjustmentBreakdown[] = [];
@@ -461,20 +452,13 @@ export function getEffectiveSkillValue(
     return field === "permenentEpReduction" ? 0 : "";
   }
 
-  const primarySkills = Array.isArray(character?.primarySkills)
-    ? character.primarySkills
-    : [];
-  const secondarySkills = Array.isArray(character?.secondarySkills)
-    ? character.secondarySkills
-    : [];
-  const allSkills = [...primarySkills, ...secondarySkills];
+  const { skills: allSkills } = getCharacterSkillsWithGranted(character);
 
   let modifiedValue = baseValue;
   const skillId = skill?.id;
 
   if (!skillId) return modifiedValue;
 
-  // Apply skill_modifier effects from learned skills
   for (const sourceSkill of allSkills) {
     if (sourceSkill?.id === skillId) continue;
     const effects = getSkillEffects(sourceSkill?.additionalInfo);

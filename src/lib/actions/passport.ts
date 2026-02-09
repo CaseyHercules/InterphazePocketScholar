@@ -12,6 +12,7 @@ import {
   getCharacterRace,
 } from "@/lib/utils/adjustments";
 import { getSkillVisibilityWhere, getVisibilityWhere, canSeeAdminOnlyAdjustments } from "@/lib/visibility";
+import { parseGrantedSkillIds } from "@/lib/utils/character-skills";
 import {
   getSkillEffects,
   getEffectsFromJson,
@@ -127,12 +128,57 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     notFound();
   }
 
-  const primarySkills = (character.primarySkillEntries ?? [])
+  const primaryFromEntries = (character.primarySkillEntries ?? [])
     .map((e) => e.skill)
     .filter(Boolean);
-  const secondarySkills = (character.secondarySkillEntries ?? [])
+  const secondaryFromEntries = (character.secondarySkillEntries ?? [])
     .map((e) => e.skill)
     .filter(Boolean);
+  const primaryIds = new Set(primaryFromEntries.map((s) => s.id));
+  const secondaryIds = new Set(secondaryFromEntries.map((s) => s.id));
+
+  const primaryGrantedIds = character.primaryClass
+    ? parseGrantedSkillIds((character.primaryClass as { grantedSkills?: unknown }).grantedSkills)
+    : [];
+  const secondaryGrantedIds = character.secondaryClass
+    ? parseGrantedSkillIds((character.secondaryClass as { grantedSkills?: unknown }).grantedSkills)
+    : [];
+
+  const grantedIdsToFetch = [
+    ...primaryGrantedIds.filter((id) => !primaryIds.has(id)),
+    ...secondaryGrantedIds.filter((id) => !secondaryIds.has(id)),
+  ];
+  const uniqueGrantedToFetch = [...new Set(grantedIdsToFetch)];
+
+  let primarySkills = primaryFromEntries;
+  let secondarySkills = secondaryFromEntries;
+  if (uniqueGrantedToFetch.length > 0) {
+    const visibilityWhere = getSkillVisibilityWhere(session?.user?.role);
+    const grantedSkills = await db.skill.findMany({
+      where: { id: { in: uniqueGrantedToFetch }, ...visibilityWhere },
+      include: { class: true },
+    });
+    const grantedMap = new Map(grantedSkills.map((s) => [s.id, s]));
+    for (const id of primaryGrantedIds) {
+      if (!primaryIds.has(id)) {
+        const skill = grantedMap.get(id);
+        if (skill) {
+          primarySkills = [...primarySkills, skill];
+          primaryIds.add(id);
+        }
+      }
+    }
+    for (const id of secondaryGrantedIds) {
+      if (!secondaryIds.has(id)) {
+        const skill = grantedMap.get(id);
+        if (skill) {
+          secondarySkills = [...secondarySkills, skill];
+          secondaryIds.add(id);
+        }
+      }
+    }
+  }
+
   const characterForReturn = {
     ...character,
     primarySkills,

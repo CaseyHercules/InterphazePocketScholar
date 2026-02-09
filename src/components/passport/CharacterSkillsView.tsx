@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SkillViewer } from "@/components/SkillViewer";
 import { CharacterSkillsCard } from "./CharacterSkillsCard";
-import { sortSkillsByTier } from "@/lib/utils";
+import { getCharacterSkillsWithGranted, sortSkillsWithGrantedFirst } from "@/lib/utils/character-skills";
 import {
   Dialog,
   DialogContent,
@@ -40,11 +40,14 @@ export function CharacterSkillsView({
   const [editOpen, setEditOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<any | null>(null);
 
-  const primarySkills = sortSkillsByTier(
-    Array.isArray(character.primarySkills) ? character.primarySkills : []
+  const { grantedIds } = getCharacterSkillsWithGranted(character);
+  const primarySkills = sortSkillsWithGrantedFirst(
+    Array.isArray(character.primarySkills) ? character.primarySkills : [],
+    grantedIds
   );
-  const secondarySkills = sortSkillsByTier(
-    Array.isArray(character.secondarySkills) ? character.secondarySkills : []
+  const secondarySkills = sortSkillsWithGrantedFirst(
+    Array.isArray(character.secondarySkills) ? character.secondarySkills : [],
+    grantedIds
   );
   const hasSkills = primarySkills.length > 0 || secondarySkills.length > 0;
   const totalSkills = primarySkills.length + secondarySkills.length;
@@ -54,7 +57,7 @@ export function CharacterSkillsView({
     if (!open) router.refresh();
   };
 
-  const SkillRow = ({ skill }: { skill: any }) => (
+  const SkillRow = ({ skill, isGranted }: { skill: any; isGranted: boolean }) => (
     <button
       type="button"
       onClick={() => setSelectedSkill(skill)}
@@ -68,9 +71,16 @@ export function CharacterSkillsView({
           </p>
         )}
       </div>
-      <Badge variant="outline" className="text-xs shrink-0">
-        T{skill.tier}
-      </Badge>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {isGranted && (
+          <Badge variant="secondary" className="text-xs">
+            Granted
+          </Badge>
+        )}
+        <Badge variant="outline" className="text-xs">
+          T{skill.tier}
+        </Badge>
+      </div>
     </button>
   );
 
@@ -111,7 +121,7 @@ export function CharacterSkillsView({
             </p>
             <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
               {primarySkills.map((skill, index) => (
-                <SkillRow key={`primary-${index}`} skill={skill} />
+                <SkillRow key={`primary-${index}`} skill={skill} isGranted={grantedIds.has(skill.id)} />
               ))}
               {primarySkills.length === 0 && (
                 <div className="px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400">
@@ -129,7 +139,7 @@ export function CharacterSkillsView({
             </p>
             <div className="divide-y divide-stone-200 dark:divide-stone-700 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
               {secondarySkills.map((skill, index) => (
-                <SkillRow key={`secondary-${index}`} skill={skill} />
+                <SkillRow key={`secondary-${index}`} skill={skill} isGranted={grantedIds.has(skill.id)} />
               ))}
               {secondarySkills.length === 0 && (
                 <div className="px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400">

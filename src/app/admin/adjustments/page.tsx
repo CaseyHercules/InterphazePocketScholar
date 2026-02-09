@@ -33,8 +33,21 @@ interface Adjustment {
   sourceType: AdjustmentSourceType;
   effectsJson: any;
   tags?: any;
-  visibilityRoles?: string[];
+  visibilityRoles?: Role[];
   archived: boolean;
+}
+
+const ROLE_SET = new Set<string>(Object.values(Role));
+
+function normalizeVisibilityRoles(input: unknown): Role[] {
+  if (!Array.isArray(input)) return [];
+  const roles: Role[] = [];
+  for (const v of input) {
+    if (typeof v !== "string") continue;
+    if (!ROLE_SET.has(v)) continue;
+    roles.push(v as Role);
+  }
+  return roles;
 }
 
 const AdjustmentsPage = () => {
@@ -51,7 +64,11 @@ const AdjustmentsPage = () => {
     queryKey: ["adjustments"],
     queryFn: async () => {
       const response = await axios.get("/api/admin/adjustment");
-      return response.data;
+      const raw = Array.isArray(response.data) ? response.data : [];
+      return raw.map((a: any) => ({
+        ...a,
+        visibilityRoles: normalizeVisibilityRoles(a?.visibilityRoles),
+      })) as Adjustment[];
     },
   });
 
@@ -76,7 +93,9 @@ const AdjustmentsPage = () => {
         ...data,
         id: selectedAdjustment?.id,
         archived: selectedAdjustment?.archived ?? false,
-        visibilityRoles: data.visibilityRoles ?? selectedAdjustment?.visibilityRoles ?? [],
+        visibilityRoles: normalizeVisibilityRoles(
+          data.visibilityRoles ?? selectedAdjustment?.visibilityRoles ?? []
+        ),
       };
       const response = await axios.post("/api/admin/adjustment", payload);
 

@@ -64,6 +64,7 @@ const FormSchema = z.object({
 });
 
 export type AdjustmentFormValues = z.infer<typeof FormSchema>;
+export type AdjustmentFormSubmitValues = AdjustmentFormValues & { visibilityRoles: Role[] };
 
 const defaultEffectsTemplate = `{
   "effects": [
@@ -83,7 +84,7 @@ interface AdjustmentFormProps {
     tags?: any;
     archived?: boolean;
   } | null;
-  onSubmit: (data: AdjustmentFormValues) => Promise<void>;
+  onSubmit: (data: AdjustmentFormSubmitValues) => Promise<void>;
   onCancel: () => void;
 }
 

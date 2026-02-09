@@ -149,7 +149,7 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
 
   const adjustments = (characterForReturn as { adjustments?: { adjustment?: { visibilityRoles?: unknown[] } }[] }).adjustments;
   if (Array.isArray(adjustments) && !canSeeAdminOnlyAdjustments(session.user.role)) {
-    (characterForReturn as { adjustments: typeof adjustments }).adjustments = adjustments.filter(
+    (characterForReturn as unknown as { adjustments: typeof adjustments }).adjustments = adjustments.filter(
       (e) => !(e?.adjustment?.visibilityRoles?.length ?? 0)
     );
   }

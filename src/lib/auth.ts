@@ -70,7 +70,7 @@ const wordPressProvider: OAuthConfig<any> = {
     url: `${wpBaseUrl}/oauth/authorize`,
     params: { scope: "basic email profile" },
   },
-  async profile(profile: any) {
+  async profile(profile: any, _tokens: any) {
     const email =
       profile.OAuthProfile?.email ?? profile.email ?? null;
     if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -81,8 +81,9 @@ const wordPressProvider: OAuthConfig<any> = {
       return {
         id: String(profile.id),
         name: profile.name || profile.slug || "User",
-        email: null as unknown as string,
+        email: "",
         image: profile.avatar_urls?.["96"] || null,
+        role: Role.USER,
       };
     }
     return {
@@ -90,6 +91,7 @@ const wordPressProvider: OAuthConfig<any> = {
       name: profile.name || profile.slug || email.split("@")[0],
       email: email.trim().toLowerCase(),
       image: profile.avatar_urls?.["96"] || null,
+      role: Role.USER,
     };
   },
   client: {

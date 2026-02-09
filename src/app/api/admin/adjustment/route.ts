@@ -99,6 +99,10 @@ export async function POST(req: Request) {
       }
     }
 
+    const visibilityRoles = Array.isArray(body.visibilityRoles)
+      ? (body.visibilityRoles as Role[]).filter((r) => Object.values(Role).includes(r))
+      : [];
+
     if (body.id) {
       const updated = await db.adjustment.update({
         where: { id: body.id },
@@ -108,6 +112,7 @@ export async function POST(req: Request) {
           sourceType: body.sourceType,
           effectsJson,
           tags: tagsJson,
+          visibilityRoles,
           archived: body.archived ?? false,
         },
       });
@@ -122,6 +127,7 @@ export async function POST(req: Request) {
         sourceType: body.sourceType,
         effectsJson,
         tags: tagsJson,
+        visibilityRoles,
         archived: body.archived ?? false,
       },
     });

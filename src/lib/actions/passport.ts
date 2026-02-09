@@ -11,7 +11,7 @@ import {
   adjustmentMatchesRace,
   getCharacterRace,
 } from "@/lib/utils/adjustments";
-import { getSkillVisibilityWhere, getVisibilityWhere } from "@/lib/visibility";
+import { getSkillVisibilityWhere, getVisibilityWhere, canSeeAdminOnlyAdjustments } from "@/lib/visibility";
 import {
   getSkillEffects,
   getEffectsFromJson,
@@ -145,6 +145,13 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     session.user.role !== "SUPERADMIN"
   ) {
     redirect("/unauthorized");
+  }
+
+  const adjustments = (characterForReturn as { adjustments?: { adjustment?: { visibilityRoles?: unknown[] } }[] }).adjustments;
+  if (Array.isArray(adjustments) && !canSeeAdminOnlyAdjustments(session.user.role)) {
+    (characterForReturn as { adjustments: typeof adjustments }).adjustments = adjustments.filter(
+      (e) => !(e?.adjustment?.visibilityRoles?.length ?? 0)
+    );
   }
 
   const inventory = Array.isArray(characterForReturn.inventory) ? characterForReturn.inventory : [];

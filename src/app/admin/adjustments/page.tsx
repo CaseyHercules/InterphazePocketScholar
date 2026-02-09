@@ -33,6 +33,7 @@ interface Adjustment {
   sourceType: AdjustmentSourceType;
   effectsJson: any;
   tags?: any;
+  visibilityRoles?: string[];
   archived: boolean;
 }
 
@@ -75,6 +76,7 @@ const AdjustmentsPage = () => {
         ...data,
         id: selectedAdjustment?.id,
         archived: selectedAdjustment?.archived ?? false,
+        visibilityRoles: data.visibilityRoles ?? selectedAdjustment?.visibilityRoles ?? [],
       };
       const response = await axios.post("/api/admin/adjustment", payload);
 
@@ -159,6 +161,7 @@ const AdjustmentsPage = () => {
                   <TableRow>
                     <TableHead>Adjustment</TableHead>
                     <TableHead>Source</TableHead>
+                    <TableHead>Visibility</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -177,6 +180,11 @@ const AdjustmentsPage = () => {
                       <TableCell>
                         <Badge variant="secondary">
                           {adjustment.sourceType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={adjustment.visibilityRoles?.length ? "secondary" : "outline"}>
+                          {adjustment.visibilityRoles?.length ? "Admin" : "Public"}
                         </Badge>
                       </TableCell>
                       <TableCell>

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { AdjustmentSourceType } from "@prisma/client";
+import { AdjustmentSourceType, Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -48,11 +48,17 @@ const optionalJsonString = z
     }
   }, "Tags must be valid JSON");
 
+const VISIBILITY_OPTIONS = [
+  { value: "public", label: "Public", roles: [] as Role[] },
+  { value: "admin", label: "Admin only", roles: [Role.ADMIN] as Role[] },
+] as const;
+
 const FormSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(2, { message: "Title is required" }),
   description: z.string().optional(),
   sourceType: z.nativeEnum(AdjustmentSourceType),
+  visibility: z.enum(["public", "admin"]),
   effectsJson: jsonString,
   tags: optionalJsonString,
 });
@@ -72,6 +78,7 @@ interface AdjustmentFormProps {
     title?: string;
     description?: string | null;
     sourceType?: AdjustmentSourceType;
+    visibilityRoles?: Role[];
     effectsJson?: any;
     tags?: any;
     archived?: boolean;
@@ -81,6 +88,9 @@ interface AdjustmentFormProps {
 }
 
 export function AdjustmentForm({ data: formData, onSubmit, onCancel }: AdjustmentFormProps) {
+  const defaultVisibility =
+    formData?.visibilityRoles?.length ? "admin" : "public";
+
   const form = useForm<AdjustmentFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -88,6 +98,7 @@ export function AdjustmentForm({ data: formData, onSubmit, onCancel }: Adjustmen
       title: formData?.title ?? "",
       description: formData?.description ?? "",
       sourceType: formData?.sourceType ?? AdjustmentSourceType.CUSTOM,
+      visibility: defaultVisibility,
       effectsJson:
         formData?.effectsJson != null
           ? JSON.stringify(formData.effectsJson, null, 2)
@@ -97,8 +108,12 @@ export function AdjustmentForm({ data: formData, onSubmit, onCancel }: Adjustmen
     },
   });
 
-  const handleSubmit = async (formData: AdjustmentFormValues) => {
-    await onSubmit(formData);
+  const handleSubmit = async (values: AdjustmentFormValues) => {
+    const option = VISIBILITY_OPTIONS.find((o) => o.value === values.visibility);
+    await onSubmit({
+      ...values,
+      visibilityRoles: option?.roles ?? [],
+    });
   };
 
   return (
@@ -154,6 +169,32 @@ export function AdjustmentForm({ data: formData, onSubmit, onCancel }: Adjustmen
                   ))}
                 </select>
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="visibility"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Visibility</FormLabel>
+              <FormControl>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  {...field}
+                >
+                  {VISIBILITY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <FormDescription>
+                Public: anyone viewing the passport sees this. Admin only: only admins see it.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

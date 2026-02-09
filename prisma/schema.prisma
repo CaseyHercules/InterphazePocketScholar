@@ -80,30 +80,30 @@ model User {
 }
 
 model Skill {
-  id                   String      @id @default(cuid())
-  title                String
-  description          String?
-  descriptionShort     String?
-  tier                 Int
-  parentSkillId        String?
-  skillGroupId         String?
-  prerequisiteSkills   Json?
-  permenentEpReduction Int
-  epCost               String
-  activation           String
-  duration             String
-  abilityCheck         String?
-  canBeTakenMultiple   Boolean     @default(false)
-  playerVisable        Boolean     @default(true)
-  additionalInfo       Json?
-  chararacterId        String?
-  classId              String?
-  visibilityRoles      Role[]      @default([])
-  parentSkill          Skill?      @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  childSkills          Skill[]     @relation("RelatedSkills")
-  skillGrouping        SkillGroup? @relation(fields: [skillGroupId], references: [id])
-  class                Class?      @relation("ClassSkills", fields: [classId], references: [id])
-  primaryCharacterEntries  CharacterPrimarySkill[]
+  id                        String                    @id @default(cuid())
+  title                     String
+  description               String?
+  descriptionShort          String?
+  tier                      Int
+  parentSkillId             String?
+  skillGroupId              String?
+  prerequisiteSkills        Json?
+  permenentEpReduction      Int
+  epCost                    String
+  activation                String
+  duration                  String
+  abilityCheck              String?
+  canBeTakenMultiple        Boolean                   @default(false)
+  playerVisable             Boolean                   @default(true)
+  additionalInfo            Json?
+  chararacterId             String?
+  classId                   String?
+  visibilityRoles           Role[]                    @default([])
+  parentSkill               Skill?                    @relation("RelatedSkills", fields: [parentSkillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  childSkills               Skill[]                   @relation("RelatedSkills")
+  skillGrouping             SkillGroup?               @relation(fields: [skillGroupId], references: [id])
+  class                     Class?                    @relation("ClassSkills", fields: [classId], references: [id])
+  primaryCharacterEntries   CharacterPrimarySkill[]
   secondaryCharacterEntries CharacterSecondarySkill[]
 
   @@index([skillGroupId])
@@ -144,29 +144,29 @@ model Class {
 }
 
 model Character {
-  id                String                @id @default(cuid())
-  name              String
-  userId            String?
-  primaryClassId    String?
-  primaryClassLvl   Int
-  secondaryClassId  String?
-  secondaryClassLvl Int
-  Attributes        Json?
-  notes             Json?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  phazians          Int
-  inlineEffectsJson Json?
-  alignmentJson     Json?
-  user              User?                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  primaryClass      Class?                @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  secondaryClass    Class?                @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id                    String                    @id @default(cuid())
+  name                  String
+  userId                String?
+  primaryClassId        String?
+  primaryClassLvl       Int
+  secondaryClassId      String?
+  secondaryClassLvl     Int
+  Attributes            Json?
+  notes                 Json?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  phazians              Int
+  inlineEffectsJson     Json?
+  alignmentJson         Json?
+  user                  User?                     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  primaryClass          Class?                    @relation("PrimaryClass", fields: [primaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  secondaryClass        Class?                    @relation("SecondaryClass", fields: [secondaryClassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   primarySkillEntries   CharacterPrimarySkill[]
   secondarySkillEntries CharacterSecondarySkill[]
-  inventory         Item[]
-  spells            Spell[]
-  events            Event[]
-  adjustments       CharacterAdjustment[]
+  inventory             Item[]
+  spells                Spell[]
+  events                Event[]
+  adjustments           CharacterAdjustment[]
 
   @@index([userId])
   @@index([primaryClassId])
@@ -174,16 +174,17 @@ model Character {
 }
 
 model Adjustment {
-  id          String                @id @default(cuid())
-  title       String
-  description String?
-  sourceType  AdjustmentSourceType
-  effectsJson Json
-  tags        Json?
-  archived    Boolean               @default(false)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  characters  CharacterAdjustment[]
+  id              String                @id @default(cuid())
+  title           String
+  description     String?
+  sourceType      AdjustmentSourceType
+  effectsJson     Json
+  tags            Json?
+  archived        Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  visibilityRoles Role[]                @default([])
+  characters      CharacterAdjustment[]
 
   @@index([title])
   @@index([sourceType])
@@ -332,7 +333,7 @@ model PromoCode {
 }
 
 model CharacterPrimarySkill {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   characterId String
   skillId     String
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
@@ -343,7 +344,7 @@ model CharacterPrimarySkill {
 }
 
 model CharacterSecondarySkill {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   characterId String
   skillId     String
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)

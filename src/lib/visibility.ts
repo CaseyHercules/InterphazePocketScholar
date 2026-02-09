@@ -37,3 +37,7 @@ export function getSkillVisibilityWhere(role?: Role | null) {
 
   return {};
 }
+
+export function canSeeAdminOnlyAdjustments(role?: Role | null): boolean {
+  return role === Role.ADMIN || role === Role.SUPERADMIN;
+}

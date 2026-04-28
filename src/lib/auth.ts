@@ -5,7 +5,7 @@ import { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { nanoid } from "nanoid";
-import type { OAuthConfig } from "next-auth/providers";
+import type { OAuthConfig } from "next-auth/providers/oauth";
 import { autoAssignPassportsForEmail } from "@/lib/passport-claim";
 
 const getEnv = (key: string) => (process.env[key] ?? "").trim();

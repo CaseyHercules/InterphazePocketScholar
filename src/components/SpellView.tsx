@@ -1,4 +1,4 @@
-import { Spell } from "@/types/spell";
+import { Spell, SPELL_PUBLICATION_STATUS_LABELS } from "@/types/spell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toRomanNumeral } from "@/lib/utils/roman-numerals";
@@ -15,18 +15,33 @@ export function SpellView({ spell }: SpellViewProps) {
           <div>
             <div className="flex items-center gap-3">
               <CardTitle className="text-2xl">{spell.title}</CardTitle>
-              {spell.data?.isInSpellLibrary && (
+              {spell.publicationStatus && (
                 <Badge
                   variant="outline"
                   className="bg-green-100 dark:bg-green-900/20"
                 >
-                  Public
+                  {SPELL_PUBLICATION_STATUS_LABELS[spell.publicationStatus]}
                 </Badge>
               )}
             </div>
             <p className="text-muted-foreground mt-1 font-semibold">
               {spell.type} Level {toRomanNumeral(spell.level)}
             </p>
+            {spell.author && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Author: {spell.author}
+              </p>
+            )}
+            {spell.reworkedAt && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Reworked: {new Date(spell.reworkedAt).toLocaleDateString()}
+              </p>
+            )}
+            {spell.supersedesSpellId && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Reworks Spell ID: {spell.supersedesSpellId}
+              </p>
+            )}
             {spell.description && <p className="mt-2">{spell.description}</p>}
           </div>
           {spell.data?.descriptor && spell.data.descriptor.length > 0 && (

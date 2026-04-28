@@ -246,17 +246,23 @@ model Item {
 }
 
 model Spell {
-  id              String     @id @default(cuid())
-  title           String
-  type            String?
-  description     String?
-  level           Int
-  characterId     String?
-  data            Json?
-  visibilityRoles Role[]     @default([])
-  character       Character? @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id                String                 @id @default(cuid())
+  title             String
+  type              String?
+  description       String?
+  level             Int
+  author            String?
+  characterId       String?
+  supersedesSpellId String?
+  reworkedAt        DateTime?
+  data              Json?
+  visibilityRoles   Role[]                 @default([])
+  publicationStatus SpellPublicationStatus @default(PUBLISHED)
+  character         Character?             @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
+  @@index([publicationStatus])
+  @@index([supersedesSpellId])
 }
 
 model Request {
@@ -399,4 +405,12 @@ enum RegisterStatus {
   REGISTERED
   WAITLIST
   CANCELLED
+}
+
+enum SpellPublicationStatus {
+  IN_REVIEW
+  PUBLISHED
+  PUBLISHED_IN_LIBRARY
+  ARCHIVED_PRIVATE
+  ARCHIVED_PUBLIC_LEGACY
 }

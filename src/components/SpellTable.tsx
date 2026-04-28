@@ -18,7 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spell, SPELL_TYPES, SPELL_DESCRIPTORS } from "@/types/spell";
+import {
+  Spell,
+  SPELL_TYPES,
+  SPELL_DESCRIPTORS,
+  SPELL_PUBLICATION_STATUS_LABELS,
+} from "@/types/spell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -227,6 +232,24 @@ export function SpellTable({
                     <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                   )}
                 </TableHead>
+                <TableHead
+                  className="cursor-pointer w-[180px]"
+                  onClick={() => onSort("author")}
+                >
+                  Author{" "}
+                  {sortConfig?.key === "author" && (
+                    <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                  )}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer w-[220px]"
+                  onClick={() => onSort("publicationStatus")}
+                >
+                  Status{" "}
+                  {sortConfig?.key === "publicationStatus" && (
+                    <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                  )}
+                </TableHead>
                 <TableHead className="text-right w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -257,6 +280,14 @@ export function SpellTable({
                         </Badge>
                       )) || "-"}
                     </div>
+                  </TableCell>
+                  <TableCell className="max-w-[180px] truncate">
+                    {spell.author || "-"}
+                  </TableCell>
+                  <TableCell className="max-w-[220px]">
+                    {spell.publicationStatus
+                      ? SPELL_PUBLICATION_STATUS_LABELS[spell.publicationStatus]
+                      : "-"}
                   </TableCell>
                   <TableCell className="text-right max-w-[150px]">
                     {onView && (

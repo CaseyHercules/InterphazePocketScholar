@@ -44,6 +44,12 @@ const ADMIN_LINKS = [
     description: "Update and manage spell values and descriptions.",
   },
   {
+    href: "/admin/printing",
+    title: "Card Printing",
+    description:
+      "Preview print-ready card templates and print spell cards to PDF.",
+  },
+  {
     href: "/admin/itemTool",
     title: "Item Tool",
     description: "Update and manage item values and descriptions.",

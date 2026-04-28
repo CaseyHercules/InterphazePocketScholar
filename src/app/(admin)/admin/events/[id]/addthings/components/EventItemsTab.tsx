@@ -20,7 +20,6 @@ export async function EventItemsTab({ eventId }: EventItemsTabProps) {
   const dbItems = await db.item.findMany({
     where: {
       characterId: null,
-      archived: false,
     },
     select: {
       id: true,
@@ -54,11 +53,10 @@ export async function EventItemsTab({ eventId }: EventItemsTabProps) {
           title: true,
           description: true,
           type: true,
-          archived: true,
         },
       });
 
-      if (item && !item.archived) {
+      if (item) {
         initialItems.push({
           id: item.id,
           title: item.title,

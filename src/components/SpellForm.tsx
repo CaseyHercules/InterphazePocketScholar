@@ -6,6 +6,8 @@ import {
   CreateSpellInput,
   SPELL_TYPES,
   SPELL_DESCRIPTORS,
+  SPELL_PUBLICATION_STATUSES,
+  SPELL_PUBLICATION_STATUS_LABELS,
 } from "@/types/spell";
 import {
   Form,
@@ -29,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const VISIBILITY_ROLE_OPTIONS = ["SPELLWRIGHT", "ADMIN", "SUPERADMIN"] as const;
@@ -38,6 +39,8 @@ const SpellFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.string().min(1, "Spell type is required"),
   description: z.string().default(""),
+  author: z.string().default(""),
+  publicationStatus: z.enum(SPELL_PUBLICATION_STATUSES).default("PUBLISHED"),
   level: z.coerce
     .number()
     .min(1, "Level must be 1 or higher")
@@ -51,7 +54,6 @@ const SpellFormSchema = z.object({
     save: z.string().default(""),
     method: z.string().default(""),
     descriptor: z.array(z.string()).default([]),
-    isInSpellLibrary: z.boolean().default(false),
   }),
   visibilityRoles: z.array(z.enum(VISIBILITY_ROLE_OPTIONS)).default([]),
 });
@@ -75,6 +77,8 @@ export function SpellForm({
       title: initialSpell?.title || "",
       type: initialSpell?.type || "",
       description: initialSpell?.description || "",
+      author: initialSpell?.author || "",
+      publicationStatus: initialSpell?.publicationStatus || "PUBLISHED",
       level: initialSpell?.level || 1,
       data: {
         castingTime: initialSpell?.data?.castingTime || "",
@@ -85,7 +89,6 @@ export function SpellForm({
         save: initialSpell?.data?.save || "",
         method: initialSpell?.data?.method || "",
         descriptor: initialSpell?.data?.descriptor || [],
-        isInSpellLibrary: initialSpell?.data?.isInSpellLibrary || false,
       },
       visibilityRoles: (initialSpell?.visibilityRoles || []) as (typeof VISIBILITY_ROLE_OPTIONS)[number][],
     },
@@ -100,6 +103,8 @@ export function SpellForm({
         title: values.title,
         type: values.type,
         description: values.description || undefined,
+        author: values.author || undefined,
+        publicationStatus: values.publicationStatus,
         level: Number(values.level),
         data: {
           ...Object.fromEntries(
@@ -176,6 +181,20 @@ export function SpellForm({
 
               <FormField
                 control={form.control}
+                name="author"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Spell Author</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter spell author..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
@@ -203,12 +222,40 @@ export function SpellForm({
               />
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="publicationStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Publication Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a publication status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SPELL_PUBLICATION_STATUSES.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {SPELL_PUBLICATION_STATUS_LABELS[status]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="level"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
+                  <FormItem>
                     <FormLabel>Level</FormLabel>
                     <FormControl>
                       <Input
@@ -230,24 +277,6 @@ export function SpellForm({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="data.isInSpellLibrary"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-end space-x-2 mt-6">
-                    <FormLabel className="font-normal">
-                      Is In Spell Library
-                    </FormLabel>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
             </div>
 
             <FormField
@@ -257,7 +286,7 @@ export function SpellForm({
                 <FormItem>
                   <FormLabel>Visibility Roles</FormLabel>
                   <FormDescription>
-                    Leave empty to make this spell public.
+                    Leave empty to allow any authenticated user to view this spell.
                   </FormDescription>
                   <div className="flex flex-wrap gap-3">
                     {VISIBILITY_ROLE_OPTIONS.map((role) => (

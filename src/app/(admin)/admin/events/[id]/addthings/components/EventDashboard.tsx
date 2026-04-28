@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2 } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import { SPELL_PUBLICATION_STATUS } from "@/types/spell";
 import { db } from "@/lib/db";
 
 // ==================== TYPES ====================
@@ -134,10 +135,14 @@ async function processEventSpells(
         level: true,
         type: true,
         data: true,
+        publicationStatus: true,
       },
     });
 
-    if (spell) {
+    if (
+      spell &&
+      spell.publicationStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
+    ) {
       spells.push({
         id: spell.id,
         name: spell.title,

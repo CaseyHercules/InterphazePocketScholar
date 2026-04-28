@@ -1,5 +1,11 @@
 import { sortSkillsByTier } from "@/lib/utils";
 
+export type CharacterSkillLike = {
+  id?: string;
+  title?: string;
+  additionalInfo?: unknown;
+};
+
 export function parseGrantedSkillIds(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === "string");
   if (typeof raw === "string") {
@@ -18,10 +24,10 @@ export function getCharacterSkillsWithGranted(character: {
   secondarySkills?: unknown[];
   primaryClass?: { grantedSkills?: unknown } | null;
   secondaryClass?: { grantedSkills?: unknown } | null;
-}): { skills: unknown[]; grantedIds: Set<string> } {
+}): { skills: CharacterSkillLike[]; grantedIds: Set<string> } {
   const primary = Array.isArray(character?.primarySkills) ? character.primarySkills : [];
   const secondary = Array.isArray(character?.secondarySkills) ? character.secondarySkills : [];
-  const skills = [...primary, ...secondary];
+  const skills = [...primary, ...secondary] as CharacterSkillLike[];
   const grantedIds = new Set<string>();
   const primaryGranted = character?.primaryClass ? parseGrantedSkillIds(character.primaryClass.grantedSkills) : [];
   const secondaryGranted = character?.secondaryClass ? parseGrantedSkillIds(character.secondaryClass.grantedSkills) : [];

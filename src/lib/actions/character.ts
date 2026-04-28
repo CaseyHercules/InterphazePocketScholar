@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { adjustmentMatchesRace } from "@/lib/utils/adjustments";
+import { SPELL_PUBLICATION_STATUS } from "@/types/spell";
 
 export type CharacterFormData = {
   name: string;
@@ -473,6 +474,13 @@ export async function addSpellToCharacter(
     throw new Error("Spell not found");
   }
 
+  if (
+    spell.publicationStatus !== SPELL_PUBLICATION_STATUS.PUBLISHED &&
+    spell.publicationStatus !== SPELL_PUBLICATION_STATUS.PUBLISHED_IN_LIBRARY
+  ) {
+    throw new Error("Spell is not available for characters");
+  }
+
   // Update the spell to be associated with this character
   // If the spell is already associated with another character, create a copy
   let updatedSpell;
@@ -485,6 +493,11 @@ export async function addSpellToCharacter(
         type: spell.type,
         description: spell.description,
         level: spell.level,
+        author: spell.author,
+        publicationStatus: spell.publicationStatus,
+        supersedesSpellId: spell.supersedesSpellId,
+        reworkedAt: spell.reworkedAt,
+        visibilityRoles: spell.visibilityRoles,
         data: spell.data as any,
         characterId: characterId,
       },

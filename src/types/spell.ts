@@ -27,6 +27,35 @@ export const SPELL_DESCRIPTORS = [
   "Obfuscation",
 ] as const;
 
+export const SPELL_PUBLICATION_STATUSES = [
+  "IN_REVIEW",
+  "PUBLISHED",
+  "PUBLISHED_IN_LIBRARY",
+  "ARCHIVED_PRIVATE",
+  "ARCHIVED_PUBLIC_LEGACY",
+] as const;
+
+export type SpellPublicationStatus = (typeof SPELL_PUBLICATION_STATUSES)[number];
+
+export const SPELL_PUBLICATION_STATUS = {
+  IN_REVIEW: "IN_REVIEW",
+  PUBLISHED: "PUBLISHED",
+  PUBLISHED_IN_LIBRARY: "PUBLISHED_IN_LIBRARY",
+  ARCHIVED_PRIVATE: "ARCHIVED_PRIVATE",
+  ARCHIVED_PUBLIC_LEGACY: "ARCHIVED_PUBLIC_LEGACY",
+} as const satisfies Record<SpellPublicationStatus, SpellPublicationStatus>;
+
+export const SPELL_PUBLICATION_STATUS_LABELS: Record<
+  SpellPublicationStatus,
+  string
+> = {
+  IN_REVIEW: "In Review",
+  PUBLISHED: "Published (Private)",
+  PUBLISHED_IN_LIBRARY: "Published (Library)",
+  ARCHIVED_PRIVATE: "Archived (Private)",
+  ARCHIVED_PUBLIC_LEGACY: "Archived (Public Legacy)",
+};
+
 export interface SpellData {
   castingTime?: string;
   effect?: string;
@@ -36,7 +65,6 @@ export interface SpellData {
   save?: string;
   method?: string;
   descriptor?: string[]; // Array of label strings
-  isInSpellLibrary?: boolean;
 }
 
 export interface Spell {
@@ -45,7 +73,11 @@ export interface Spell {
   type?: string;
   description?: string;
   level: number;
+  author?: string;
   characterId?: string;
+  publicationStatus?: SpellPublicationStatus;
+  supersedesSpellId?: string;
+  reworkedAt?: string | Date;
   data?: SpellData;
   visibilityRoles?: string[];
 }
@@ -55,7 +87,11 @@ export interface CreateSpellInput {
   type?: string;
   description?: string;
   level: number;
+  author?: string;
   characterId?: string;
+  publicationStatus?: SpellPublicationStatus;
+  supersedesSpellId?: string;
+  reworkedAt?: string | Date;
   data?: SpellData;
   visibilityRoles?: string[];
 }

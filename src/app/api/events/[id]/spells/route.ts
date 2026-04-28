@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
+import { SPELL_PUBLICATION_STATUS } from "@/types/spell";
 import { authOptions } from "@/lib/auth";
 
 interface Params {
@@ -52,10 +53,14 @@ export async function GET(req: Request, { params }: Params) {
             level: true,
             type: true,
             data: true,
+            publicationStatus: true,
           },
         });
 
-        if (spell) {
+        if (
+          spell &&
+          spell.publicationStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
+        ) {
           // Try to extract class from data or type
           let spellClass = undefined;
           if (spell.data && typeof spell.data === "object") {

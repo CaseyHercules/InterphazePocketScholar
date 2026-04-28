@@ -35,13 +35,20 @@ export default function AdminSpellTool() {
   const [isCreating, setIsCreating] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
+  const [viewMode, setViewMode] = useState<"catalog" | "review">("catalog");
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === Role.SUPERADMIN;
+  const isReviewer =
+    session?.user?.role === Role.SPELLWRIGHT ||
+    session?.user?.role === Role.ADMIN ||
+    session?.user?.role === Role.SUPERADMIN;
 
   const { data: spells, isLoading } = useQuery<Spell[]>({
-    queryKey: ["spells"],
+    queryKey: ["spells", viewMode],
     queryFn: async () => {
-      const response = await axios.get("/api/spells");
+      const endpoint =
+        viewMode === "review" ? "/api/spells/review-queue" : "/api/spells";
+      const response = await axios.get(endpoint);
       return response.data;
     },
   });
@@ -95,11 +102,31 @@ export default function AdminSpellTool() {
     }
   };
 
+  const handleApprove = async (
+    id: string,
+    publicationStatus: "PUBLISHED" | "PUBLISHED_IN_LIBRARY"
+  ) => {
+    try {
+      await axios.post(`/api/spells/${id}/approve`, { publicationStatus });
+      queryClient.invalidateQueries({ queryKey: ["spells"] });
+      toast({
+        title: "Success",
+        description: "Spell approved successfully",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to approve spell",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="w-full p-6 space-y-6">
       <div className="flex items-center justify-between bg-background">
         <h1 className="text-xl font-semibold">Spell Tool</h1>
-        {!isCreating && !selectedSpell && (
+        {!isCreating && !selectedSpell && viewMode === "catalog" && (
           <Button onClick={handleCreate} disabled={!isSuperAdmin}>
             Create New Spell
           </Button>
@@ -111,26 +138,88 @@ export default function AdminSpellTool() {
         )}
       </div>
 
+      {!isCreating && !selectedSpell && isReviewer && (
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "catalog" ? "default" : "outline"}
+            onClick={() => setViewMode("catalog")}
+          >
+            Spell Catalog
+          </Button>
+          <Button
+            variant={viewMode === "review" ? "default" : "outline"}
+            onClick={() => setViewMode("review")}
+          >
+            Review Queue
+          </Button>
+        </div>
+      )}
+
       <hr className="bg-foreground h-px" />
 
       {!isCreating && !selectedSpell ? (
         <>
-          <SpellTable
-            spells={spells || []}
-            onEdit={isSuperAdmin ? handleEdit : undefined}
-            onView={handleView}
-            onDelete={
-              isSuperAdmin
-                ? (id) => {
-                    const spell = spells?.find((s) => s.id === id);
-                    if (spell) {
-                      setSpellToDelete(spell);
+          {viewMode === "catalog" ? (
+            <SpellTable
+              spells={spells || []}
+              onEdit={isSuperAdmin ? handleEdit : undefined}
+              onView={handleView}
+              onDelete={
+                isSuperAdmin
+                  ? (id) => {
+                      const spell = spells?.find((s) => s.id === id);
+                      if (spell) {
+                        setSpellToDelete(spell);
+                      }
                     }
-                  }
-                : undefined
-            }
-            isLoading={isLoading}
-          />
+                  : undefined
+              }
+              isLoading={isLoading}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Spells Awaiting Review</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoading && <div>Loading review queue...</div>}
+                {!isLoading && (spells?.length ?? 0) === 0 && (
+                  <div>No spells in review.</div>
+                )}
+                {spells?.map((spell) => (
+                  <div
+                    key={spell.id}
+                    className="border rounded-md p-3 flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <div className="font-semibold">{spell.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Level {spell.level}
+                        {spell.author ? ` • ${spell.author}` : ""}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => spell.id && handleApprove(spell.id, "PUBLISHED")}
+                      >
+                        Approve Private
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          spell.id && handleApprove(spell.id, "PUBLISHED_IN_LIBRARY")
+                        }
+                      >
+                        Approve To Library
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           <AlertDialog
             open={spellToDelete !== null}

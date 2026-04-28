@@ -39,12 +39,21 @@ export function AddSpellDialog({
   const normalizedSearch = searchTerm.toLowerCase();
 
   // Filter spells based on search term
-  const filteredSpells = spells.filter(
-    (spell) =>
+  const filteredSpells = spells.filter((spell) => {
+    const isAvailable =
+      spell.publicationStatus === "PUBLISHED" ||
+      spell.publicationStatus === "PUBLISHED_IN_LIBRARY";
+
+    if (!isAvailable) {
+      return false;
+    }
+
+    return (
       (spell.title ?? "").toLowerCase().includes(normalizedSearch) ||
       spell.type?.toLowerCase().includes(normalizedSearch) ||
       spell.description?.toLowerCase().includes(normalizedSearch)
-  );
+    );
+  });
 
   // Group spells by level
   const groupedSpells = filteredSpells.reduce<Record<number, Spell[]>>(

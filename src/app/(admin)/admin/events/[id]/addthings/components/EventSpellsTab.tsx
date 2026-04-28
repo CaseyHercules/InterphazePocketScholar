@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { SPELL_PUBLICATION_STATUS } from "@/types/spell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpellSelector } from "./SpellSelector";
 import { revalidatePath } from "next/cache";
@@ -19,6 +20,14 @@ export async function EventSpellsTab({ eventId }: EventSpellsTabProps) {
 
   // Fetch all available spells from the database
   const dbSpells = await db.spell.findMany({
+    where: {
+      publicationStatus: {
+        in: [
+          SPELL_PUBLICATION_STATUS.PUBLISHED,
+          SPELL_PUBLICATION_STATUS.PUBLISHED_IN_LIBRARY,
+        ],
+      },
+    },
     select: {
       id: true,
       title: true,
@@ -79,10 +88,14 @@ export async function EventSpellsTab({ eventId }: EventSpellsTabProps) {
           level: true,
           data: true,
           type: true,
+          publicationStatus: true,
         },
       });
 
-      if (spell) {
+      if (
+        spell &&
+        spell.publicationStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
+      ) {
         // Try to extract class from data or type
         let spellClass = undefined;
         if (spell.data && typeof spell.data === "object") {

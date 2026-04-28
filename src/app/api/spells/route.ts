@@ -2,25 +2,76 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { CreateSpellInput, UpdateSpellInput } from "@/types/spell";
+import {
+  CreateSpellInput,
+  UpdateSpellInput,
+  type SpellPublicationStatus,
+  SPELL_PUBLICATION_STATUS,
+  SPELL_PUBLICATION_STATUSES,
+} from "@/types/spell";
 import { authOptions } from "@/lib/auth";
-import { getVisibilityWhere } from "@/lib/visibility";
+import { canReviewSpells, getSpellBrowseWhere } from "@/lib/spell-queries";
+
+function getPublicationStatus(
+  value?: string
+): SpellPublicationStatus | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if ((SPELL_PUBLICATION_STATUSES as readonly string[]).includes(value)) {
+    return value as SpellPublicationStatus;
+  }
+
+  return undefined;
+}
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body: CreateSpellInput = await req.json();
-    const { title, type, data, description, level, characterId, visibilityRoles } =
-      body;
+    const {
+      title,
+      type,
+      data,
+      description,
+      level,
+      characterId,
+      visibilityRoles,
+      author,
+      publicationStatus,
+      supersedesSpellId,
+      reworkedAt,
+    } = body;
 
     if (!title || level === undefined) {
       return NextResponse.json(
         { error: "Title and level are required" },
         { status: 400 }
+      );
+    }
+
+    const requestedStatus = getPublicationStatus(publicationStatus);
+    if (publicationStatus && !requestedStatus) {
+      return NextResponse.json(
+        { error: "Invalid publication status" },
+        { status: 400 }
+      );
+    }
+
+    const reviewer = canReviewSpells(session.user.role);
+    if (
+      !reviewer &&
+      requestedStatus &&
+      requestedStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
+    ) {
+      return NextResponse.json(
+        { error: "You are not allowed to publish spells" },
+        { status: 403 }
       );
     }
 
@@ -31,8 +82,16 @@ export async function POST(req: Request) {
         data: data ? JSON.parse(JSON.stringify(data)) : undefined,
         description,
         level,
+        author: author || null,
         characterId: characterId || null,
+        supersedesSpellId: supersedesSpellId || null,
+        reworkedAt: reworkedAt ? new Date(reworkedAt) : null,
         visibilityRoles: (visibilityRoles ?? []) as Role[],
+        publicationStatus:
+          requestedStatus ??
+          (reviewer
+            ? SPELL_PUBLICATION_STATUS.PUBLISHED
+            : SPELL_PUBLICATION_STATUS.IN_REVIEW),
       },
     });
 
@@ -54,7 +113,7 @@ export async function GET() {
     }
 
     const spells = await prisma.spell.findMany({
-      where: getVisibilityWhere(session?.user?.role),
+      where: getSpellBrowseWhere(session.user.role),
       orderBy: [
         {
           level: "asc",
@@ -70,6 +129,11 @@ export async function GET() {
         level: true,
         type: true,
         data: true,
+        author: true,
+        publicationStatus: true,
+        supersedesSpellId: true,
+        reworkedAt: true,
+        visibilityRoles: true,
       },
     });
 
@@ -90,29 +154,67 @@ export async function GET() {
         description: spell.description || "",
         level: spell.level,
         type: spell.type || undefined,
+        author: spell.author ?? undefined,
+        publicationStatus: spell.publicationStatus,
+        supersedesSpellId: spell.supersedesSpellId ?? undefined,
+        reworkedAt: spell.reworkedAt ?? undefined,
+        visibilityRoles: spell.visibilityRoles,
         data: spell.data ?? undefined,
       };
     });
 
     return NextResponse.json(formattedSpells);
-  } catch {
-    return new NextResponse("Internal Error", { status: 500 });
+  } catch (error) {
+    console.error("[GET /api/spells]", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      {
+        error: "Internal Error",
+        message: process.env.NODE_ENV === "development" ? message : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!canReviewSpells(session.user.role)) {
+      return NextResponse.json(
+        { error: "Only spell reviewers can update spells" },
+        { status: 403 }
+      );
+    }
+
     const body: UpdateSpellInput = await req.json();
-    const { id, type, characterId, visibilityRoles, ...updateData } = body;
+    const {
+      id,
+      type,
+      characterId,
+      visibilityRoles,
+      publicationStatus,
+      author,
+      supersedesSpellId,
+      reworkedAt,
+      ...updateData
+    } = body;
 
     if (!id) {
       return NextResponse.json(
         { error: "Spell ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const status = getPublicationStatus(publicationStatus);
+    if (publicationStatus && !status) {
+      return NextResponse.json(
+        { error: "Invalid publication status" },
         { status: 400 }
       );
     }
@@ -126,6 +228,16 @@ export async function PUT(req: Request) {
           : undefined,
         type: type || null,
         characterId: characterId || null,
+        author: author === undefined ? undefined : author || null,
+        supersedesSpellId:
+          supersedesSpellId === undefined ? undefined : supersedesSpellId || null,
+        reworkedAt:
+          reworkedAt === undefined
+            ? undefined
+            : reworkedAt
+            ? new Date(reworkedAt)
+            : null,
+        ...(status ? { publicationStatus: status } : {}),
         ...(visibilityRoles ? { visibilityRoles: visibilityRoles as Role[] } : {}),
       },
     });
@@ -143,8 +255,15 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!canReviewSpells(session.user.role)) {
+      return NextResponse.json(
+        { error: "Only spell reviewers can delete spells" },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);

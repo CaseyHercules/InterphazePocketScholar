@@ -87,6 +87,13 @@ function getMetaItems(spell: Spell): string[] {
 export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
   const style = STYLE_CLASSES[styleId];
   const metaItems = getMetaItems(spell);
+  const details = [
+    ["Casting Time", spell.data?.castingTime],
+    ["Range", spell.data?.range],
+    ["Area of Effect", spell.data?.areaOfEffect],
+    ["Duration", spell.data?.duration],
+    ["Save", spell.data?.save],
+  ] as const;
 
   return (
     <article
@@ -115,6 +122,19 @@ export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
         <p className={cn("text-sm leading-snug whitespace-pre-wrap", style.body)}>
           {spell.description?.trim() || "No description provided."}
         </p>
+      </section>
+
+      <section className="mt-3 space-y-2">
+        <h3 className={cn("text-xs font-semibold uppercase", style.sectionTitle)}>
+          Spell Details
+        </h3>
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+          {details.map(([label, value]) => (
+            <div key={label} className={cn("text-[11px] leading-tight", style.body)}>
+              <span className="font-semibold">{label}:</span> {value?.trim() || "-"}
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="mt-3 space-y-2">

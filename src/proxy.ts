@@ -42,7 +42,7 @@ function isContentViewingRoute(pathname: string): boolean {
   return false;
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Check if the path is public or a content viewing route

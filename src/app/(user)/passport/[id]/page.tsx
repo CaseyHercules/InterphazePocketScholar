@@ -12,6 +12,7 @@ import { CharacterInventoryCard } from "@/components/passport/CharacterInventory
 import { CharacterBackstoryCard } from "@/components/passport/CharacterBackstoryCard";
 import { CharacterTraitsCard } from "@/components/passport/CharacterTraitsCard";
 import { PassportAdminDialog } from "@/components/passport/PassportAdminDialog";
+import { PassportPrintButton } from "@/components/passport/PassportPrintButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -92,6 +93,11 @@ export default async function PassportPage({ params }: PassportPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            <PassportPrintButton
+              characterId={character.id}
+              character={character}
+              playerName={(character.user as { name?: string } | null)?.name ?? null}
+            />
             {isAdmin && (
               <PassportAdminDialog
                 character={{

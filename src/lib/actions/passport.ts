@@ -32,7 +32,7 @@ const characterPassportInclude = {
   },
   inventory: { orderBy: { title: "asc" as const } },
   spells: { orderBy: { level: "asc" as const } },
-  user: { select: { id: true, UnallocatedLevels: true } },
+  user: { select: { id: true, UnallocatedLevels: true, name: true } },
 } as const;
 
 type CharacterPassportPayload = Prisma.CharacterGetPayload<{
@@ -80,6 +80,7 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
       select: {
         id: true,
         UnallocatedLevels: true,
+        name: true,
       },
     },
   } as const;
@@ -148,7 +149,7 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
     ...primaryGrantedIds.filter((id) => !primaryIds.has(id)),
     ...secondaryGrantedIds.filter((id) => !secondaryIds.has(id)),
   ];
-  const uniqueGrantedToFetch = [...new Set(grantedIdsToFetch)];
+  const uniqueGrantedToFetch = Array.from(new Set(grantedIdsToFetch));
 
   let primarySkills = primaryFromEntries;
   let secondarySkills = secondaryFromEntries;

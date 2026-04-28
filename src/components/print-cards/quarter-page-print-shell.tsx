@@ -25,19 +25,19 @@ export function QuarterPagePrintShell({
         <div
           key={`sheet-${sheetIndex}`}
           className={cn(
-            "print-sheet grid h-full min-h-[700px] grid-cols-2 grid-rows-2 gap-4 bg-white p-4",
+            "print-sheet grid h-full min-h-[700px] grid-cols-1 gap-4 bg-white p-4 lg:grid-cols-2 lg:grid-rows-2",
             sheetIndex > 0 ? "print:break-before-page" : ""
           )}
         >
-          {Array.from({ length: 4 }).map((_, slotIndex) => (
+          {sheetCards.map((card, slotIndex) => (
             <div
               key={`slot-${sheetIndex}-${slotIndex}`}
               className={cn(
-                "spell-card-slot rounded-md border border-dashed border-muted-foreground/30 p-2",
+                "spell-card-slot rounded-md border border-muted-foreground/25 p-2",
                 className
               )}
             >
-              {sheetCards[slotIndex] ?? null}
+              {card}
             </div>
           ))}
         </div>

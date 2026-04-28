@@ -251,18 +251,32 @@ model Spell {
   type              String?
   description       String?
   level             Int
-  author            String?
   characterId       String?
-  supersedesSpellId String?
-  reworkedAt        DateTime?
   data              Json?
   visibilityRoles   Role[]                 @default([])
+  author            String?
   publicationStatus SpellPublicationStatus @default(PUBLISHED)
+  reworkedAt        DateTime?
+  supersedesSpellId String?
+  createdAt         DateTime               @default(now())
   character         Character?             @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([characterId])
   @@index([publicationStatus])
   @@index([supersedesSpellId])
+}
+
+model Spellbook {
+  id          String   @id @default(cuid())
+  name        String
+  spellIds    Json
+  styleId     String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdById])
+  @@index([name])
 }
 
 model Request {

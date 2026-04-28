@@ -1,9 +1,17 @@
 @page {
-  size: 11in 8.5in;
-  margin: 0.25in;
+  size: letter landscape;
+  margin: 0;
 }
 
 @media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 11in;
+    height: 8.5in;
+  }
+
   body * {
     visibility: hidden !important;
   }
@@ -22,17 +30,23 @@
     margin: 0;
     box-shadow: none;
     background: white;
+    width: 11in;
+    height: 8.5in;
+    overflow: hidden;
   }
 
   .print-sheet {
-    width: calc(11in - 0.5in);
-    height: calc(8.5in - 0.5in);
+    width: 11in;
+    height: 8.5in;
     min-height: 0;
     border: 0;
-    padding: 0;
+    padding: 0.1in;
     margin: 0;
-    gap: 0.15in;
+    gap: 0.1in;
     box-shadow: none;
+    box-sizing: border-box;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
 
   .spell-card-slot {

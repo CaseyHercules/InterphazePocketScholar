@@ -31,6 +31,7 @@ export async function GET() {
         publicationStatus: true,
         supersedesSpellId: true,
         reworkedAt: true,
+        createdAt: true,
         visibilityRoles: true,
       },
     });

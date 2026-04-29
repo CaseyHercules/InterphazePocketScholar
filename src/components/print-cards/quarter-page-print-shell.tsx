@@ -20,14 +20,11 @@ export function QuarterPagePrintShell({
   }
 
   return (
-    <section className="print-root space-y-3 rounded-lg border bg-muted/10 p-3 shadow-sm">
+    <section className="print-root space-y-3 rounded-lg border bg-muted/10 p-3 shadow-sm print:space-y-0 print:border-0 print:bg-transparent print:p-0">
       {sheets.map((sheetCards, sheetIndex) => (
         <div
           key={`sheet-${sheetIndex}`}
-          className={cn(
-            "print-sheet grid h-full min-h-[700px] grid-cols-1 gap-4 bg-white p-4 lg:grid-cols-2 lg:grid-rows-2",
-            sheetIndex > 0 ? "print:break-before-page" : ""
-          )}
+          className="print-sheet grid h-full min-h-[700px] grid-cols-1 gap-4 bg-white p-4 lg:grid-cols-2 lg:grid-rows-2 print:min-h-0 print:gap-[0.1in] print:p-[0.12in]"
         >
           {sheetCards.map((card, slotIndex) => (
             <div

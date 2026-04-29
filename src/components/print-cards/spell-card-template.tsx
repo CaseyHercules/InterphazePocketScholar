@@ -144,7 +144,7 @@ export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
   return (
     <article
       className={cn(
-        "relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-md p-4",
+        "relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-md p-4 print:min-h-0 print:p-2.5",
         style.card
       )}
     >

@@ -133,6 +133,7 @@ export async function GET() {
         publicationStatus: true,
         supersedesSpellId: true,
         reworkedAt: true,
+        createdAt: true,
         visibilityRoles: true,
       },
     });
@@ -158,6 +159,7 @@ export async function GET() {
         publicationStatus: spell.publicationStatus,
         supersedesSpellId: spell.supersedesSpellId ?? undefined,
         reworkedAt: spell.reworkedAt ?? undefined,
+        createdAt: spell.createdAt ?? undefined,
         visibilityRoles: spell.visibilityRoles,
         data: spell.data ?? undefined,
       };

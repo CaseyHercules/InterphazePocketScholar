@@ -78,6 +78,7 @@ export interface Spell {
   publicationStatus?: SpellPublicationStatus;
   supersedesSpellId?: string;
   reworkedAt?: string | Date;
+  createdAt?: string | Date;
   data?: SpellData;
   visibilityRoles?: string[];
 }

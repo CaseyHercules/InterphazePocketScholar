@@ -68,47 +68,116 @@ const STYLE_CLASSES: Record<
   },
 };
 
-function getMetaItems(spell: Spell): string[] {
-  const items: string[] = [];
-  items.push(`Class: ${spell.type || "Unassigned"}`);
-  items.push(`Level: ${toRomanNumeral(spell.level)}`);
+const MONTH_ABBR = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
 
-  if (spell.data?.descriptor && spell.data.descriptor.length > 0) {
-    for (const descriptor of spell.data.descriptor) {
-      items.push(descriptor);
-    }
-  } else {
-    items.push("No descriptors");
+function formatCardDateSlash(value: string | Date | undefined | null): string {
+  if (value == null) {
+    return "—";
   }
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) {
+    return "—";
+  }
+  const mm = MONTH_ABBR[d.getMonth()];
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}/${dd}/${yy}`;
+}
 
-  return items;
+function getMetaItems(spell: Spell): string[] {
+  const descriptors =
+    spell.data?.descriptor && spell.data.descriptor.length > 0
+      ? spell.data.descriptor.join(", ")
+      : "-";
+  return [
+    `Class: ${spell.type || "Unassigned"}`,
+    `Level: ${toRomanNumeral(spell.level)}`,
+    `Descriptors: ${descriptors}`,
+  ];
+}
+
+function mostRecentSlashDate(spell: Spell): string | null {
+  const ms: number[] = [];
+  for (const value of [spell.createdAt, spell.reworkedAt]) {
+    if (value == null) {
+      continue;
+    }
+    const d = typeof value === "string" ? new Date(value) : value;
+    const t = d.getTime();
+    if (!Number.isNaN(t)) {
+      ms.push(t);
+    }
+  }
+  if (ms.length === 0) {
+    return null;
+  }
+  return formatCardDateSlash(new Date(Math.max(...ms)));
 }
 
 export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
   const style = STYLE_CLASSES[styleId];
   const metaItems = getMetaItems(spell);
+  const authorName = spell.author?.trim();
+  const mostRecentDate = mostRecentSlashDate(spell);
   const details = [
     ["Casting Time", spell.data?.castingTime],
     ["Range", spell.data?.range],
     ["Area of Effect", spell.data?.areaOfEffect],
     ["Duration", spell.data?.duration],
     ["Save", spell.data?.save],
+    ["Effect", spell.data?.effect],
   ] as const;
 
   return (
     <article
       className={cn(
-        "relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-md p-4",
+        "relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-md p-4 print:min-h-0 print:p-2.5",
         style.card
       )}
     >
       <header className="space-y-2">
-        <h2 className={cn("text-center text-lg font-bold leading-tight", style.title)}>
-          {spell.title}
-        </h2>
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold">
+        <div className="flex items-start justify-between gap-3">
+          <h2
+            className={cn(
+              "min-w-0 flex-1 text-left text-lg font-bold leading-tight",
+              style.title
+            )}
+          >
+            {spell.title}
+          </h2>
+          {authorName ? (
+            <div
+              className={cn(
+                "max-w-[min(100%,11rem)] shrink-0 truncate text-right text-[9px] leading-tight",
+                style.body
+              )}
+              title={
+                mostRecentDate
+                  ? `Author: ${authorName} ${mostRecentDate}`
+                  : `Author: ${authorName}`
+              }
+            >
+              Author: {authorName}
+              {mostRecentDate ? ` ${mostRecentDate}` : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-semibold">
           {metaItems.map((item) => (
-            <span key={item} className={style.metaItem}>
+            <span key={item} className={cn("px-0.5", style.body)}>
               {item}
             </span>
           ))}
@@ -135,15 +204,6 @@ export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="mt-3 space-y-2">
-        <h3 className={cn("text-xs font-semibold uppercase", style.sectionTitle)}>
-          Specialized Effects
-        </h3>
-        <p className={cn("text-sm leading-snug whitespace-pre-wrap", style.body)}>
-          {spell.data?.effect?.trim() || "No specialized effects provided."}
-        </p>
       </section>
 
       <footer className={cn("mt-3 rounded px-3 py-2 pr-16", style.method)}>

@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Spell, CreateSpellInput } from "@/types/spell";
@@ -28,6 +27,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SpellView } from "@/components/SpellView";
+import { SpellCardTemplate } from "@/components/print-cards/spell-card-template";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminSpellTool() {
   const queryClient = useQueryClient();
@@ -36,6 +43,7 @@ export default function AdminSpellTool() {
   const [isViewing, setIsViewing] = useState(false);
   const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
   const [viewMode, setViewMode] = useState<"catalog" | "review">("catalog");
+  const [previewCardSpell, setPreviewCardSpell] = useState<Spell | null>(null);
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === Role.SUPERADMIN;
   const isReviewer =
@@ -198,7 +206,23 @@ export default function AdminSpellTool() {
                         {spell.author ? ` • ${spell.author}` : ""}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setPreviewCardSpell(spell)}
+                      >
+                        Preview card
+                      </Button>
+                      {isReviewer && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(spell)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -220,6 +244,30 @@ export default function AdminSpellTool() {
               </CardContent>
             </Card>
           )}
+
+          <Dialog
+            open={previewCardSpell !== null}
+            onOpenChange={(open) => !open && setPreviewCardSpell(null)}
+          >
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-4 sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Print card preview</DialogTitle>
+                <DialogDescription>
+                  Same layout as the spell card printing page (default style).
+                </DialogDescription>
+              </DialogHeader>
+              {previewCardSpell && (
+                <div className="overflow-x-auto">
+                  <div className="mx-auto w-full min-w-[280px] max-w-md">
+                    <SpellCardTemplate
+                      spell={previewCardSpell}
+                      styleId="minimal"
+                    />
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           <AlertDialog
             open={spellToDelete !== null}
@@ -253,19 +301,14 @@ export default function AdminSpellTool() {
         <SpellView spell={selectedSpell} />
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">
               {isCreating
                 ? "Create New Spell"
                 : `Edit Spell: ${selectedSpell?.title}`}
             </CardTitle>
-            <CardDescription>
-              {isCreating
-                ? "Create a new spell with the form below"
-                : "Edit the selected spell properties"}
-            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <SpellForm
               initialSpell={selectedSpell ?? undefined}
               onSubmit={async (values: CreateSpellInput) => {

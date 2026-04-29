@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { isAdminRole } from "@/lib/api-auth";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -38,7 +39,7 @@ export async function GET(req: Request, { params }: Params) {
     };
 
     // Limit access to detailed data to admins only
-    const isAdmin = ["ADMIN", "SUPERADMIN"].includes(session.user.role);
+    const isAdmin = isAdminRole(session.user.role);
 
     // If the user is not an admin, only return public event details
     if (!isAdmin) {
@@ -62,7 +63,7 @@ export async function PUT(req: Request, { params }: Params) {
     }
 
     // Only admins can update events
-    if (!["ADMIN", "SUPERADMIN"].includes(session.user.role)) {
+    if (!isAdminRole(session.user.role)) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 

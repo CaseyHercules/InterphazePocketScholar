@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import type { PassportExportScope } from "@/components/passport/pdf/PassportPDFDocument";
+import { generateQrDataUrl } from "@/lib/qr";
 
 const PassportPDFViewer = dynamic(
   () => import("./PassportPDFViewer").then((m) => m.PassportPDFViewer),
@@ -54,11 +55,6 @@ type Character = { id: string; name: string };
 type PassportPDFDebugViewProps = {
   characters: Character[];
 };
-
-async function generateQrDataUrl(url: string): Promise<string> {
-  const QRCode = (await import("qrcode")).default;
-  return QRCode.toDataURL(url, { width: 128, margin: 1 });
-}
 
 export function PassportPDFDebugView({
   characters,

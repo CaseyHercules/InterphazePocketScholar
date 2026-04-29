@@ -3,10 +3,10 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import {
   type SpellPublicationStatus,
-  SPELL_PUBLICATION_STATUS,
 } from "@/types/spell";
 import { authOptions } from "@/lib/auth";
 import { canReviewSpells } from "@/lib/spell-queries";
+import { isApprovalPublicationStatus } from "@/lib/spell-status";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -32,10 +32,7 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Spell ID is required" }, { status: 400 });
     }
 
-    if (
-      body.publicationStatus !== SPELL_PUBLICATION_STATUS.PUBLISHED &&
-      body.publicationStatus !== SPELL_PUBLICATION_STATUS.PUBLISHED_IN_LIBRARY
-    ) {
+    if (!isApprovalPublicationStatus(body.publicationStatus)) {
       return NextResponse.json(
         { error: "Approval requires a published status" },
         { status: 400 }

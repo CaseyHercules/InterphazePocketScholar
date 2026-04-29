@@ -237,16 +237,6 @@ export function isPickSkillByTierEffect(
 /**
  * Type guard to check if an effect is a note/custom effect.
  */
-export function isNoteEffect(effect: SkillEffect): effect is NoteEffect {
-  return (
-    effect.type !== "stat_bonus" &&
-    effect.type !== "skill_modifier" &&
-    effect.type !== "grant_skill" &&
-    effect.type !== "pick_skill_by_tier" &&
-    "note" in effect
-  );
-}
-
 /**
  * Creates a properly structured additionalInfo object from effects and notes.
  * 

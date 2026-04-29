@@ -40,8 +40,8 @@ const ItemDataSchema = z
         uses: z.number().optional(),
       })
       .optional(),
-    magicItem: z.record(z.string()).optional(),
-    incarnateItem: z.record(z.string()).optional(),
+    magicItem: z.record(z.string(), z.string()).optional(),
+    incarnateItem: z.record(z.string(), z.string()).optional(),
   })
   .optional();
 

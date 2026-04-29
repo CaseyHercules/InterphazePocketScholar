@@ -12,12 +12,10 @@ import { authOptions } from "@/lib/auth";
 import { canReviewSpells, getSpellBrowseWhere } from "@/lib/spell-queries";
 import {
   createSpellRecord,
-  parseSpellPublicationStatus,
 } from "@/lib/spell-create";
+import { parseSpellPublicationStatus } from "@/lib/spell-status";
 
-function getPublicationStatus(
-  value?: string
-): SpellPublicationStatus | undefined {
+function getPublicationStatus(value?: string): SpellPublicationStatus | undefined {
   return parseSpellPublicationStatus(value);
 }
 

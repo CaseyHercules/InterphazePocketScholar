@@ -94,10 +94,6 @@ export function createInlineEffectsJson(effects: InlineEffect[]): {
   return { effects };
 }
 
-export function getDingusTitlesFromInlineEffects(json: unknown): string[] {
-  return getDingusItemsFromInlineEffects(json).map((item) => item.title);
-}
-
 export type DingusDisplayItem = { title: string; note?: string };
 
 function formatStatAdjustmentSubtitle(e: InlineEffect & { type: "stat_adjustment" }): string {

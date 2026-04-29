@@ -4,43 +4,9 @@ import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { canReviewSpells } from "@/lib/spell-queries";
 import { renderSpellCardsPdfBuffer } from "@/server/pdf/render-spell-cards-pdf";
-import { appendFile } from "node:fs/promises";
+import { logPdfDebug, pdfBufferResponse } from "@/server/pdf/render-utils";
 
 export const runtime = "nodejs";
-
-function debugLog(
-  runId: string,
-  hypothesisId: string,
-  location: string,
-  message: string,
-  data: Record<string, unknown>
-) {
-  const payload = {
-    sessionId: "16d2f9",
-    runId,
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now(),
-  };
-  // #region agent log
-  fetch("http://127.0.0.1:7303/ingest/ceb4e0c0-a9af-479b-8dd9-06b2280bffe3", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "16d2f9",
-    },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
-  // #endregion
-  // #region agent log
-  appendFile(
-    "/Users/icarus/Documents/Coding/InterphazePocketScholar/.cursor/debug-16d2f9.log",
-    `${JSON.stringify(payload)}\n`
-  ).catch(() => {});
-  // #endregion
-}
 
 type Body = {
   spellIds?: string[];
@@ -90,7 +56,7 @@ function serializeSpellForPdf(row: {
 
 export async function POST(req: Request) {
   const runId = `pdf-route-${Date.now()}`;
-  debugLog(runId, "H1", "route.ts:POST:start", "spell PDF route entered", {
+  logPdfDebug(runId, "H1", "route.ts:POST:start", "spell PDF route entered", {
     runtime,
   });
   const session = await getAuthSession();
@@ -146,7 +112,7 @@ export async function POST(req: Request) {
     ordered.push(serializeSpellForPdf(row));
   }
 
-  debugLog(runId, "H3", "route.ts:POST:payload", "prepared spell payload", {
+  logPdfDebug(runId, "H3", "route.ts:POST:payload", "prepared spell payload", {
     spellCount: ordered.length,
     firstSpellTitleType: typeof ordered[0]?.title,
     firstSpellLevelType: typeof ordered[0]?.level,
@@ -163,16 +129,11 @@ export async function POST(req: Request) {
 
     const stamp = new Date().toISOString().slice(0, 10);
 
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="spell-cards-${stamp}.pdf"`,
-      },
-    });
+    return pdfBufferResponse(buffer, `spell-cards-${stamp}.pdf`);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "PDF rendering failed. Try fewer spells or shorter text.";
-    debugLog(runId, "H4", "route.ts:POST:catch", "renderSpellCardsPdfBuffer failed", {
+    logPdfDebug(runId, "H4", "route.ts:POST:catch", "renderSpellCardsPdfBuffer failed", {
       message,
       name: err instanceof Error ? err.name : "unknown",
       stackTop:

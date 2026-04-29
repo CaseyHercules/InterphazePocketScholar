@@ -7,7 +7,10 @@ import type { CreateSpellInput } from "@/types/spell";
 function apiKeysMatch(secret: string, provided: string): boolean {
   const a = createHash("sha256").update(secret).digest();
   const b = createHash("sha256").update(provided).digest();
-  return a.length === b.length && timingSafeEqual(a, b);
+  return (
+    a.length === b.length &&
+    timingSafeEqual(new Uint8Array(a), new Uint8Array(b))
+  );
 }
 
 function getBearerToken(req: NextRequest): string | null {

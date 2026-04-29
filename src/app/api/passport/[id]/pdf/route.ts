@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getCharacterForPassport } from "@/lib/actions/passport";
 import { PassportPDFDocument } from "@/components/passport/pdf/PassportPDFDocument";
 import React from "react";
-import QRCode from "qrcode";
+import { generateQrDataUrl } from "@/lib/qr";
+import { pdfBufferResponse } from "@/server/pdf/render-utils";
 
 export async function GET(
   req: NextRequest,
@@ -38,10 +39,7 @@ export async function GET(
         ? `https://${process.env.VERCEL_URL}`
         : "https://interphaze-pocket-scholar.vercel.app");
     const passportUrl = `${baseUrl}/passport/${id}`;
-    const qrDataUrl = await QRCode.toDataURL(passportUrl, {
-      width: 128,
-      margin: 1,
-    });
+    const qrDataUrl = await generateQrDataUrl(passportUrl);
 
     const scope = { main, spells, items };
     const playerName = (character.user as { name?: string } | null)?.name ?? null;
@@ -51,17 +49,12 @@ export async function GET(
       playerName,
       scope,
       qrDataUrl,
-    });
+    }) as React.ReactElement<any>;
 
     const { renderToBuffer } = await import("@react-pdf/renderer");
-    const buffer = await renderToBuffer(doc as React.ReactElement);
+    const buffer = await renderToBuffer(doc);
 
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${character.name}-passport.pdf"`,
-      },
-    });
+    return pdfBufferResponse(buffer, `${character.name}-passport.pdf`);
   } catch (err) {
     console.error("PDF generation failed:", err);
     return NextResponse.json(

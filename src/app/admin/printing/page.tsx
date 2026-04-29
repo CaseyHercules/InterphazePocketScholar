@@ -14,19 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { QuarterPagePrintShell } from "@/components/print-cards/quarter-page-print-shell";
-import { SpellCardTemplate } from "@/components/print-cards/spell-card-template";
 import {
-  SpellCardStyleId,
+  DEFAULT_SPELL_CARD_STYLE_ID,
+  QuarterPagePrintShell,
   PrintTemplateId,
-} from "@/components/print-cards/types";
+  getSpellCardKey,
+  renderSpellCardsForPrint,
+} from "@/components/print-cards";
 import { Spell } from "@/types/spell";
 import { toRomanNumeral } from "@/lib/utils/roman-numerals";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 const TEMPLATE_ID: PrintTemplateId = "spell";
-const getSpellValue = (spell: Spell) => spell.id ?? spell.title;
-const DEFAULT_STYLE: SpellCardStyleId = "minimal";
 
 type Spellbook = {
   id: string;
@@ -138,7 +137,7 @@ export default function AdminPrintingPage() {
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const printQueue = useMemo(() => {
-    const spellMap = new Map(spells.map((spell) => [getSpellValue(spell), spell]));
+    const spellMap = new Map(spells.map((spell) => [getSpellCardKey(spell), spell]));
     return printQueueIds
       .map((id) => spellMap.get(id))
       .filter((spell): spell is Spell => Boolean(spell));
@@ -244,14 +243,14 @@ export default function AdminPrintingPage() {
         id: existing.id,
         name,
         spellIds: printQueueIds,
-        styleId: DEFAULT_STYLE,
+        styleId: DEFAULT_SPELL_CARD_STYLE_ID,
       });
       setSelectedSpellbookId(response.data.id);
     } else {
       const response = await axios.post<Spellbook>("/api/admin/spellbooks", {
         name,
         spellIds: printQueueIds,
-        styleId: DEFAULT_STYLE,
+        styleId: DEFAULT_SPELL_CARD_STYLE_ID,
       });
       setSelectedSpellbookId(response.data.id);
     }
@@ -404,7 +403,7 @@ export default function AdminPrintingPage() {
               </thead>
               <tbody>
                 {sortedSpells.map((spell) => {
-                  const spellId = getSpellValue(spell);
+                  const spellId = getSpellCardKey(spell);
                   const detailTitle = [
                     `Title: ${spell.title}`,
                     `Class: ${spell.type || "-"}`,
@@ -472,17 +471,7 @@ export default function AdminPrintingPage() {
       </Card>
 
       {printQueue.length > 0 ? (
-        <QuarterPagePrintShell
-          cards={printQueue.map((spell) => (
-            <SpellCardTemplate
-              key={getSpellValue(spell)}
-              spell={spell}
-              styleId={DEFAULT_STYLE}
-            />
-          ))}
-        >
-          <div />
-        </QuarterPagePrintShell>
+        <QuarterPagePrintShell cards={renderSpellCardsForPrint(printQueue)} />
       ) : (
         <Card className="print:hidden">
           <CardContent className="py-10 text-sm text-muted-foreground">

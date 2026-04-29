@@ -26,21 +26,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { SpellView } from "@/components/SpellView";
-import { SpellCardTemplate } from "@/components/print-cards/spell-card-template";
+import { SpellCardPreview } from "@/components/print-cards";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 export default function AdminSpellTool() {
   const queryClient = useQueryClient();
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [isViewing, setIsViewing] = useState(false);
   const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
   const [viewMode, setViewMode] = useState<"catalog" | "review">("catalog");
   const [previewCardSpell, setPreviewCardSpell] = useState<Spell | null>(null);
@@ -63,33 +61,27 @@ export default function AdminSpellTool() {
 
   const handleSuccess = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(false);
     queryClient.invalidateQueries({ queryKey: ["spells"] });
   };
 
   const handleEdit = (spell: Spell) => {
     setSelectedSpell(spell);
-    setIsViewing(false);
     setIsCreating(false);
   };
 
   const handleCreate = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(true);
   };
 
   const handleBack = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(false);
   };
 
   const handleView = (spell: Spell) => {
-    setSelectedSpell(spell);
-    setIsViewing(true);
-    setIsCreating(false);
+    setPreviewCardSpell(spell);
   };
 
   const handleDelete = async (id: string) => {
@@ -210,7 +202,7 @@ export default function AdminSpellTool() {
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => setPreviewCardSpell(spell)}
+                        onClick={() => handleView(spell)}
                       >
                         Preview card
                       </Button>
@@ -228,7 +220,7 @@ export default function AdminSpellTool() {
                         variant="outline"
                         onClick={() => spell.id && handleApprove(spell.id, "PUBLISHED")}
                       >
-                        Approve Private
+                        Approve
                       </Button>
                       <Button
                         size="sm"
@@ -236,7 +228,7 @@ export default function AdminSpellTool() {
                           spell.id && handleApprove(spell.id, "PUBLISHED_IN_LIBRARY")
                         }
                       >
-                        Approve To Library
+                        Approve and add to library
                       </Button>
                     </div>
                   </div>
@@ -249,21 +241,18 @@ export default function AdminSpellTool() {
             open={previewCardSpell !== null}
             onOpenChange={(open) => !open && setPreviewCardSpell(null)}
           >
-            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-4 sm:max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Print card preview</DialogTitle>
-                <DialogDescription>
-                  Same layout as the spell card printing page (default style).
-                </DialogDescription>
-              </DialogHeader>
+            <DialogContent
+              hideClose
+              className="max-h-[92vh] w-auto max-w-[min(92vw,calc(36rem+2rem))] translate-x-[-50%] translate-y-[-50%] gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-none"
+            >
+              <DialogTitle className="sr-only">Spell card preview</DialogTitle>
               {previewCardSpell && (
-                <div className="overflow-x-auto">
-                  <div className="mx-auto w-full min-w-[280px] max-w-md">
-                    <SpellCardTemplate
-                      spell={previewCardSpell}
-                      styleId="minimal"
-                    />
-                  </div>
+                <div className="relative mx-auto w-fit">
+                  <DialogClose className="absolute -right-1 -top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <X className="h-5 w-5" aria-hidden />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
+                  <SpellCardPreview spell={previewCardSpell} />
                 </div>
               )}
             </DialogContent>
@@ -297,8 +286,6 @@ export default function AdminSpellTool() {
             </AlertDialogContent>
           </AlertDialog>
         </>
-      ) : isViewing && selectedSpell ? (
-        <SpellView spell={selectedSpell} />
       ) : (
         <Card>
           <CardHeader className="p-4 pb-2">

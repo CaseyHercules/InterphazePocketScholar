@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface QuarterPagePrintShellProps {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   cards?: ReactNode[];
 }

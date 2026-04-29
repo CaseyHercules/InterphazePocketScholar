@@ -57,7 +57,7 @@ test("renderer keeps four-card page packing invariant", async () => {
 
 test("html pilot renderer builds spell details and method sections", () => {
   const html = buildSpellCardsHtmlDocument(messySpells(), defaultPdfLayout);
-  assert.ok(html.includes("SPELL DETAILS"));
-  assert.ok(html.includes("METHOD"));
+  assert.ok(html.includes("Spell Details"));
+  assert.ok(html.includes("Method"));
   assert.ok(html.includes("grid-template-columns: 1fr 1fr"));
 });

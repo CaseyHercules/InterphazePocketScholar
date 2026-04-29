@@ -42,6 +42,7 @@ type SortKey = "title" | "class" | "level" | "descriptors";
 type PaperSize = "letter" | "a4";
 type MarginInches = 0.25 | 0.35 | 0.5;
 type PdfRenderer = "pdf-lib" | "html-pilot";
+type HtmlPilotPreset = "editorial-bold" | "luxury-minimal";
 
 function SortableHeader({
   label,
@@ -102,6 +103,7 @@ export default function AdminPrintingPage() {
   const [marginInches, setMarginInches] = useState<MarginInches>(0.25);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const [pdfRenderer, setPdfRenderer] = useState<PdfRenderer>("pdf-lib");
+  const [htmlPilotPreset, setHtmlPilotPreset] = useState<HtmlPilotPreset>("luxury-minimal");
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
 
@@ -231,6 +233,7 @@ export default function AdminPrintingPage() {
           paperSize,
           marginInches,
           showCropMarks,
+          visualPreset: htmlPilotPreset,
         }),
       });
       const contentType = res.headers.get("content-type") ?? "";
@@ -264,7 +267,7 @@ export default function AdminPrintingPage() {
       const stamp = new Date().toISOString().slice(0, 10);
       a.download =
         pdfRenderer === "html-pilot"
-          ? `spell-cards-html-pilot-${stamp}.pdf`
+          ? `spell-cards-html-${htmlPilotPreset}-${stamp}.pdf`
           : `spell-cards-${stamp}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
@@ -273,6 +276,48 @@ export default function AdminPrintingPage() {
       toast({
         title: "PDF export failed",
         description: "Network error while generating the PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleDownloadBothHtmlPresets = async () => {
+    if (printQueueIds.length === 0) return;
+    setPdfLoading(true);
+    try {
+      const presets: HtmlPilotPreset[] = ["editorial-bold", "luxury-minimal"];
+      for (const preset of presets) {
+        const res = await fetch("/api/admin/spell-cards/pdf-html", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            spellIds: printQueueIds,
+            paperSize,
+            marginInches,
+            showCropMarks,
+            visualPreset: preset,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error(`Failed to generate ${preset}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `spell-cards-html-${preset}-${stamp}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setPdfExportOpen(false);
+    } catch {
+      toast({
+        title: "PDF export failed",
+        description: "Unable to generate both HTML pilot variants.",
         variant: "destructive",
       });
     } finally {
@@ -575,6 +620,23 @@ export default function AdminPrintingPage() {
                 </SelectContent>
               </Select>
             </div>
+            {pdfRenderer === "html-pilot" ? (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">HTML pilot style</p>
+                <Select
+                  value={htmlPilotPreset}
+                  onValueChange={(value) => setHtmlPilotPreset(value as HtmlPilotPreset)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select HTML style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="editorial-bold">Editorial Bold</SelectItem>
+                    <SelectItem value="luxury-minimal">Luxury Minimal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <div className="space-y-1">
               <p className="text-sm font-medium">Paper size</p>
               <Select value={paperSize} onValueChange={(value) => setPaperSize(value as PaperSize)}>
@@ -616,6 +678,11 @@ export default function AdminPrintingPage() {
             <Button type="button" variant="outline" onClick={() => setPdfExportOpen(false)}>
               Cancel
             </Button>
+            {pdfRenderer === "html-pilot" ? (
+              <Button type="button" variant="outline" onClick={handleDownloadBothHtmlPresets} disabled={pdfLoading}>
+                {pdfLoading ? "Generating…" : "Download both styles"}
+              </Button>
+            ) : null}
             <Button type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>
               {pdfLoading ? "Generating…" : "Generate & download"}
             </Button>

@@ -6,7 +6,21 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
-const ADMIN_LINKS = [
+type AdminLinkItem =
+  | {
+      href: string;
+      title: string;
+      description: string;
+      external?: false;
+    }
+  | {
+      href: string;
+      title: string;
+      description: string;
+      external: true;
+    };
+
+const ADMIN_LINKS: AdminLinkItem[] = [
   {
     href: "/admin/dash",
     title: "Admin Dashboard",
@@ -67,6 +81,20 @@ const ADMIN_LINKS = [
 ];
 
 const Page = () => {
+  const scanUrl = process.env.NEXT_PUBLIC_SPELL_SCAN_APP_URL?.trim();
+  const links: AdminLinkItem[] = scanUrl
+    ? [
+        ...ADMIN_LINKS,
+        {
+          href: scanUrl,
+          title: "Spell card scan",
+          description:
+            "Capture a spell card with your phone and import into the database (opens separate app).",
+          external: true,
+        },
+      ]
+    : ADMIN_LINKS;
+
   return (
     <div className="w-full py-12 px-6">
       <div className="mb-8">
@@ -76,16 +104,33 @@ const Page = () => {
         </p>
       </div>
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-        {ADMIN_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="group">
-            <Card className="h-full transition-colors group-hover:border-primary/50 group-hover:bg-muted/40">
-              <CardHeader>
-                <CardTitle className="text-lg">{link.title}</CardTitle>
-                <CardDescription>{link.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
+        {links.map((link) =>
+          link.external ? (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group"
+            >
+              <Card className="h-full transition-colors group-hover:border-primary/50 group-hover:bg-muted/40">
+                <CardHeader>
+                  <CardTitle className="text-lg">{link.title}</CardTitle>
+                  <CardDescription>{link.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </a>
+          ) : (
+            <Link key={link.href} href={link.href} className="group">
+              <Card className="h-full transition-colors group-hover:border-primary/50 group-hover:bg-muted/40">
+                <CardHeader>
+                  <CardTitle className="text-lg">{link.title}</CardTitle>
+                  <CardDescription>{link.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          )
+        )}
       </div>
     </div>
   );

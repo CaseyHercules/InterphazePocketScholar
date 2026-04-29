@@ -63,6 +63,12 @@ export async function proxy(req: NextRequest) {
 
   // For API routes, return appropriate status codes
   if (pathname.startsWith("/api/")) {
+    if (
+      pathname === "/api/integrations/spell-import" &&
+      req.method === "POST"
+    ) {
+      return NextResponse.next();
+    }
     if (!token) {
       return new NextResponse("Unauthorized", { status: 401 });
     }

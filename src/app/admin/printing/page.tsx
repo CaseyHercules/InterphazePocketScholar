@@ -1,6 +1,5 @@
 "use client";
 
-import "./print.css";
 import axios from "axios";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,19 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { QuarterPagePrintShell } from "@/components/print-cards/quarter-page-print-shell";
-import { SpellCardTemplate } from "@/components/print-cards/spell-card-template";
 import {
-  SpellCardStyleId,
-  PrintTemplateId,
-} from "@/components/print-cards/types";
+  DEFAULT_SPELL_CARD_STYLE_ID,
+  QuarterPagePrintShell,
+  getSpellCardKey,
+  renderSpellCardsForPrint,
+} from "@/components/print-cards";
 import { Spell } from "@/types/spell";
-import { toRomanNumeral } from "@/lib/utils/roman-numerals";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-
-const TEMPLATE_ID: PrintTemplateId = "spell";
-const getSpellValue = (spell: Spell) => spell.id ?? spell.title;
-const DEFAULT_STYLE: SpellCardStyleId = "minimal";
+import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Spellbook = {
   id: string;
@@ -36,6 +39,8 @@ type Spellbook = {
 };
 
 type SortKey = "title" | "class" | "level" | "descriptors";
+type PaperSize = "letter" | "a4";
+type MarginInches = 0.25 | 0.35 | 0.5;
 
 function SortableHeader({
   label,
@@ -89,11 +94,14 @@ export default function AdminPrintingPage() {
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const handlePrint = () => window.print();
-
   const [printQueueIds, setPrintQueueIds] = useState<string[]>([]);
   const [spellbookName, setSpellbookName] = useState("");
   const [selectedSpellbookId, setSelectedSpellbookId] = useState<string>("");
+  const [paperSize, setPaperSize] = useState<PaperSize>("letter");
+  const [marginInches, setMarginInches] = useState<MarginInches>(0.25);
+  const [showCropMarks, setShowCropMarks] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
 
   const { data: spells = [], isLoading, isError } = useQuery<Spell[]>({
     queryKey: ["spells", "print-preview"],
@@ -138,11 +146,12 @@ export default function AdminPrintingPage() {
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const printQueue = useMemo(() => {
-    const spellMap = new Map(spells.map((spell) => [getSpellValue(spell), spell]));
+    const spellMap = new Map(spells.map((spell) => [getSpellCardKey(spell), spell]));
     return printQueueIds
       .map((id) => spellMap.get(id))
       .filter((spell): spell is Spell => Boolean(spell));
   }, [printQueueIds, spells]);
+  const queuedSheetCount = Math.ceil(printQueue.length / 4);
   const availableClasses = useMemo(
     () =>
       Array.from(
@@ -201,6 +210,66 @@ export default function AdminPrintingPage() {
     return list;
   }, [filteredSpells, sortKey, sortDir]);
 
+  const handleDownloadPdf = async () => {
+    if (printQueueIds.length === 0) {
+      return;
+    }
+    setPdfLoading(true);
+    try {
+      const res = await fetch("/api/admin/spell-cards/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          spellIds: printQueueIds,
+          paperSize,
+          marginInches,
+          showCropMarks,
+        }),
+      });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!res.ok) {
+        let message = `Request failed (${res.status})`;
+        if (contentType.includes("application/json")) {
+          const body = (await res.json()) as { error?: string };
+          if (body.error) {
+            message = body.error;
+          }
+        }
+        toast({
+          title: "PDF export failed",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!contentType.includes("pdf")) {
+        toast({
+          title: "PDF export failed",
+          description: "Server did not return a PDF.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `spell-cards-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setPdfExportOpen(false);
+    } catch {
+      toast({
+        title: "PDF export failed",
+        description: "Network error while generating the PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -244,14 +313,14 @@ export default function AdminPrintingPage() {
         id: existing.id,
         name,
         spellIds: printQueueIds,
-        styleId: DEFAULT_STYLE,
+        styleId: DEFAULT_SPELL_CARD_STYLE_ID,
       });
       setSelectedSpellbookId(response.data.id);
     } else {
       const response = await axios.post<Spellbook>("/api/admin/spellbooks", {
         name,
         spellIds: printQueueIds,
-        styleId: DEFAULT_STYLE,
+        styleId: DEFAULT_SPELL_CARD_STYLE_ID,
       });
       setSelectedSpellbookId(response.data.id);
     }
@@ -271,19 +340,15 @@ export default function AdminPrintingPage() {
     <div className="w-full space-y-6 p-6">
       <div className="print:hidden">
         <h1 className="text-2xl font-semibold">Card Printing</h1>
-        <p className="text-sm text-muted-foreground">
-          Template: {TEMPLATE_ID}. Using Minimal Slate style. Build a print queue
-          or spellbook grouping, then print.
-        </p>
       </div>
 
       <Card className="print:hidden">
         <CardHeader>
-          <CardTitle>Spell Card Controls</CardTitle>
+          <CardTitle>Spellbooks</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-1">
           <div className="space-y-2 lg:col-span-1">
-            <p className="text-sm font-medium">Spellbook Grouping</p>
+            <p className="text-sm font-medium">Spellbook grouping</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input
                 placeholder="Spellbook name"
@@ -361,7 +426,7 @@ export default function AdminPrintingPage() {
                 <SelectItem value="all">All levels</SelectItem>
                 {availableLevels.map((level) => (
                   <SelectItem key={String(level)} value={String(level)}>
-                    Level {toRomanNumeral(level)}
+                    Level {level}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -404,11 +469,11 @@ export default function AdminPrintingPage() {
               </thead>
               <tbody>
                 {sortedSpells.map((spell) => {
-                  const spellId = getSpellValue(spell);
+                  const spellId = getSpellCardKey(spell);
                   const detailTitle = [
                     `Title: ${spell.title}`,
                     `Class: ${spell.type || "-"}`,
-                    `Level: ${toRomanNumeral(spell.level)}`,
+                    `Level: ${spell.level}`,
                     `Descriptors: ${spell.data?.descriptor?.join(", ") || "-"}`,
                     `Casting Time: ${spell.data?.castingTime || "-"}`,
                     `Range: ${spell.data?.range || "-"}`,
@@ -437,7 +502,7 @@ export default function AdminPrintingPage() {
                         {spell.title}
                       </td>
                       <td className="px-3 py-2">{spell.type || "-"}</td>
-                      <td className="px-3 py-2">{toRomanNumeral(spell.level)}</td>
+                      <td className="px-3 py-2 tabular-nums">{spell.level}</td>
                       <td className="px-3 py-2">
                         {spell.data?.descriptor?.length
                           ? spell.data.descriptor.join(", ")
@@ -449,6 +514,10 @@ export default function AdminPrintingPage() {
               </tbody>
             </table>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Queue: {printQueue.length} card{printQueue.length === 1 ? "" : "s"} across{" "}
+            {queuedSheetCount} sheet{queuedSheetCount === 1 ? "" : "s"}.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleAddSelectedToQueue} disabled={selectedIds.length === 0}>
               Add Selected to Print Selection
@@ -462,31 +531,79 @@ export default function AdminPrintingPage() {
             </Button>
             <Button
               className="ml-auto"
-              onClick={handlePrint}
-              disabled={printQueue.length === 0}
+              onClick={() => setPdfExportOpen(true)}
+              disabled={printQueueIds.length === 0 || pdfLoading}
             >
-              Print Queue / Save PDF
+              Download PDF
             </Button>
           </div>
         </CardContent>
       </Card>
 
+      <Dialog open={pdfExportOpen} onOpenChange={setPdfExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>PDF export</DialogTitle>
+            <DialogDescription>
+              Choose paper and margin. PDFs are generated server-side; preview uses the same card
+              layout (5×3 landscape, 2×2 cards per page).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Paper size</p>
+              <Select value={paperSize} onValueChange={(value) => setPaperSize(value as PaperSize)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select paper size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="letter">Letter (11 × 8.5 landscape)</SelectItem>
+                  <SelectItem value="a4">A4 (11.69 × 8.27 landscape)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Page margin</p>
+              <Select
+                value={String(marginInches)}
+                onValueChange={(value) => setMarginInches(Number(value) as MarginInches)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select margin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0.25">0.25 in</SelectItem>
+                  <SelectItem value="0.35">0.35 in</SelectItem>
+                  <SelectItem value="0.5">0.50 in</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showCropMarks}
+                onChange={(event) => setShowCropMarks(event.target.checked)}
+              />
+              Cut guides on PDF cards
+            </label>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setPdfExportOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>
+              {pdfLoading ? "Generating…" : "Generate & download"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {printQueue.length > 0 ? (
-        <QuarterPagePrintShell
-          cards={printQueue.map((spell) => (
-            <SpellCardTemplate
-              key={getSpellValue(spell)}
-              spell={spell}
-              styleId={DEFAULT_STYLE}
-            />
-          ))}
-        >
-          <div />
-        </QuarterPagePrintShell>
+        <QuarterPagePrintShell cards={renderSpellCardsForPrint(printQueue)} />
       ) : (
         <Card className="print:hidden">
           <CardContent className="py-10 text-sm text-muted-foreground">
-            Add spells to the print selection to preview and print cards.
+            Add spells to the print selection to preview cards.
           </CardContent>
         </Card>
       )}

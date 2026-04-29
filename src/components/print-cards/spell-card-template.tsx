@@ -2,11 +2,13 @@ import Image from "next/image";
 import { Spell } from "@/types/spell";
 import { SpellCardStyleId } from "@/components/print-cards/types";
 import { toRomanNumeral } from "@/lib/utils/roman-numerals";
+import { mostRecentSpellCardSeasonYear } from "@/lib/utils/spell-card-date";
 import { cn } from "@/lib/utils";
 
 interface SpellCardTemplateProps {
   spell: Spell;
   styleId: SpellCardStyleId;
+  orientation?: "portrait" | "landscape";
 }
 
 const STYLE_CLASSES: Record<
@@ -68,70 +70,56 @@ const STYLE_CLASSES: Record<
   },
 };
 
-const MONTH_ABBR = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-] as const;
+type Density = "comfortable" | "compact" | "dense";
 
-function formatCardDateSlash(value: string | Date | undefined | null): string {
-  if (value == null) {
-    return "—";
+function totalDetailChars(
+  details: readonly (readonly [string, string | undefined])[]
+): number {
+  let n = 0;
+  for (const [, v] of details) {
+    if (typeof v === "string") {
+      n += v.length;
+    }
   }
-  const d = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(d.getTime())) {
-    return "—";
-  }
-  const mm = MONTH_ABBR[d.getMonth()];
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}/${dd}/${yy}`;
+  return n;
 }
 
-function getMetaItems(spell: Spell): string[] {
-  const descriptors =
+function contentDensity(spell: Spell, detailsChars: number, note: boolean): Density {
+  const desc = spell.description?.length ?? 0;
+  const method = spell.data?.method?.length ?? 0;
+  const total = desc + method + detailsChars;
+  if (note) {
+    if (total > 1600) {
+      return "dense";
+    }
+    if (total > 700) {
+      return "compact";
+    }
+    return "comfortable";
+  }
+  if (total > 3200) {
+    return "dense";
+  }
+  if (total > 1600) {
+    return "compact";
+  }
+  return "comfortable";
+}
+
+export function SpellCardTemplate({
+  spell,
+  styleId,
+  orientation = "portrait",
+}: SpellCardTemplateProps) {
+  const style = STYLE_CLASSES[styleId];
+  const typeLabel = spell.type?.trim() || "Unassigned";
+  const levelRoman = toRomanNumeral(spell.level);
+  const descriptorLine =
     spell.data?.descriptor && spell.data.descriptor.length > 0
       ? spell.data.descriptor.join(", ")
-      : "-";
-  return [
-    `Class: ${spell.type || "Unassigned"}`,
-    `Level: ${toRomanNumeral(spell.level)}`,
-    `Descriptors: ${descriptors}`,
-  ];
-}
-
-function mostRecentSlashDate(spell: Spell): string | null {
-  const ms: number[] = [];
-  for (const value of [spell.createdAt, spell.reworkedAt]) {
-    if (value == null) {
-      continue;
-    }
-    const d = typeof value === "string" ? new Date(value) : value;
-    const t = d.getTime();
-    if (!Number.isNaN(t)) {
-      ms.push(t);
-    }
-  }
-  if (ms.length === 0) {
-    return null;
-  }
-  return formatCardDateSlash(new Date(Math.max(...ms)));
-}
-
-export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
-  const style = STYLE_CLASSES[styleId];
-  const metaItems = getMetaItems(spell);
+      : "—";
   const authorName = spell.author?.trim();
-  const mostRecentDate = mostRecentSlashDate(spell);
+  const mostRecentDate = mostRecentSpellCardSeasonYear(spell);
   const details = [
     ["Casting Time", spell.data?.castingTime],
     ["Range", spell.data?.range],
@@ -141,18 +129,69 @@ export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
     ["Effect", spell.data?.effect],
   ] as const;
 
+  const note = orientation === "landscape";
+  const density = contentDensity(spell, totalDetailChars(details), note);
+
+  const noteSectionLabel = cn(
+    density === "comfortable" && "text-xs tracking-wide",
+    density === "compact" && "text-[11px] tracking-wide",
+    density === "dense" && "text-[10px] tracking-wide"
+  );
+
+  const noteBodyPrimary = cn(
+    density === "comfortable" && "text-sm leading-relaxed",
+    density === "compact" && "text-xs leading-snug",
+    density === "dense" && "text-[11px] leading-snug"
+  );
+
+  const noteDetailsText = cn(
+    density === "comfortable" &&
+      "gap-x-2 gap-y-1 text-xs leading-snug",
+    density === "compact" && "gap-x-1.5 gap-y-0.5 text-[11px] leading-snug",
+    density === "dense" && "gap-x-1 gap-y-0.5 text-[10px] leading-snug"
+  );
+
+  const portraitSectionLabel = cn(
+    density === "comfortable" && "text-xs tracking-wide",
+    density === "compact" && "text-xs",
+    density === "dense" && "text-[10px]"
+  );
+
+  const portraitDesc = cn(
+    density === "comfortable" && "text-base leading-relaxed",
+    density === "compact" && "text-sm leading-snug",
+    density === "dense" && "text-xs leading-snug"
+  );
+
+  const portraitDetailsGrid = cn(
+    density === "comfortable" &&
+      "gap-x-2.5 gap-y-1.5 text-xs leading-snug",
+    density === "compact" && "gap-x-2 gap-y-1 text-[11px] leading-snug",
+    density === "dense" && "gap-x-2 gap-y-1 text-[10px] leading-tight"
+  );
+
+  const portraitMethod = cn(
+    density === "comfortable" && "text-base leading-relaxed",
+    density === "compact" && "text-sm leading-snug",
+    density === "dense" && "text-xs leading-snug"
+  );
+
   return (
     <article
       className={cn(
-        "relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-md p-4 print:min-h-0 print:p-2.5",
+        "relative flex min-h-0 w-full flex-col overflow-hidden rounded-md",
+        note
+          ? "h-full p-2.5"
+          : "h-full min-h-[300px] p-4 print:min-h-0 print:p-2.5",
         style.card
       )}
     >
-      <header className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
+      <header className={cn("shrink-0", note ? "space-y-1" : "space-y-1.5")}>
+        <div className={cn("flex items-start justify-between", note ? "gap-2" : "gap-3")}>
           <h2
             className={cn(
-              "min-w-0 flex-1 text-left text-lg font-bold leading-tight",
+              "min-w-0 flex-1 text-left font-bold leading-tight",
+              note ? "text-base" : "text-lg",
               style.title
             )}
           >
@@ -161,67 +200,131 @@ export function SpellCardTemplate({ spell, styleId }: SpellCardTemplateProps) {
           {authorName ? (
             <div
               className={cn(
-                "max-w-[min(100%,11rem)] shrink-0 truncate text-right text-[9px] leading-tight",
+                "shrink-0 truncate text-right leading-tight opacity-80",
+                note
+                  ? "max-w-[6rem] text-[10px]"
+                  : "max-w-[min(100%,11rem)] text-[9px]",
                 style.body
               )}
               title={
                 mostRecentDate
-                  ? `Author: ${authorName} ${mostRecentDate}`
-                  : `Author: ${authorName}`
+                  ? `Author - ${authorName} · ${mostRecentDate}`
+                  : `Author - ${authorName}`
               }
             >
-              Author: {authorName}
-              {mostRecentDate ? ` ${mostRecentDate}` : null}
+              Author - {authorName}
+              {mostRecentDate ? ` · ${mostRecentDate}` : null}
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-semibold">
-          {metaItems.map((item) => (
-            <span key={item} className={cn("px-0.5", style.body)}>
-              {item}
-            </span>
-          ))}
+        <div
+          className={cn(
+            "flex justify-between gap-2 border-t border-black/[0.06] pt-1 font-normal dark:border-white/[0.08]",
+            note ? "items-start" : "items-baseline",
+            note ? "text-xs leading-snug" : "text-sm leading-snug",
+            style.sectionTitle
+          )}
+        >
+          <div className={cn("min-w-0 flex-1 text-left", style.body)}>
+            <span className="opacity-90">{typeLabel}</span>
+            <span className="mx-1.5 opacity-40">·</span>
+            <span className="opacity-90">Level {levelRoman}</span>
+          </div>
+          <div
+            className={cn(
+              "max-w-[58%] shrink-0 break-words pl-2 text-right leading-snug",
+              style.body
+            )}
+          >
+            <span className={cn("opacity-70", style.sectionTitle)}>Descriptor:</span>{" "}
+            <span className="opacity-90">{descriptorLine}</span>
+          </div>
         </div>
       </header>
 
-      <section className="mt-3 min-h-0 flex-1 space-y-2 overflow-hidden">
-        <h3 className={cn("text-xs font-semibold uppercase", style.sectionTitle)}>
-          Description
-        </h3>
-        <p className={cn("text-sm leading-snug whitespace-pre-wrap", style.body)}>
-          {spell.description?.trim() || "No description provided."}
-        </p>
+      <section
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-hidden",
+          note ? "mt-1.5 gap-0" : "mt-3 gap-0"
+        )}
+      >
+        <div className="spell-card-body min-h-0 flex-1 overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-hidden">
+          <p
+            className={cn(
+              "break-words whitespace-pre-wrap [overflow-wrap:anywhere]",
+              note ? noteBodyPrimary : portraitDesc,
+              style.body
+            )}
+          >
+            {spell.description?.trim() || "No description provided."}
+          </p>
+        </div>
       </section>
 
-      <section className="mt-3 space-y-2">
-        <h3 className={cn("text-xs font-semibold uppercase", style.sectionTitle)}>
+      <section className={cn("shrink-0", note ? "mt-1.5 space-y-1" : "mt-3 space-y-2")}>
+        <h3
+          className={cn(
+            "font-semibold uppercase",
+            note ? noteSectionLabel : portraitSectionLabel,
+            style.sectionTitle
+          )}
+        >
           Spell Details
         </h3>
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+        <div
+          className={cn(
+            "grid grid-cols-2",
+            note ? noteDetailsText : portraitDetailsGrid
+          )}
+        >
           {details.map(([label, value]) => (
-            <div key={label} className={cn("text-[11px] leading-tight", style.body)}>
+            <div key={label} className={style.body}>
               <span className="font-semibold">{label}:</span> {value?.trim() || "-"}
             </div>
           ))}
         </div>
       </section>
 
-      <footer className={cn("mt-3 rounded px-3 py-2 pr-16", style.method)}>
-        <h3 className={cn("text-xs font-semibold uppercase", style.sectionTitle)}>
+      <footer
+        className={cn(
+          "shrink-0",
+          note ? "mt-1.5 rounded px-2 py-1.5 pr-10" : "mt-3 rounded px-3 py-2 pr-16",
+          style.method
+        )}
+      >
+        <h3
+          className={cn(
+            "font-semibold uppercase",
+            note ? noteSectionLabel : portraitSectionLabel,
+            style.sectionTitle
+          )}
+        >
           Method
         </h3>
-        <p className={cn("text-sm leading-snug whitespace-pre-wrap", style.body)}>
+        <p
+          className={cn(
+            "spell-card-method whitespace-pre-wrap",
+            note ? noteBodyPrimary : portraitMethod,
+            style.body
+          )}
+        >
           {spell.data?.method?.trim() || "No method provided."}
         </p>
       </footer>
 
-      <div className="pointer-events-none absolute bottom-3 right-3">
+      <div
+        className={cn(
+          "pointer-events-none absolute",
+          note ? "bottom-1.5 right-1.5" : "bottom-3 right-3"
+        )}
+      >
         <Image
           src="/logo.svg"
           alt="Interphaze logo"
-          width={46}
-          height={32}
+          width={note ? 28 : 46}
+          height={note ? 20 : 32}
           className={style.logo}
+          unoptimized
           priority
         />
       </div>

@@ -6,24 +6,19 @@ import {
   CreateSpellInput,
   UpdateSpellInput,
   type SpellPublicationStatus,
-  SPELL_PUBLICATION_STATUS,
   SPELL_PUBLICATION_STATUSES,
 } from "@/types/spell";
 import { authOptions } from "@/lib/auth";
 import { canReviewSpells, getSpellBrowseWhere } from "@/lib/spell-queries";
+import {
+  createSpellRecord,
+  parseSpellPublicationStatus,
+} from "@/lib/spell-create";
 
 function getPublicationStatus(
   value?: string
 ): SpellPublicationStatus | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  if ((SPELL_PUBLICATION_STATUSES as readonly string[]).includes(value)) {
-    return value as SpellPublicationStatus;
-  }
-
-  return undefined;
+  return parseSpellPublicationStatus(value);
 }
 
 export async function POST(req: Request) {
@@ -34,68 +29,16 @@ export async function POST(req: Request) {
     }
 
     const body: CreateSpellInput = await req.json();
-    const {
-      title,
-      type,
-      data,
-      description,
-      level,
-      characterId,
-      visibilityRoles,
-      author,
-      publicationStatus,
-      supersedesSpellId,
-      reworkedAt,
-    } = body;
 
-    if (!title || level === undefined) {
-      return NextResponse.json(
-        { error: "Title and level are required" },
-        { status: 400 }
-      );
-    }
-
-    const requestedStatus = getPublicationStatus(publicationStatus);
-    if (publicationStatus && !requestedStatus) {
-      return NextResponse.json(
-        { error: "Invalid publication status" },
-        { status: 400 }
-      );
-    }
-
-    const reviewer = canReviewSpells(session.user.role);
-    if (
-      !reviewer &&
-      requestedStatus &&
-      requestedStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
-    ) {
-      return NextResponse.json(
-        { error: "You are not allowed to publish spells" },
-        { status: 403 }
-      );
-    }
-
-    const spell = await prisma.spell.create({
-      data: {
-        title,
-        type,
-        data: data ? JSON.parse(JSON.stringify(data)) : undefined,
-        description,
-        level,
-        author: author || null,
-        characterId: characterId || null,
-        supersedesSpellId: supersedesSpellId || null,
-        reworkedAt: reworkedAt ? new Date(reworkedAt) : null,
-        visibilityRoles: (visibilityRoles ?? []) as Role[],
-        publicationStatus:
-          requestedStatus ??
-          (reviewer
-            ? SPELL_PUBLICATION_STATUS.PUBLISHED
-            : SPELL_PUBLICATION_STATUS.IN_REVIEW),
-      },
+    const result = await createSpellRecord(body, {
+      actingAsReviewer: canReviewSpells(session.user.role),
     });
 
-    return NextResponse.json(spell);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+
+    return NextResponse.json(result.spell);
   } catch {
     return NextResponse.json(
       { error: "Error creating spell" },

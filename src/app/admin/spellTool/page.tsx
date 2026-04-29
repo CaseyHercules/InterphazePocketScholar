@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Spell, CreateSpellInput } from "@/types/spell";
@@ -27,15 +26,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { SpellView } from "@/components/SpellView";
+import { SpellCardPreview } from "@/components/print-cards";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 export default function AdminSpellTool() {
   const queryClient = useQueryClient();
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [isViewing, setIsViewing] = useState(false);
   const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
   const [viewMode, setViewMode] = useState<"catalog" | "review">("catalog");
+  const [previewCardSpell, setPreviewCardSpell] = useState<Spell | null>(null);
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === Role.SUPERADMIN;
   const isReviewer =
@@ -55,33 +61,27 @@ export default function AdminSpellTool() {
 
   const handleSuccess = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(false);
     queryClient.invalidateQueries({ queryKey: ["spells"] });
   };
 
   const handleEdit = (spell: Spell) => {
     setSelectedSpell(spell);
-    setIsViewing(false);
     setIsCreating(false);
   };
 
   const handleCreate = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(true);
   };
 
   const handleBack = () => {
     setSelectedSpell(null);
-    setIsViewing(false);
     setIsCreating(false);
   };
 
   const handleView = (spell: Spell) => {
-    setSelectedSpell(spell);
-    setIsViewing(true);
-    setIsCreating(false);
+    setPreviewCardSpell(spell);
   };
 
   const handleDelete = async (id: string) => {
@@ -198,13 +198,29 @@ export default function AdminSpellTool() {
                         {spell.author ? ` • ${spell.author}` : ""}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleView(spell)}
+                      >
+                        Preview card
+                      </Button>
+                      {isReviewer && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(spell)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => spell.id && handleApprove(spell.id, "PUBLISHED")}
                       >
-                        Approve Private
+                        Approve
                       </Button>
                       <Button
                         size="sm"
@@ -212,7 +228,7 @@ export default function AdminSpellTool() {
                           spell.id && handleApprove(spell.id, "PUBLISHED_IN_LIBRARY")
                         }
                       >
-                        Approve To Library
+                        Approve and add to library
                       </Button>
                     </div>
                   </div>
@@ -220,6 +236,27 @@ export default function AdminSpellTool() {
               </CardContent>
             </Card>
           )}
+
+          <Dialog
+            open={previewCardSpell !== null}
+            onOpenChange={(open) => !open && setPreviewCardSpell(null)}
+          >
+            <DialogContent
+              hideClose
+              className="max-h-[92vh] w-auto max-w-[min(92vw,calc(36rem+2rem))] translate-x-[-50%] translate-y-[-50%] gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-none"
+            >
+              <DialogTitle className="sr-only">Spell card preview</DialogTitle>
+              {previewCardSpell && (
+                <div className="relative mx-auto w-fit">
+                  <DialogClose className="absolute -right-1 -top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <X className="h-5 w-5" aria-hidden />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
+                  <SpellCardPreview spell={previewCardSpell} />
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           <AlertDialog
             open={spellToDelete !== null}
@@ -249,23 +286,16 @@ export default function AdminSpellTool() {
             </AlertDialogContent>
           </AlertDialog>
         </>
-      ) : isViewing && selectedSpell ? (
-        <SpellView spell={selectedSpell} />
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">
               {isCreating
                 ? "Create New Spell"
                 : `Edit Spell: ${selectedSpell?.title}`}
             </CardTitle>
-            <CardDescription>
-              {isCreating
-                ? "Create a new spell with the form below"
-                : "Edit the selected spell properties"}
-            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <SpellForm
               initialSpell={selectedSpell ?? undefined}
               onSubmit={async (values: CreateSpellInput) => {

@@ -55,7 +55,8 @@ const ADMIN_LINKS: AdminLinkItem[] = [
   {
     href: "/admin/spellTool",
     title: "Spell Tool",
-    description: "Update and manage spell values and descriptions.",
+    description:
+      "Update and manage spell values and descriptions. Review queue: /admin/spellTool?view=review or /admin/spellTool/review.",
   },
   {
     href: "/admin/printing",

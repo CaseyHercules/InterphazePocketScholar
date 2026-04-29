@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { isAdminRole } from "@/lib/api-auth";
+import { readEventCollection, writeEventCollection } from "@/lib/event-data";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -27,37 +30,38 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     // Get event data
-    const eventData = (event.data as Record<string, any>) || {};
-
-    // Extract items from event data
-    const eventItems = eventData.items || [];
-
-    // Get item details for the event items
-    const items = [];
-
-    for (const eventItem of eventItems) {
-      if (eventItem.itemId) {
-        const item = await db.item.findUnique({
-          where: { id: eventItem.itemId },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            type: true,
-          },
-        });
-
-        if (item) {
-          items.push({
-            id: item.id,
-            title: item.title,
-            description: item.description,
-            type: item.type,
-            quantity: eventItem.quantity || 1,
-          });
-        }
-      }
-    }
+    const eventItems = readEventCollection<{ itemId?: string; quantity?: number }>(
+      event.data,
+      "items"
+    );
+    const itemIds = eventItems
+      .map((entry) => entry.itemId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    const uniqueIds = [...new Set(itemIds)];
+    const foundItems = await db.item.findMany({
+      where: { id: { in: uniqueIds } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+      },
+    });
+    const itemById = new Map(foundItems.map((item) => [item.id, item]));
+    const items = eventItems
+      .map((eventItem) => {
+        if (!eventItem.itemId) return null;
+        const item = itemById.get(eventItem.itemId);
+        if (!item) return null;
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          type: item.type,
+          quantity: eventItem.quantity || 1,
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
     return NextResponse.json(items);
   } catch {
@@ -74,7 +78,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Check if user is admin
-    if (!["ADMIN", "SUPERADMIN"].includes(session.user.role)) {
+    if (!isAdminRole(session.user.role)) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -96,13 +100,12 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Update event with items
-    const eventData = (event.data as Record<string, any>) || {};
-    eventData.items = items;
+    const eventData = writeEventCollection(event.data, "items", items);
 
     await db.event.update({
       where: { id: eventId },
       data: {
-        data: eventData,
+          data: eventData as Prisma.InputJsonValue,
       },
     });
 

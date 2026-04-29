@@ -125,7 +125,7 @@ export async function POST(req: Request) {
       return new Response(
         JSON.stringify({
           error: "Validation failed",
-          details: error.errors,
+          details: error.issues,
         }),
         {
           status: 422,

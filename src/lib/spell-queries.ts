@@ -2,12 +2,6 @@ import { Prisma, Role } from "@prisma/client";
 import { getVisibilityWhere } from "@/lib/visibility";
 import { SPELL_PUBLICATION_STATUS } from "@/types/spell";
 
-export const SPELL_REVIEWER_ROLES = [
-  Role.SPELLWRIGHT,
-  Role.ADMIN,
-  Role.SUPERADMIN,
-] as const;
-
 export function canReviewSpells(role?: Role | null): boolean {
   return (
     role === Role.SPELLWRIGHT ||

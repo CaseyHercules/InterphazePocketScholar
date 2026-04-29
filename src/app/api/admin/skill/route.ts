@@ -114,7 +114,7 @@ export async function POST(req: Request) {
           return new Response(
             JSON.stringify({
               error: "Validation failed",
-              details: validationError.errors,
+              details: validationError.issues,
             }),
             {
               status: 422,
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
           return new Response(
             JSON.stringify({
               error: "Validation failed",
-              details: validationError.errors,
+              details: validationError.issues,
             }),
             {
               status: 422,
@@ -190,7 +190,7 @@ export async function POST(req: Request) {
       return new Response(
         JSON.stringify({
           error: "Validation failed",
-          details: error.errors,
+          details: error.issues,
         }),
         {
           status: 422,

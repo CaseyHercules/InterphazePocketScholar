@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PassportExportScope } from "./pdf/PassportPDFDocument";
+import { generateQrDataUrl } from "@/lib/qr";
 
 const PDFBlobGenerator = dynamic(
   () => import("./PDFBlobGenerator").then((m) => m.PDFBlobGenerator),
@@ -16,11 +17,6 @@ type PassportPrintButtonProps = {
   character: any;
   playerName?: string | null;
 };
-
-async function generateQrDataUrl(url: string): Promise<string> {
-  const QRCode = (await import("qrcode")).default;
-  return QRCode.toDataURL(url, { width: 128, margin: 1 });
-}
 
 export function PassportPrintButton({
   characterId,

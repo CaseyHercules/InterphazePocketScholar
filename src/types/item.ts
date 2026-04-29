@@ -52,6 +52,3 @@ export interface CreateItemInput {
   visibilityRoles?: string[];
 }
 
-export interface UpdateItemInput extends Partial<CreateItemInput> {
-  id: string;
-}

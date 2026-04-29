@@ -1,50 +1,19 @@
 import type { Spell } from "@/types/spell";
 import type { SpellCardsPdfLayoutOptions } from "@/server/pdf/spell-pdf-layout";
-import { appendFile } from "node:fs/promises";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { mostRecentSpellCardSeasonYear } from "@/lib/utils/spell-card-date";
 import { toRomanNumeral } from "@/lib/utils/roman-numerals";
-
-function debugLog(
-  runId: string,
-  hypothesisId: string,
-  location: string,
-  message: string,
-  data: Record<string, unknown>
-) {
-  const payload = {
-    sessionId: "16d2f9",
-    runId,
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now(),
-  };
-  // #region agent log
-  fetch("http://127.0.0.1:7303/ingest/ceb4e0c0-a9af-479b-8dd9-06b2280bffe3", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "16d2f9",
-    },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
-  // #endregion
-  // #region agent log
-  appendFile(
-    "/Users/icarus/Documents/Coding/InterphazePocketScholar/.cursor/debug-16d2f9.log",
-    `${JSON.stringify(payload)}\n`
-  ).catch(() => {});
-  // #endregion
-}
+import { logPdfDebug } from "@/server/pdf/render-utils";
 
 export async function renderSpellCardsPdfBuffer(
   spells: Spell[],
   layout: SpellCardsPdfLayoutOptions
 ): Promise<Buffer> {
   const runId = `render-module-${Date.now()}`;
-  debugLog(runId, "H2", "render-spell-cards-pdf.ts:entry", "render helper entered", {
+  logPdfDebug(runId, "H2", "render-spell-cards-pdf.ts:entry", "render helper entered", {
     spellCount: spells.length,
     renderer: "pdf-lib",
     paperSize: layout.paperSize,
@@ -59,11 +28,20 @@ export async function renderSpellCardsPdfBuffer(
   const innerHeight = page.height - margin * 2;
   const cardWidth = (innerWidth - gutter) / 2;
   const cardHeight = (innerHeight - gutter) / 2;
+  const [gentiumRegularBytes, gentiumBoldBytes, interRegularBytes, interBoldBytes] = await Promise.all([
+    readFile(path.join(process.cwd(), "public", "fonts", "GentiumBookPlus-Regular.ttf")),
+    readFile(path.join(process.cwd(), "public", "fonts", "GentiumBookPlus-Bold.ttf")),
+    readFile(path.join(process.cwd(), "public", "fonts", "Inter-Regular.ttf")),
+    readFile(path.join(process.cwd(), "public", "fonts", "Inter-Bold.ttf")),
+  ]);
   const slots: (Spell | null)[] = [...spells];
   while (slots.length % 4 !== 0) slots.push(null);
   const document = await PDFDocument.create();
-  const font = await document.embedFont(StandardFonts.TimesRoman);
-  const bold = await document.embedFont(StandardFonts.TimesRomanBold);
+  document.registerFontkit(fontkit);
+  const font = await document.embedFont(new Uint8Array(gentiumRegularBytes));
+  const bold = await document.embedFont(new Uint8Array(gentiumBoldBytes));
+  const ui = await document.embedFont(new Uint8Array(interRegularBytes));
+  const uiBold = await document.embedFont(new Uint8Array(interBoldBytes));
   const palette = {
     text: rgb(0.12, 0.12, 0.14),
     muted: rgb(0.45, 0.45, 0.48),
@@ -73,17 +51,17 @@ export async function renderSpellCardsPdfBuffer(
     guide: rgb(0.52, 0.54, 0.58),
   };
   const spacing = {
-    cardPad: 14,
-    rowGap: 8,
-    bodyLine: 10.5,
-    methodHeight: 74,
+    cardPad: 16,
+    rowGap: 7,
+    bodyLine: 10.35,
+    methodHeight: 78,
   };
   const typeScale = {
-    title: 19,
-    meta: 8.3,
-    body: 7.8,
-    label: 6.9,
-    details: 7.3,
+    title: 21,
+    meta: 8.4,
+    body: 7.55,
+    label: 7.1,
+    details: 7.05,
   };
 
   const safe = (value: unknown, max: number) => String(value ?? "").replace(/\u0000/g, "").trim().slice(0, max);
@@ -91,7 +69,7 @@ export async function renderSpellCardsPdfBuffer(
     value: unknown,
     maxWidth: number,
     size: number,
-    face: typeof font | typeof bold
+    face: typeof font | typeof bold | typeof ui | typeof uiBold
   ) => {
     const source = safe(value, 1000);
     if (!source) return "";
@@ -107,7 +85,7 @@ export async function renderSpellCardsPdfBuffer(
     maxWidth: number,
     size: number,
     maxLines: number,
-    face: typeof font | typeof bold
+    face: typeof font | typeof bold | typeof ui | typeof uiBold
   ): string[] => {
     const words = safe(input, 4000).split(/\s+/).filter(Boolean);
     if (words.length === 0) return ["-"];
@@ -136,6 +114,36 @@ export async function renderSpellCardsPdfBuffer(
     }
     return lines;
   };
+  const drawLabelValue = (args: {
+    sheet: Awaited<ReturnType<typeof document.addPage>>;
+    x: number;
+    y: number;
+    width: number;
+    size: number;
+    label: string;
+    value: string;
+  }) => {
+    const { sheet, x, y, width, size, label, value } = args;
+    const labelText = `${label}:`;
+    const labelWidth = uiBold.widthOfTextAtSize(labelText, size);
+    const valueWidth = Math.max(10, width - labelWidth - 3);
+    sheet.drawText(labelText, {
+      x,
+      y,
+      size,
+      font: uiBold,
+      color: palette.text,
+      maxWidth: width,
+    });
+    sheet.drawText(clampLine(value || "-", valueWidth, size, ui), {
+      x: x + labelWidth + 3,
+      y,
+      size,
+      font: ui,
+      color: palette.text,
+      maxWidth: valueWidth,
+    });
+  };
 
   const drawSpellCard = (
     sheet: Awaited<ReturnType<typeof document.addPage>>,
@@ -162,28 +170,32 @@ export async function renderSpellCardsPdfBuffer(
     const left = x + spacing.cardPad;
     const rightWidth = cardWidth - spacing.cardPad * 2;
     const top = y + cardHeight - spacing.cardPad;
-    let cursorY = top;
-    sheet.drawText(title, {
+    const authorWidth = authorLine
+      ? Math.min(170, uiBold.widthOfTextAtSize(clampLine(authorLine, 190, typeScale.meta, uiBold), typeScale.meta))
+      : 0;
+    const titleMaxWidth = Math.max(100, rightWidth - (authorWidth > 0 ? authorWidth + 14 : 0));
+    let cursorY = top - 1;
+    sheet.drawText(clampLine(title, titleMaxWidth, typeScale.title, bold), {
       x: left,
       y: cursorY,
       size: typeScale.title,
       font: bold,
       color: palette.text,
-      maxWidth: rightWidth,
+      maxWidth: titleMaxWidth,
     });
     if (authorLine) {
-      sheet.drawText(clampLine(authorLine, 140, typeScale.meta, bold), {
-        x: x + cardWidth - spacing.cardPad - 140,
-        y: cursorY + 1.5,
+      sheet.drawText(clampLine(authorLine, authorWidth, typeScale.meta, uiBold), {
+        x: x + cardWidth - spacing.cardPad - authorWidth,
+        y: cursorY + 2.5,
         size: typeScale.meta,
-        font: bold,
+        font: uiBold,
         color: palette.muted,
-        maxWidth: 140,
+        maxWidth: authorWidth,
       });
     }
-    cursorY -= spacing.rowGap + 3;
+    cursorY -= spacing.rowGap + 5;
     if (authorLine) {
-      cursorY -= 1;
+      cursorY -= 1.5;
     }
 
     sheet.drawLine({
@@ -193,23 +205,37 @@ export async function renderSpellCardsPdfBuffer(
       color: palette.border,
     });
 
-    sheet.drawText(clampLine(`${type} · Level ${level}`, rightWidth * 0.56, typeScale.meta, font), {
+    sheet.drawText(clampLine(`${type} · Level ${level}`, rightWidth * 0.56, typeScale.meta, ui), {
       x: left,
-      y: cursorY,
+      y: cursorY + 0.5,
       size: typeScale.meta,
-      font,
+      font: uiBold,
       color: palette.text,
       maxWidth: rightWidth * 0.56,
     });
-    sheet.drawText(clampLine(`Descriptor: ${descriptor}`, rightWidth * 0.42, typeScale.meta, font), {
+    const descriptorWidth = rightWidth * 0.42;
+    const descriptorLabel = "Descriptor:";
+    const descriptorLabelWidth = uiBold.widthOfTextAtSize(descriptorLabel, typeScale.meta);
+    sheet.drawText(descriptorLabel, {
       x: x + cardWidth - spacing.cardPad - rightWidth * 0.42,
-      y: cursorY,
-      size: typeScale.meta,
-      font,
+      y: cursorY + 0.25,
+      size: typeScale.meta - 0.3,
+      font: uiBold,
       color: palette.muted,
-      maxWidth: rightWidth * 0.42,
+      maxWidth: descriptorWidth,
     });
-    cursorY -= spacing.rowGap + 3;
+    sheet.drawText(
+      clampLine(descriptor, Math.max(12, descriptorWidth - descriptorLabelWidth - 4), typeScale.meta, ui),
+      {
+        x: x + cardWidth - spacing.cardPad - rightWidth * 0.42 + descriptorLabelWidth + 4,
+        y: cursorY + 0.25,
+        size: typeScale.meta - 0.3,
+        font: ui,
+        color: palette.muted,
+        maxWidth: Math.max(12, descriptorWidth - descriptorLabelWidth - 4),
+      }
+    );
+    cursorY -= spacing.rowGap + 4;
     sheet.drawLine({
       start: { x: left, y: cursorY },
       end: { x: x + cardWidth - spacing.cardPad, y: cursorY },
@@ -220,9 +246,9 @@ export async function renderSpellCardsPdfBuffer(
 
     const methodBoxY = y + spacing.cardPad;
     const methodBoxHeight = spacing.methodHeight;
-    const detailsHeight = 66;
-    const detailsY = methodBoxY + methodBoxHeight + 10;
-    const bodyBottom = detailsY + detailsHeight + spacing.rowGap;
+    const detailsHeight = 61;
+    const detailsY = methodBoxY + methodBoxHeight + 8;
+    const bodyBottom = detailsY + detailsHeight + spacing.rowGap + 2;
     const availableBodyHeight = Math.max(18, cursorY - bodyBottom);
     const maxBodyLines = Math.max(2, Math.floor(availableBodyHeight / spacing.bodyLine));
     const bodyLines = wrap(description, rightWidth, typeScale.body, maxBodyLines, font);
@@ -243,7 +269,7 @@ export async function renderSpellCardsPdfBuffer(
       x: left,
       y: detailsY + detailsHeight - 10,
       size: typeScale.label,
-      font: bold,
+      font: uiBold,
       color: palette.muted,
     });
     const details = [
@@ -254,28 +280,30 @@ export async function renderSpellCardsPdfBuffer(
       ["Save", spell.data?.save],
       ["Effect", spell.data?.effect],
     ] as const;
-    const colW = (rightWidth - 14) / 2;
+    const colW = (rightWidth - 10) / 2;
     let rowY = detailsY + detailsHeight - 24;
     for (let i = 0; i < details.length; i += 2) {
       const [l1, v1] = details[i];
       const [l2, v2] = details[i + 1];
-      sheet.drawText(clampLine(`${l1}: ${safe(v1 || "-", 80)}`, colW, typeScale.details, font), {
+      drawLabelValue({
+        sheet,
         x: left,
         y: rowY,
+        width: colW,
         size: typeScale.details,
-        font,
-        color: palette.text,
-        maxWidth: colW,
+        label: l1,
+        value: safe(v1 || "-", 80),
       });
-      sheet.drawText(clampLine(`${l2}: ${safe(v2 || "-", 80)}`, colW, typeScale.details, font), {
-        x: left + colW + 14,
+      drawLabelValue({
+        sheet,
+        x: left + colW + 10,
         y: rowY,
+        width: colW,
         size: typeScale.details,
-        font,
-        color: palette.text,
-        maxWidth: colW,
+        label: l2,
+        value: safe(v2 || "-", 80),
       });
-      rowY -= 10.2;
+      rowY -= 9.7;
     }
 
     sheet.drawRectangle({
@@ -291,11 +319,11 @@ export async function renderSpellCardsPdfBuffer(
       x: left,
       y: methodBoxY + methodBoxHeight - 12,
       size: typeScale.label,
-      font: bold,
+      font: uiBold,
       color: palette.muted,
     });
     const methodLines = wrap(method, rightWidth - 2, typeScale.body, 4, font);
-    let methodY = methodBoxY + methodBoxHeight - 22;
+    let methodY = methodBoxY + methodBoxHeight - 20;
     for (const line of methodLines) {
       sheet.drawText(line, {
         x: left,
@@ -341,7 +369,7 @@ export async function renderSpellCardsPdfBuffer(
 
   const bytes = await document.save();
   const buffer = Buffer.from(bytes);
-  debugLog(runId, "H1", "render-spell-cards-pdf.ts:success", "pdf-lib render succeeded", {
+  logPdfDebug(runId, "H1", "render-spell-cards-pdf.ts:success", "pdf-lib render succeeded", {
     pageCount,
     cardCount: spells.length,
     bufferLength: buffer.length,

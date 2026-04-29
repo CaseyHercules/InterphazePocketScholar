@@ -2,20 +2,8 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   CreateSpellInput,
-  SPELL_PUBLICATION_STATUS,
-  SPELL_PUBLICATION_STATUSES,
-  type SpellPublicationStatus,
 } from "@/types/spell";
-
-export function parseSpellPublicationStatus(
-  value?: string
-): SpellPublicationStatus | undefined {
-  if (!value) return undefined;
-  if ((SPELL_PUBLICATION_STATUSES as readonly string[]).includes(value)) {
-    return value as SpellPublicationStatus;
-  }
-  return undefined;
-}
+import { resolveCreatePublicationStatus } from "@/lib/spell-status";
 
 export type CreateSpellRecordOptions = {
   actingAsReviewer: boolean;
@@ -58,26 +46,13 @@ export async function createSpellRecord(
     };
   }
 
-  const requestedStatus = parseSpellPublicationStatus(publicationStatus);
-  if (publicationStatus && !requestedStatus) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Invalid publication status",
-    };
-  }
-
   const reviewer = options.actingAsReviewer;
-  if (
-    !reviewer &&
-    requestedStatus &&
-    requestedStatus !== SPELL_PUBLICATION_STATUS.IN_REVIEW
-  ) {
-    return {
-      ok: false,
-      status: 403,
-      error: "You are not allowed to publish spells",
-    };
+  const publicationDecision = resolveCreatePublicationStatus({
+    requestedStatus: publicationStatus,
+    actingAsReviewer: reviewer,
+  });
+  if (!publicationDecision.ok) {
+    return publicationDecision;
   }
 
   const spell = await prisma.spell.create({
@@ -92,11 +67,7 @@ export async function createSpellRecord(
       supersedesSpellId: supersedesSpellId || null,
       reworkedAt: reworkedAt ? new Date(reworkedAt) : null,
       visibilityRoles: (visibilityRoles ?? []) as Role[],
-      publicationStatus:
-        requestedStatus ??
-        (reviewer
-          ? SPELL_PUBLICATION_STATUS.PUBLISHED
-          : SPELL_PUBLICATION_STATUS.IN_REVIEW),
+      publicationStatus: publicationDecision.publicationStatus,
     },
   });
 

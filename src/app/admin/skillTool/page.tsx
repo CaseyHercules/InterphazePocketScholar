@@ -201,7 +201,6 @@ export default function SkillToolPage() {
         </Card>
       ) : (
         <>
-          {/* <BulkSkillImport /> */}
           <SkillTable
             skills={skills}
             onEdit={handleEdit}

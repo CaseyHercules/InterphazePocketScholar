@@ -50,6 +50,6 @@ test("renderer keeps four-card page packing invariant", async () => {
   ];
   const buf = await renderSpellCardsPdfBuffer(spells, defaultPdfLayout);
   assertPdfMagic(buf);
-  const doc = await PDFDocument.load(buf);
+  const doc = await PDFDocument.load(new Uint8Array(buf));
   assert.equal(doc.getPageCount(), 2);
 });

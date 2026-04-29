@@ -29,6 +29,7 @@ test("spell renderer handles messy edge-case fixture set", async () => {
     showCropMarks: true,
   });
   assertPdfMagic(buf);
+  assert.ok(buf.length > 2000, "styled messy PDF should remain non-trivial");
 });
 
 test("renderer supports a4 layout option", async () => {

@@ -37,7 +37,7 @@ export function renderSpellCardsForPrint(
   options?: RenderSpellCardOptions
 ): ReactElement[] {
   const styleId = options?.styleId ?? DEFAULT_SPELL_CARD_STYLE_ID;
-  const orientation = options?.orientation ?? "portrait";
+  const orientation = options?.orientation ?? SPELL_CARD_PREVIEW_ORIENTATION;
   return spells.map((spell) =>
     createElement(SpellCardTemplate, {
       key: getSpellCardKey(spell),
@@ -52,6 +52,16 @@ export function SpellCardPreviewFrame({ children }: { children: ReactNode }) {
   return (
     <div className="aspect-[5/3] w-[min(92vw,36rem)] max-w-full overflow-hidden rounded-md border border-border/60 shadow-lg">
       <div className="h-full min-h-0 w-full min-w-0">{children}</div>
+    </div>
+  );
+}
+
+export function SpellCardLandscapeFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-full min-h-0 w-full items-center justify-center p-0.5">
+      <div className="aspect-[5/3] h-auto w-full max-h-full max-w-[min(100%,20rem)] overflow-hidden rounded-md border border-border/60 shadow-sm sm:max-w-[min(100%,24rem)]">
+        <div className="h-full min-h-0 w-full min-w-0">{children}</div>
+      </div>
     </div>
   );
 }

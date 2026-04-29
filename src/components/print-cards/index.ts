@@ -17,6 +17,7 @@ export {
   getSpellCardKey,
   renderSpellCard,
   renderSpellCardsForPrint,
+  SpellCardLandscapeFrame,
   SpellCardPreview,
   SpellCardPreviewFrame,
   type RenderSpellCardOptions,

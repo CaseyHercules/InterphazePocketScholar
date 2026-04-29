@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Spell } from "@/types/spell";
 import { SpellCardStyleId } from "@/components/print-cards/types";
 import { toRomanNumeral } from "@/lib/utils/roman-numerals";
+import { mostRecentSpellCardSeasonYear } from "@/lib/utils/spell-card-date";
 import { cn } from "@/lib/utils";
 
 interface SpellCardTemplateProps {
@@ -69,53 +70,6 @@ const STYLE_CLASSES: Record<
   },
 };
 
-const MONTH_ABBR = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-] as const;
-
-function formatCardDateSlash(value: string | Date | undefined | null): string {
-  if (value == null) {
-    return "—";
-  }
-  const d = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(d.getTime())) {
-    return "—";
-  }
-  const mm = MONTH_ABBR[d.getMonth()];
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}/${dd}/${yy}`;
-}
-
-function mostRecentSlashDate(spell: Spell): string | null {
-  const ms: number[] = [];
-  for (const value of [spell.createdAt, spell.reworkedAt]) {
-    if (value == null) {
-      continue;
-    }
-    const d = typeof value === "string" ? new Date(value) : value;
-    const t = d.getTime();
-    if (!Number.isNaN(t)) {
-      ms.push(t);
-    }
-  }
-  if (ms.length === 0) {
-    return null;
-  }
-  return formatCardDateSlash(new Date(Math.max(...ms)));
-}
-
 type Density = "comfortable" | "compact" | "dense";
 
 function totalDetailChars(
@@ -135,10 +89,10 @@ function contentDensity(spell: Spell, detailsChars: number, note: boolean): Dens
   const method = spell.data?.method?.length ?? 0;
   const total = desc + method + detailsChars;
   if (note) {
-    if (total > 2000) {
+    if (total > 1600) {
       return "dense";
     }
-    if (total > 900) {
+    if (total > 700) {
       return "compact";
     }
     return "comfortable";
@@ -165,7 +119,7 @@ export function SpellCardTemplate({
       ? spell.data.descriptor.join(", ")
       : "—";
   const authorName = spell.author?.trim();
-  const mostRecentDate = mostRecentSlashDate(spell);
+  const mostRecentDate = mostRecentSpellCardSeasonYear(spell);
   const details = [
     ["Casting Time", spell.data?.castingTime],
     ["Range", spell.data?.range],
@@ -227,7 +181,7 @@ export function SpellCardTemplate({
       className={cn(
         "relative flex min-h-0 w-full flex-col overflow-hidden rounded-md",
         note
-          ? "h-full p-3"
+          ? "h-full p-2.5"
           : "h-full min-h-[300px] p-4 print:min-h-0 print:p-2.5",
         style.card
       )}
@@ -254,27 +208,19 @@ export function SpellCardTemplate({
               )}
               title={
                 mostRecentDate
-                  ? `Author: ${authorName} ${mostRecentDate}`
-                  : `Author: ${authorName}`
+                  ? `Author - ${authorName} · ${mostRecentDate}`
+                  : `Author - ${authorName}`
               }
             >
-              {note ? (
-                <>
-                  {authorName}
-                  {mostRecentDate ? ` · ${mostRecentDate}` : null}
-                </>
-              ) : (
-                <>
-                  Author: {authorName}
-                  {mostRecentDate ? ` ${mostRecentDate}` : null}
-                </>
-              )}
+              Author - {authorName}
+              {mostRecentDate ? ` · ${mostRecentDate}` : null}
             </div>
           ) : null}
         </div>
         <div
           className={cn(
-            "flex items-baseline justify-between gap-2 border-t border-black/[0.06] pt-1 font-normal dark:border-white/[0.08]",
+            "flex justify-between gap-2 border-t border-black/[0.06] pt-1 font-normal dark:border-white/[0.08]",
+            note ? "items-start" : "items-baseline",
             note ? "text-xs leading-snug" : "text-sm leading-snug",
             style.sectionTitle
           )}
@@ -302,7 +248,7 @@ export function SpellCardTemplate({
           note ? "mt-1.5 gap-0" : "mt-3 gap-0"
         )}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-visible">
+        <div className="spell-card-body min-h-0 flex-1 overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-hidden">
           <p
             className={cn(
               "break-words whitespace-pre-wrap [overflow-wrap:anywhere]",
@@ -357,7 +303,7 @@ export function SpellCardTemplate({
         </h3>
         <p
           className={cn(
-            "whitespace-pre-wrap",
+            "spell-card-method whitespace-pre-wrap",
             note ? noteBodyPrimary : portraitMethod,
             style.body
           )}
@@ -378,6 +324,7 @@ export function SpellCardTemplate({
           width={note ? 28 : 46}
           height={note ? 20 : 32}
           className={style.logo}
+          unoptimized
           priority
         />
       </div>

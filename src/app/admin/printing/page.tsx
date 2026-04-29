@@ -41,6 +41,7 @@ type Spellbook = {
 type SortKey = "title" | "class" | "level" | "descriptors";
 type PaperSize = "letter" | "a4";
 type MarginInches = 0.25 | 0.35 | 0.5;
+type PdfRenderer = "pdf-lib" | "html-pilot";
 
 function SortableHeader({
   label,
@@ -100,6 +101,7 @@ export default function AdminPrintingPage() {
   const [paperSize, setPaperSize] = useState<PaperSize>("letter");
   const [marginInches, setMarginInches] = useState<MarginInches>(0.25);
   const [showCropMarks, setShowCropMarks] = useState(false);
+  const [pdfRenderer, setPdfRenderer] = useState<PdfRenderer>("pdf-lib");
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
 
@@ -216,7 +218,11 @@ export default function AdminPrintingPage() {
     }
     setPdfLoading(true);
     try {
-      const res = await fetch("/api/admin/spell-cards/pdf", {
+      const endpoint =
+        pdfRenderer === "html-pilot"
+          ? "/api/admin/spell-cards/pdf-html"
+          : "/api/admin/spell-cards/pdf";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -255,7 +261,11 @@ export default function AdminPrintingPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `spell-cards-${new Date().toISOString().slice(0, 10)}.pdf`;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download =
+        pdfRenderer === "html-pilot"
+          ? `spell-cards-html-pilot-${stamp}.pdf`
+          : `spell-cards-${stamp}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       setPdfExportOpen(false);
@@ -550,6 +560,21 @@ export default function AdminPrintingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">PDF renderer</p>
+              <Select
+                value={pdfRenderer}
+                onValueChange={(value) => setPdfRenderer(value as PdfRenderer)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select renderer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf-lib">Stable renderer (pdf-lib)</SelectItem>
+                  <SelectItem value="html-pilot">HTML pilot renderer (Playwright)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Paper size</p>
               <Select value={paperSize} onValueChange={(value) => setPaperSize(value as PaperSize)}>

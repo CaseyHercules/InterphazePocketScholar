@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PDFDocument } from "pdf-lib";
 import { renderSpellCardsPdfBuffer } from "@/server/pdf/render-spell-cards-pdf";
+import { buildSpellCardsHtmlDocument } from "@/server/pdf/render-spell-cards-html-pdf";
 import {
   defaultPdfLayout,
   messySpells,
@@ -52,4 +53,11 @@ test("renderer keeps four-card page packing invariant", async () => {
   assertPdfMagic(buf);
   const doc = await PDFDocument.load(new Uint8Array(buf));
   assert.equal(doc.getPageCount(), 2);
+});
+
+test("html pilot renderer builds spell details and method sections", () => {
+  const html = buildSpellCardsHtmlDocument(messySpells(), defaultPdfLayout);
+  assert.ok(html.includes("Spell Details"));
+  assert.ok(html.includes("Method"));
+  assert.ok(html.includes("grid-template-columns: 1fr 1fr"));
 });

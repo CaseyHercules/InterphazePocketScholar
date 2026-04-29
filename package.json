@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:pdf": "tsx --test src/components/print-cards/pdf/spell-cards-pdf.render.test.ts",
     "postinstall": "prisma generate --no-engine"
   },
   "dependencies": {
@@ -70,6 +71,7 @@
     "nanoid": "^5.0.5",
     "next": "^16.1.6",
     "next-auth": "^4.24.5",
+    "pdf-lib": "^1.17.1",
     "postcss": "^8.4.33",
     "qrcode": "^1.5.4",
     "quill": "^2.0.2",
@@ -91,7 +93,8 @@
     "@types/lodash.debounce": "^4.0.9",
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9.39.2",
-    "prisma": "^6.8.2"
+    "prisma": "^6.8.2",
+    "tsx": "^4.21.0"
   },
   "description": "Testing",
   "main": "next.config.js",

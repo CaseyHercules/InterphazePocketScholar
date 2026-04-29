@@ -1,13 +1,46 @@
 import { NextResponse } from "next/server";
-import React from "react";
 import type { Spell, SpellData } from "@/types/spell";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { canReviewSpells } from "@/lib/spell-queries";
-import { SpellCardsPdfDocument } from "@/components/print-cards/pdf/spell-cards-pdf-document";
-import { renderToBuffer } from "@react-pdf/renderer";
+import { renderSpellCardsPdfBuffer } from "@/server/pdf/render-spell-cards-pdf";
+import { appendFile } from "node:fs/promises";
 
 export const runtime = "nodejs";
+
+function debugLog(
+  runId: string,
+  hypothesisId: string,
+  location: string,
+  message: string,
+  data: Record<string, unknown>
+) {
+  const payload = {
+    sessionId: "16d2f9",
+    runId,
+    hypothesisId,
+    location,
+    message,
+    data,
+    timestamp: Date.now(),
+  };
+  // #region agent log
+  fetch("http://127.0.0.1:7303/ingest/ceb4e0c0-a9af-479b-8dd9-06b2280bffe3", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": "16d2f9",
+    },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+  // #endregion
+  // #region agent log
+  appendFile(
+    "/Users/icarus/Documents/Coding/InterphazePocketScholar/.cursor/debug-16d2f9.log",
+    `${JSON.stringify(payload)}\n`
+  ).catch(() => {});
+  // #endregion
+}
 
 type Body = {
   spellIds?: string[];
@@ -56,6 +89,10 @@ function serializeSpellForPdf(row: {
 }
 
 export async function POST(req: Request) {
+  const runId = `pdf-route-${Date.now()}`;
+  debugLog(runId, "H1", "route.ts:POST:start", "spell PDF route entered", {
+    runtime,
+  });
   const session = await getAuthSession();
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -109,19 +146,20 @@ export async function POST(req: Request) {
     ordered.push(serializeSpellForPdf(row));
   }
 
-  const pdfElement = React.createElement(SpellCardsPdfDocument, {
-    spells: ordered,
-    layout: {
-      paperSize,
-      marginInches,
-      showCropMarks,
-    },
+  debugLog(runId, "H3", "route.ts:POST:payload", "prepared spell payload", {
+    spellCount: ordered.length,
+    firstSpellTitleType: typeof ordered[0]?.title,
+    firstSpellLevelType: typeof ordered[0]?.level,
+    firstSpellAuthorType: typeof ordered[0]?.author,
+    firstSpellDescriptorIsArray: Array.isArray(ordered[0]?.data?.descriptor),
   });
 
   try {
-    const buffer = await renderToBuffer(
-      pdfElement as Parameters<typeof renderToBuffer>[0]
-    );
+    const buffer = await renderSpellCardsPdfBuffer(ordered, {
+      paperSize,
+      marginInches,
+      showCropMarks,
+    });
 
     const stamp = new Date().toISOString().slice(0, 10);
 
@@ -132,13 +170,20 @@ export async function POST(req: Request) {
       },
     });
   } catch (err) {
-    console.error("spell-cards pdf render:", err);
-    return NextResponse.json(
-      {
-        error:
-          err instanceof Error ? err.message : "PDF rendering failed. Try fewer spells or shorter text.",
-      },
-      { status: 500 }
-    );
+    const message =
+      err instanceof Error ? err.message : "PDF rendering failed. Try fewer spells or shorter text.";
+    debugLog(runId, "H4", "route.ts:POST:catch", "renderSpellCardsPdfBuffer failed", {
+      message,
+      name: err instanceof Error ? err.name : "unknown",
+      stackTop:
+        err instanceof Error && err.stack
+          ? err.stack.split("\n").slice(0, 4).join(" | ")
+          : "no-stack",
+    });
+    console.error("spell-cards pdf render:", message);
+    if (err instanceof Error && err.stack) {
+      console.error(err.stack);
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

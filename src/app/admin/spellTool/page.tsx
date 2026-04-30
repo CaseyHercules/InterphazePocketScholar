@@ -3,6 +3,8 @@
 import { SpellForm } from "@/components/SpellForm";
 import { SpellTable } from "@/components/SpellTable";
 import { Button } from "@/components/ui/button";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -13,7 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { Spell, CreateSpellInput } from "@/types/spell";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Role } from "@prisma/client";
 import {
@@ -35,19 +36,52 @@ import {
 } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 
-export default function AdminSpellTool() {
+function spellToolHref(
+  pathname: string,
+  searchParams: { toString(): string },
+  mode: "catalog" | "review"
+) {
+  const qs = new URLSearchParams(searchParams.toString());
+  if (mode === "review") {
+    qs.set("view", "review");
+  } else {
+    qs.delete("view");
+  }
+  const s = qs.toString();
+  return s ? `${pathname}?${s}` : pathname;
+}
+
+function AdminSpellTool() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [spellToDelete, setSpellToDelete] = useState<Spell | null>(null);
-  const [viewMode, setViewMode] = useState<"catalog" | "review">("catalog");
+  const [viewMode, setViewMode] = useState<"catalog" | "review">(() =>
+    searchParams.get("view") === "review" ? "review" : "catalog"
+  );
   const [previewCardSpell, setPreviewCardSpell] = useState<Spell | null>(null);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isSuperAdmin = session?.user?.role === Role.SUPERADMIN;
   const isReviewer =
     session?.user?.role === Role.SPELLWRIGHT ||
     session?.user?.role === Role.ADMIN ||
     session?.user?.role === Role.SUPERADMIN;
+
+  useEffect(() => {
+    if (status === "loading") return;
+    const wantsReview = searchParams.get("view") === "review";
+    if (!isReviewer && wantsReview) {
+      router.replace(spellToolHref(pathname, searchParams, "catalog"), {
+        scroll: false,
+      });
+      setViewMode("catalog");
+      return;
+    }
+    setViewMode(wantsReview ? "review" : "catalog");
+  }, [searchParams, isReviewer, status, router, pathname]);
 
   const { data: spells, isLoading } = useQuery<Spell[]>({
     queryKey: ["spells", viewMode],
@@ -57,7 +91,13 @@ export default function AdminSpellTool() {
       const response = await axios.get(endpoint);
       return response.data;
     },
+    enabled:
+      viewMode === "catalog" ||
+      (status !== "loading" && isReviewer),
   });
+
+  const awaitingSessionForReview =
+    viewMode === "review" && status === "loading";
 
   const handleSuccess = () => {
     setSelectedSpell(null);
@@ -142,13 +182,23 @@ export default function AdminSpellTool() {
         <div className="flex gap-2">
           <Button
             variant={viewMode === "catalog" ? "default" : "outline"}
-            onClick={() => setViewMode("catalog")}
+            onClick={() => {
+              setViewMode("catalog");
+              router.replace(spellToolHref(pathname, searchParams, "catalog"), {
+                scroll: false,
+              });
+            }}
           >
             Spell Catalog
           </Button>
           <Button
             variant={viewMode === "review" ? "default" : "outline"}
-            onClick={() => setViewMode("review")}
+            onClick={() => {
+              setViewMode("review");
+              router.replace(spellToolHref(pathname, searchParams, "review"), {
+                scroll: false,
+              });
+            }}
           >
             Review Queue
           </Button>
@@ -182,11 +232,17 @@ export default function AdminSpellTool() {
                 <CardTitle>Spells Awaiting Review</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {isLoading && <div>Loading review queue...</div>}
-                {!isLoading && (spells?.length ?? 0) === 0 && (
+                {(isLoading || awaitingSessionForReview) && (
+                  <div>Loading review queue...</div>
+                )}
+                {!isLoading &&
+                  !awaitingSessionForReview &&
+                  (spells?.length ?? 0) === 0 && (
                   <div>No spells in review.</div>
                 )}
-                {spells?.map((spell) => (
+                {!isLoading &&
+                  !awaitingSessionForReview &&
+                  spells?.map((spell) => (
                   <div
                     key={spell.id}
                     className="border rounded-md p-3 flex items-center justify-between gap-4"
@@ -319,5 +375,17 @@ export default function AdminSpellTool() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function AdminSpellToolPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full p-6 text-sm text-muted-foreground">Loading…</div>
+      }
+    >
+      <AdminSpellTool />
+    </Suspense>
   );
 }

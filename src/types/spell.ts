@@ -81,6 +81,8 @@ export interface Spell {
   createdAt?: string | Date;
   data?: SpellData;
   visibilityRoles?: string[];
+  reviewedByUserId?: string | null;
+  reviewedAt?: string | Date | null;
 }
 
 export interface CreateSpellInput {

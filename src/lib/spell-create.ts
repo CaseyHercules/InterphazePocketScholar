@@ -4,9 +4,14 @@ import {
   CreateSpellInput,
 } from "@/types/spell";
 import { resolveCreatePublicationStatus } from "@/lib/spell-status";
+import {
+  prismaSpellReviewColumns,
+  spellStatusShouldRecordReviewer,
+} from "@/lib/staff-approval";
 
 export type CreateSpellRecordOptions = {
   actingAsReviewer: boolean;
+  reviewerUserId?: string;
 };
 
 export type CreateSpellRecordFailure = {
@@ -55,6 +60,12 @@ export async function createSpellRecord(
     return publicationDecision;
   }
 
+  const pub = publicationDecision.publicationStatus;
+  const review =
+    options.reviewerUserId && spellStatusShouldRecordReviewer(pub)
+      ? prismaSpellReviewColumns(options.reviewerUserId)
+      : {};
+
   const spell = await prisma.spell.create({
     data: {
       title,
@@ -67,7 +78,8 @@ export async function createSpellRecord(
       supersedesSpellId: supersedesSpellId || null,
       reworkedAt: reworkedAt ? new Date(reworkedAt) : null,
       visibilityRoles: (visibilityRoles ?? []) as Role[],
-      publicationStatus: publicationDecision.publicationStatus,
+      publicationStatus: pub,
+      ...review,
     },
   });
 

@@ -77,6 +77,7 @@ model User {
   characters        Character[]
   request           Request[]
   posts             Post[]
+  spellsReviewed    Spell[]     @relation("SpellReviewedBy")
 }
 
 model Skill {
@@ -259,11 +260,15 @@ model Spell {
   reworkedAt        DateTime?
   supersedesSpellId String?
   createdAt         DateTime               @default(now())
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
   character         Character?             @relation(fields: [characterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy        User?                  @relation("SpellReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Restrict)
 
   @@index([characterId])
   @@index([publicationStatus])
   @@index([supersedesSpellId])
+  @@index([reviewedByUserId])
 }
 
 model Spellbook {

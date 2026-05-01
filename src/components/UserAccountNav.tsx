@@ -79,7 +79,7 @@ const UserAccountNav: FC<UserAccountNavProps> = ({ user }) => {
           user?.role === "SPELLWRIGHT") && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/spellwright">Spell and Item Management</Link>
+              <Link href="/admin/spellTool">Spell and Item Management</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

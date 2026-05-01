@@ -14,6 +14,10 @@ import {
   createSpellRecord,
 } from "@/lib/spell-create";
 import { parseSpellPublicationStatus } from "@/lib/spell-status";
+import {
+  prismaSpellReviewColumns,
+  spellStatusShouldRecordReviewer,
+} from "@/lib/staff-approval";
 
 function getPublicationStatus(value?: string): SpellPublicationStatus | undefined {
   return parseSpellPublicationStatus(value);
@@ -30,6 +34,7 @@ export async function POST(req: Request) {
 
     const result = await createSpellRecord(body, {
       actingAsReviewer: canReviewSpells(session.user.role),
+      reviewerUserId: session.user.id,
     });
 
     if (!result.ok) {
@@ -76,6 +81,8 @@ export async function GET() {
         reworkedAt: true,
         createdAt: true,
         visibilityRoles: true,
+        reviewedByUserId: true,
+        reviewedAt: true,
       },
     });
 
@@ -103,6 +110,8 @@ export async function GET() {
         createdAt: spell.createdAt ?? undefined,
         visibilityRoles: spell.visibilityRoles,
         data: spell.data ?? undefined,
+        reviewedByUserId: spell.reviewedByUserId ?? undefined,
+        reviewedAt: spell.reviewedAt ?? undefined,
       };
     });
 
@@ -162,6 +171,11 @@ export async function PUT(req: Request) {
       );
     }
 
+    const reviewStamp =
+      status && spellStatusShouldRecordReviewer(status)
+        ? prismaSpellReviewColumns(session.user.id)
+        : {};
+
     const spell = await prisma.spell.update({
       where: { id },
       data: {
@@ -182,6 +196,7 @@ export async function PUT(req: Request) {
             : null,
         ...(status ? { publicationStatus: status } : {}),
         ...(visibilityRoles ? { visibilityRoles: visibilityRoles as Role[] } : {}),
+        ...reviewStamp,
       },
     });
 

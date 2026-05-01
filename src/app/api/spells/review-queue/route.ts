@@ -33,6 +33,8 @@ export async function GET() {
         reworkedAt: true,
         createdAt: true,
         visibilityRoles: true,
+        reviewedByUserId: true,
+        reviewedAt: true,
       },
     });
 

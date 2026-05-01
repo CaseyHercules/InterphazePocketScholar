@@ -7,6 +7,13 @@ import GoogleProvider from "next-auth/providers/google";
 import { nanoid } from "nanoid";
 import type { OAuthConfig } from "next-auth/providers/oauth";
 import { autoAssignPassportsForEmail } from "@/lib/passport-claim";
+import { canReviewSpells } from "@/lib/spell-queries";
+
+function normalizeEmail(email: string | null | undefined): string | null {
+  if (!email || typeof email !== "string") return null;
+  const trimmed = email.trim().toLowerCase();
+  return trimmed.includes("@") ? trimmed : null;
+}
 
 const getEnv = (key: string) => (process.env[key] ?? "").trim();
 
@@ -117,6 +124,16 @@ export const authOptions: NextAuthOptions = {
       clientId: getEnv("GOOGLE_CLIENT_ID"),
       clientSecret: getEnv("GOOGLE_CLIENT_SECRET"),
       allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        const email = normalizeEmail(profile.email);
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: email ?? undefined,
+          image: profile.picture,
+          role: Role.USER,
+        };
+      },
     }),
     wordPressProvider,
   ],
@@ -126,15 +143,12 @@ export const authOptions: NextAuthOptions = {
         console.error("[auth] signIn: missing account");
         return false;
       }
-      if (!user.email || typeof user.email !== "string" || !user.email.includes("@")) {
+      const email = normalizeEmail(user.email);
+      if (!email) {
         console.error("[auth] signIn: missing or invalid email", {
           provider: account.provider,
           hasEmail: !!user.email,
         });
-        return false;
-      }
-      if (account.provider === "wordpress" && user.email.endsWith("@interphaze.org")) {
-        console.error("[auth] signIn: WordPress returned placeholder email; userinfo may not include email scope");
         return false;
       }
       return true;
@@ -146,38 +160,54 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.image = token.picture;
         session.user.username = token.username;
-        session.user.role = token.role || Role.USER;
-        session.user.isAdmin = token.isAdmin;
-        session.user.isRoot = token.isRoot;
-        session.user.isSpellWright = token.isSpellWright;
-        session.user.isModerator = token.isModerator;
+        const role = token.role || Role.USER;
+        session.user.role = role;
+        session.user.isAdmin = Boolean(token.isAdmin);
+        session.user.isRoot = Boolean(token.isRoot);
+        session.user.isSpellWright = Boolean(token.isSpellWright);
+        session.user.canReviewSpells =
+          token.canReviewSpells ?? canReviewSpells(role);
+        session.user.isModerator = Boolean(token.isModerator);
       }
       return session;
     },
-    async jwt({ token, user, account }) {
-      if (!token.email) return token;
+    async jwt({ token, user }) {
+      const email =
+        normalizeEmail(user?.email as string | undefined) ??
+        normalizeEmail(token.email as string | undefined);
+      if (!email) {
+        return token;
+      }
+      token.email = email;
 
       const dbUser = await db.user.findFirst({
-        where: { email: token.email },
+        where: { email: { equals: email, mode: "insensitive" } },
       });
 
       if (!dbUser) {
-        if (user) {
+        if (user?.id) {
           token.id = user.id;
         }
+        token.role = Role.USER;
+        token.isAdmin = false;
+        token.isRoot = false;
+        token.isSpellWright = false;
+        token.canReviewSpells = false;
+        token.isModerator = false;
         return token;
       }
 
       return {
         id: dbUser.id,
         name: dbUser.name,
-        email: dbUser.email,
+        email: dbUser.email ?? email,
         picture: dbUser.image,
         username: dbUser.username,
         role: dbUser.role || Role.USER,
         isAdmin: dbUser.role === Role.ADMIN,
         isRoot: dbUser.role === Role.SUPERADMIN,
         isSpellWright: dbUser.role === Role.SPELLWRIGHT,
+        canReviewSpells: canReviewSpells(dbUser.role),
         isModerator: dbUser.role === Role.MODERATOR,
       };
     },

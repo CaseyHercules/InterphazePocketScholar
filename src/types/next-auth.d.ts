@@ -13,6 +13,7 @@ declare module "next-auth/jwt" {
     isAdmin?: boolean;
     isRoot?: boolean;
     isSpellWright?: boolean;
+    canReviewSpells?: boolean;
     isModerator?: boolean;
   }
 }
@@ -29,6 +30,7 @@ declare module "next-auth" {
       isAdmin?: boolean;
       isRoot?: boolean;
       isSpellWright?: boolean;
+      canReviewSpells?: boolean;
       isModerator?: boolean;
     };
   }

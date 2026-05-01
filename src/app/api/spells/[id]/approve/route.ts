@@ -7,6 +7,7 @@ import {
 import { authOptions } from "@/lib/auth";
 import { canReviewSpells } from "@/lib/spell-queries";
 import { isApprovalPublicationStatus } from "@/lib/spell-status";
+import { prismaSpellReviewColumns } from "@/lib/staff-approval";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -41,7 +42,10 @@ export async function POST(req: Request, { params }: Params) {
 
     const spell = await prisma.spell.update({
       where: { id },
-      data: { publicationStatus: body.publicationStatus },
+      data: {
+        publicationStatus: body.publicationStatus,
+        ...prismaSpellReviewColumns(session.user.id),
+      },
     });
 
     return NextResponse.json(spell);

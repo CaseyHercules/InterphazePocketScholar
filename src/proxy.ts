@@ -91,9 +91,7 @@ export async function proxy(req: NextRequest) {
     }
     if (
       SPELLWRIGHT_PATHS.some((path) => pathname.includes(path)) &&
-      !token.isSpellWright &&
-      !token.isAdmin &&
-      !token.isRoot
+      !token.canReviewSpells
     ) {
       return new NextResponse("Forbidden", { status: 403 });
     }
@@ -126,9 +124,7 @@ export async function proxy(req: NextRequest) {
   }
   if (
     SPELLWRIGHT_PATHS.some((path) => pathname.startsWith(path)) &&
-    !token.isSpellWright &&
-    !token.isAdmin &&
-    !token.isRoot
+    !token.canReviewSpells
   ) {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }

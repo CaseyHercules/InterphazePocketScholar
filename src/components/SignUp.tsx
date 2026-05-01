@@ -1,8 +1,11 @@
 import { UserAuthForm } from "@/components/user-auth-form";
+import { getEnabledOAuthProviders } from "@/lib/auth";
 import Link from "next/link";
 import { Suspense } from "react";
 
 const SignUp = () => {
+  const oauth = getEnabledOAuthProviders();
+
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <div className="flex flex-col space-y-2 text-center">
@@ -14,7 +17,7 @@ const SignUp = () => {
         </p>
       </div>
       <Suspense fallback={<div className="grid gap-6 animate-pulse"><div className="h-10 bg-muted rounded" /><div className="h-10 bg-muted rounded" /></div>}>
-        <UserAuthForm />
+        <UserAuthForm oauth={oauth} />
       </Suspense>
       <p className="px-8 text-center text-sm text-muted-foreground">
         By continuing, you agree to our{" "}

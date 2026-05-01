@@ -8,9 +8,20 @@ import { signIn } from "next-auth/react";
 import { useToast } from "../hooks/use-toast";
 import { useSearchParams } from "next/navigation";
 
-interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type EnabledOAuthProviders = {
+  google: boolean;
+  wordpress: boolean;
+};
 
-export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
+interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  oauth?: EnabledOAuthProviders;
+}
+
+export function UserAuthForm({
+  className,
+  oauth,
+  ...props
+}: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -35,6 +46,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     }
   };
 
+  const showWp = oauth?.wordpress ?? false;
+  const showGoogle = oauth?.google ?? false;
+  const anyOAuth = showWp || showGoogle;
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <div className="relative">
@@ -47,37 +62,46 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           </span>
         </div>
       </div>
-      <Button
-        variant="outline"
-        type="button"
-        disabled={isLoading}
-        onClick={() => {
-          loginWith("wordpress").catch((error) => {});
-        }}
-      >
-        {isLoading ? (
-          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Icons.wordpress className="mr-2 h-4 w-4" />
-        )}
-        {"\u00A0"}
-        Wordpress
-      </Button>
-      <Button
-        variant="outline"
-        type="button"
-        disabled={isLoading}
-        onClick={() => {
-          loginWith("google").catch((error) => {});
-        }}
-      >
-        {isLoading ? (
-          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Icons.google className="mr-2 h-4 w-4" />
-        )}{" "}
-        Google
-      </Button>
+      {!anyOAuth && (
+        <p className="text-center text-sm text-muted-foreground">
+          Sign-in is temporarily unavailable for this deployment.
+        </p>
+      )}
+      {showWp && (
+        <Button
+          variant="outline"
+          type="button"
+          disabled={isLoading}
+          onClick={() => {
+            loginWith("wordpress").catch(() => {});
+          }}
+        >
+          {isLoading ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.wordpress className="mr-2 h-4 w-4" />
+          )}
+          {"\u00A0"}
+          WordPress
+        </Button>
+      )}
+      {showGoogle && (
+        <Button
+          variant="outline"
+          type="button"
+          disabled={isLoading}
+          onClick={() => {
+            loginWith("google").catch(() => {});
+          }}
+        >
+          {isLoading ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.google className="mr-2 h-4 w-4" />
+          )}{" "}
+          Google
+        </Button>
+      )}
     </div>
   );
 }

@@ -24,6 +24,9 @@ const requiredWordPressEnv = [
   "WORDPRESS_CLIENT_ID",
   "WORDPRESS_CLIENT_SECRET",
 ] as const;
+const AUTH_DEBUG_ENABLED =
+  process.env.NODE_ENV === "development" ||
+  process.env.NEXTAUTH_DEBUG === "true";
 
 function validateAuthEnv() {
   const missing = requiredAuthEnv.filter((k) => !getEnv(k));
@@ -62,54 +65,129 @@ validateAuthEnv();
 validateGoogleEnv();
 validateWordPressEnv();
 
-const wpBaseUrl = getWordPressBaseUrl();
-const wpApiUrl = getEnv("WORDPRESS_API_URL") || wpBaseUrl + "/wp-json";
-
-const wordPressProvider: OAuthConfig<any> = {
-  id: "wordpress",
-  name: "WordPress",
-  type: "oauth",
-  token: `${wpBaseUrl}/oauth/token`,
-  userinfo: `${wpApiUrl}/wp/v2/users/me?context=edit`,
-  clientId: getEnv("WORDPRESS_CLIENT_ID") || undefined,
-  clientSecret: getEnv("WORDPRESS_CLIENT_SECRET") || undefined,
-  authorization: {
-    url: `${wpBaseUrl}/oauth/authorize`,
-    params: { scope: "basic email profile" },
-  },
-  async profile(profile: any, _tokens: any) {
-    const email =
-      profile.OAuthProfile?.email ?? profile.email ?? null;
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      console.error("[auth] WordPress profile missing valid email", {
-        hasOAuthProfile: !!profile.OAuthProfile,
-        hasEmail: !!profile.email,
-      });
+function createWordPressProvider(): OAuthConfig<any> | null {
+  const wpBaseUrl = getWordPressBaseUrl();
+  const clientId = getEnv("WORDPRESS_CLIENT_ID");
+  const clientSecret = getEnv("WORDPRESS_CLIENT_SECRET");
+  if (!wpBaseUrl || !clientId || !clientSecret) {
+    return null;
+  }
+  const wpApiUrl = getEnv("WORDPRESS_API_URL") || wpBaseUrl + "/wp-json";
+  return {
+    id: "wordpress",
+    name: "WordPress",
+    type: "oauth",
+    token: `${wpBaseUrl}/oauth/token`,
+    userinfo: `${wpApiUrl}/wp/v2/users/me?context=edit`,
+    clientId,
+    clientSecret,
+    authorization: {
+      url: `${wpBaseUrl}/oauth/authorize`,
+      params: { scope: "basic email profile" },
+    },
+    async profile(profile: any, _tokens: any) {
+      const email =
+        profile.OAuthProfile?.email ?? profile.email ?? null;
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        console.error("[auth] WordPress profile missing valid email", {
+          hasOAuthProfile: !!profile.OAuthProfile,
+          hasEmail: !!profile.email,
+        });
+        return {
+          id: String(profile.id),
+          name: profile.name || profile.slug || "User",
+          email: "",
+          image: profile.avatar_urls?.["96"] || null,
+          role: Role.USER,
+        };
+      }
       return {
         id: String(profile.id),
-        name: profile.name || profile.slug || "User",
-        email: "",
+        name: profile.name || profile.slug || email.split("@")[0],
+        email: email.trim().toLowerCase(),
         image: profile.avatar_urls?.["96"] || null,
         role: Role.USER,
       };
-    }
-    return {
-      id: String(profile.id),
-      name: profile.name || profile.slug || email.split("@")[0],
-      email: email.trim().toLowerCase(),
-      image: profile.avatar_urls?.["96"] || null,
-      role: Role.USER,
-    };
-  },
-  client: {
-    token_endpoint_auth_method: "client_secret_basic",
-  },
-  checks: ["state"],
-};
+    },
+    client: {
+      token_endpoint_auth_method: "client_secret_basic",
+    },
+    checks: ["state"],
+  };
+}
+
+function buildOAuthProviders(): NextAuthOptions["providers"] {
+  const list: NextAuthOptions["providers"] = [];
+
+  const googleId = getEnv("GOOGLE_CLIENT_ID");
+  const googleSecret = getEnv("GOOGLE_CLIENT_SECRET");
+  if (googleId && googleSecret) {
+    list.push(
+      GoogleProvider({
+        clientId: googleId,
+        clientSecret: googleSecret,
+        allowDangerousEmailAccountLinking: true,
+        profile(profile) {
+          const email = normalizeEmail(profile.email);
+          return {
+            id: profile.sub,
+            name: profile.name,
+            email: email ?? undefined,
+            image: profile.picture,
+            role: Role.USER,
+          };
+        },
+      })
+    );
+  }
+
+  const wp = createWordPressProvider();
+  if (wp) {
+    list.push(wp);
+  }
+
+  return list;
+}
+
+const oauthProviders = buildOAuthProviders();
+if (oauthProviders.length === 0) {
+  console.error(
+    "[auth] No OAuth providers are configured; set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET and/or WordPress OAuth env vars."
+  );
+}
+
+export function getEnabledOAuthProviders(): {
+  google: boolean;
+  wordpress: boolean;
+} {
+  return {
+    google: Boolean(
+      getEnv("GOOGLE_CLIENT_ID") && getEnv("GOOGLE_CLIENT_SECRET")
+    ),
+    wordpress: Boolean(
+      getWordPressBaseUrl() &&
+        getEnv("WORDPRESS_CLIENT_ID") &&
+        getEnv("WORDPRESS_CLIENT_SECRET")
+    ),
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
-  debug: process.env.NODE_ENV === "development",
+  debug: AUTH_DEBUG_ENABLED,
+  logger: {
+    error(code, metadata) {
+      console.error("[next-auth:error]", code, metadata ?? "");
+    },
+    warn(code) {
+      console.warn("[next-auth:warn]", code);
+    },
+    debug(code, metadata) {
+      if (AUTH_DEBUG_ENABLED) {
+        console.log("[next-auth:debug]", code, metadata ?? "");
+      }
+    },
+  },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
@@ -119,24 +197,7 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
     signOut: "/login",
   },
-  providers: [
-    GoogleProvider({
-      clientId: getEnv("GOOGLE_CLIENT_ID"),
-      clientSecret: getEnv("GOOGLE_CLIENT_SECRET"),
-      allowDangerousEmailAccountLinking: true,
-      profile(profile) {
-        const email = normalizeEmail(profile.email);
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: email ?? undefined,
-          image: profile.picture,
-          role: Role.USER,
-        };
-      },
-    }),
-    wordPressProvider,
-  ],
+  providers: oauthProviders,
   callbacks: {
     async signIn({ user, account }) {
       if (!account) {

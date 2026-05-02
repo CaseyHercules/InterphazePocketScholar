@@ -3,6 +3,13 @@ import "server-only";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 
+const databaseUrl = (process.env.PocketScholar_DATABASE_URL ?? "").trim();
+if (!databaseUrl) {
+  throw new Error(
+    "[db] Missing PocketScholar_DATABASE_URL. Prisma adapter cannot persist OAuth users/accounts."
+  );
+}
+
 declare global {
   // eslint-disable-next-line no-var, no-unused-vars
   var cachedPrisma: PrismaClient | undefined;

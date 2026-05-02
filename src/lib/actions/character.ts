@@ -306,7 +306,7 @@ export async function getCharacter(characterId: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const character = await db.character.findUnique({

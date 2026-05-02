@@ -15,7 +15,7 @@ export function SignInPrompt({ eventId }: SignInPromptProps) {
     if (typeof window !== "undefined") {
       localStorage.setItem("loginRedirect", `/events/${eventId}`);
     }
-    router.push("/auth/signin");
+    router.push("/login");
   };
 
   return (

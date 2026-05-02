@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test:pdf": "tsx --test src/components/print-cards/pdf/spell-cards-pdf.render.test.ts",
-    "postinstall": "prisma generate --no-engine"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

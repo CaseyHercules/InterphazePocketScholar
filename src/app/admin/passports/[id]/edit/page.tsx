@@ -23,7 +23,7 @@ export default async function AdminPassportsEditPage({ params }: PageProps) {
     !session?.user ||
     (session.user.role !== "ADMIN" && session.user.role !== "SUPERADMIN")
   ) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const { id } = await params;

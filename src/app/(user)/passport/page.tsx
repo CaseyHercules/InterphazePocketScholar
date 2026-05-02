@@ -18,7 +18,7 @@ export default async function PassportPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   // Fetch user's characters

@@ -24,7 +24,7 @@ export default async function RegistrationPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin?callbackUrl=/events/registration");
+    redirect("/login?callbackUrl=/events/registration");
   }
 
   const registrations = await db.eventRegistration.findMany({

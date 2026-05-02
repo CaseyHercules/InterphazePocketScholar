@@ -20,7 +20,7 @@ export default async function BackstoryPage({ params }: BackstoryPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   // Fetch the character and verify ownership

@@ -22,7 +22,7 @@ export default async function EditCharacterPage({
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const character = await db.character.findUnique({

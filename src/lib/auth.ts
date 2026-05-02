@@ -9,6 +9,24 @@ import type { OAuthConfig } from "next-auth/providers/oauth";
 import { autoAssignPassportsForEmail } from "@/lib/passport-claim";
 import { canReviewSpells } from "@/lib/spell-queries";
 
+const isProduction = process.env.NODE_ENV === "production";
+const localAuthUrl = (process.env.NEXTAUTH_URL_LOCAL ?? "").trim();
+if (!isProduction) {
+  const configuredAuthUrl = (process.env.NEXTAUTH_URL ?? "").trim();
+  if (localAuthUrl) {
+    process.env.NEXTAUTH_URL = localAuthUrl;
+  } else if (
+    configuredAuthUrl &&
+    !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredAuthUrl)
+  ) {
+    const fallbackAuthUrl = `http://localhost:${process.env.PORT || "3000"}`;
+    console.warn(
+      `[auth] NEXTAUTH_URL points to a non-local origin in development (${configuredAuthUrl}). Falling back to ${fallbackAuthUrl}. Set NEXTAUTH_URL_LOCAL to override.`
+    );
+    process.env.NEXTAUTH_URL = fallbackAuthUrl;
+  }
+}
+
 function normalizeEmail(email: string | null | undefined): string | null {
   if (!email || typeof email !== "string") return null;
   const trimmed = email.trim().toLowerCase();
@@ -25,19 +43,45 @@ const requiredWordPressEnv = [
   "WORDPRESS_CLIENT_SECRET",
 ] as const;
 const AUTH_DEBUG_ENABLED =
-  process.env.NODE_ENV === "development" ||
-  process.env.NEXTAUTH_DEBUG === "true";
+  !isProduction || process.env.NEXTAUTH_DEBUG === "true";
 
 function validateAuthEnv() {
   const missing = requiredAuthEnv.filter((k) => !getEnv(k));
   if (missing.length > 0) {
-    console.error(
-      `[auth] Missing required env: ${missing.join(", ")}. OAuth callbacks may fail.`
-    );
+    const message = `[auth] Missing required env: ${missing.join(", ")}. OAuth callbacks may fail.`;
+    if (isProduction) {
+      throw new Error(message);
+    }
+    console.error(message);
+  }
+  const authUrlRaw = getEnv("NEXTAUTH_URL");
+  if (!authUrlRaw) return;
+  let parsedAuthUrl: URL;
+  try {
+    parsedAuthUrl = new URL(authUrlRaw);
+  } catch {
+    throw new Error(`[auth] NEXTAUTH_URL is invalid: ${authUrlRaw}`);
+  }
+  const isLocalHost =
+    parsedAuthUrl.hostname === "localhost" ||
+    parsedAuthUrl.hostname === "127.0.0.1";
+  if (isProduction && parsedAuthUrl.protocol !== "https:" && !isLocalHost) {
+    throw new Error("[auth] NEXTAUTH_URL must use https in production.");
   }
 }
 
 function validateGoogleEnv() {
+  const googleId = getEnv("GOOGLE_CLIENT_ID");
+  const googleSecret = getEnv("GOOGLE_CLIENT_SECRET");
+  const hasPartial = Boolean(googleId) !== Boolean(googleSecret);
+  if (hasPartial) {
+    const message =
+      "[auth] Incomplete Google env. Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.";
+    if (isProduction) {
+      throw new Error(message);
+    }
+    console.warn(message);
+  }
   const missing = requiredGoogleEnv.filter((k) => !getEnv(k));
   if (missing.length > 0) {
     console.warn(
@@ -53,6 +97,16 @@ function getWordPressBaseUrl(): string {
 }
 
 function validateWordPressEnv() {
+  const wpValues = requiredWordPressEnv.map((k) => getEnv(k));
+  const presentCount = wpValues.filter(Boolean).length;
+  if (presentCount > 0 && presentCount < requiredWordPressEnv.length) {
+    const message =
+      "[auth] Incomplete WordPress env. Set WORDPRESS_API_URL, WORDPRESS_CLIENT_ID, and WORDPRESS_CLIENT_SECRET together.";
+    if (isProduction) {
+      throw new Error(message);
+    }
+    console.warn(message);
+  }
   const missing = requiredWordPressEnv.filter((k) => !getEnv(k));
   if (missing.length > 0) {
     console.warn(
@@ -86,17 +140,19 @@ function createWordPressProvider(): OAuthConfig<any> | null {
       params: { scope: "basic email profile" },
     },
     async profile(profile: any, _tokens: any) {
-      const email =
-        profile.OAuthProfile?.email ?? profile.email ?? null;
-      if (!email || typeof email !== "string" || !email.includes("@")) {
+      const email = normalizeEmail(
+        profile.OAuthProfile?.email ?? profile.email ?? null
+      );
+      if (!email) {
         console.error("[auth] WordPress profile missing valid email", {
           hasOAuthProfile: !!profile.OAuthProfile,
           hasEmail: !!profile.email,
+          profileId: profile?.id ?? null,
         });
         return {
           id: String(profile.id),
           name: profile.name || profile.slug || "User",
-          email: "",
+          email: undefined,
           image: profile.avatar_urls?.["96"] || null,
           role: Role.USER,
         };
@@ -104,7 +160,7 @@ function createWordPressProvider(): OAuthConfig<any> | null {
       return {
         id: String(profile.id),
         name: profile.name || profile.slug || email.split("@")[0],
-        email: email.trim().toLowerCase(),
+        email,
         image: profile.avatar_urls?.["96"] || null,
         role: Role.USER,
       };
@@ -129,6 +185,12 @@ function buildOAuthProviders(): NextAuthOptions["providers"] {
         allowDangerousEmailAccountLinking: true,
         profile(profile) {
           const email = normalizeEmail(profile.email);
+          if (!email) {
+            console.error("[auth] Google profile missing valid email", {
+              profileSub: profile?.sub ?? null,
+              hasEmail: !!profile?.email,
+            });
+          }
           return {
             id: profile.sub,
             name: profile.name,
@@ -151,9 +213,12 @@ function buildOAuthProviders(): NextAuthOptions["providers"] {
 
 const oauthProviders = buildOAuthProviders();
 if (oauthProviders.length === 0) {
-  console.error(
-    "[auth] No OAuth providers are configured; set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET and/or WordPress OAuth env vars."
-  );
+  const message =
+    "[auth] No OAuth providers are configured; set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET and/or WordPress OAuth env vars.";
+  if (isProduction) {
+    throw new Error(message);
+  }
+  console.error(message);
 }
 
 export function getEnabledOAuthProviders(): {
@@ -209,6 +274,7 @@ export const authOptions: NextAuthOptions = {
         console.error("[auth] signIn: missing or invalid email", {
           provider: account.provider,
           hasEmail: !!user.email,
+          userId: user.id ?? null,
         });
         return false;
       }
@@ -232,11 +298,18 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       const email =
         normalizeEmail(user?.email as string | undefined) ??
         normalizeEmail(token.email as string | undefined);
       if (!email) {
+        if (user || account) {
+          console.error("[auth] jwt: missing normalized email on auth flow", {
+            provider: account?.provider ?? null,
+            hasUser: Boolean(user),
+            hasTokenEmail: Boolean(token.email),
+          });
+        }
         return token;
       }
       token.email = email;
@@ -259,6 +332,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       return {
+        ...token,
         id: dbUser.id,
         name: dbUser.name,
         email: dbUser.email ?? email,

@@ -15,7 +15,7 @@ export default async function CreateEventPage() {
     !session?.user ||
     (session.user.role !== "ADMIN" && session.user.role !== "SUPERADMIN")
   ) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   return (

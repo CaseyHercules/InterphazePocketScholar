@@ -14,7 +14,7 @@ export default async function CreateCharacterPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   // Fetch all classes for the form

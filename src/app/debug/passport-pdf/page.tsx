@@ -8,7 +8,7 @@ export default async function DebugPassportPDFPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const characters = await db.character.findMany({

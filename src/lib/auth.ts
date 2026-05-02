@@ -86,9 +86,10 @@ function createWordPressProvider(): OAuthConfig<any> | null {
       params: { scope: "basic email profile" },
     },
     async profile(profile: any, _tokens: any) {
-      const email =
-        profile.OAuthProfile?.email ?? profile.email ?? null;
-      if (!email || typeof email !== "string" || !email.includes("@")) {
+      const email = normalizeEmail(
+        profile.OAuthProfile?.email ?? profile.email ?? null
+      );
+      if (!email) {
         console.error("[auth] WordPress profile missing valid email", {
           hasOAuthProfile: !!profile.OAuthProfile,
           hasEmail: !!profile.email,
@@ -104,7 +105,7 @@ function createWordPressProvider(): OAuthConfig<any> | null {
       return {
         id: String(profile.id),
         name: profile.name || profile.slug || email.split("@")[0],
-        email: email.trim().toLowerCase(),
+        email,
         image: profile.avatar_urls?.["96"] || null,
         role: Role.USER,
       };
@@ -209,6 +210,7 @@ export const authOptions: NextAuthOptions = {
         console.error("[auth] signIn: missing or invalid email", {
           provider: account.provider,
           hasEmail: !!user.email,
+          userId: user.id ?? null,
         });
         return false;
       }
@@ -232,11 +234,18 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       const email =
         normalizeEmail(user?.email as string | undefined) ??
         normalizeEmail(token.email as string | undefined);
       if (!email) {
+        if (user || account) {
+          console.error("[auth] jwt: missing normalized email on auth flow", {
+            provider: account?.provider ?? null,
+            hasUser: Boolean(user),
+            hasTokenEmail: Boolean(token.email),
+          });
+        }
         return token;
       }
       token.email = email;
@@ -259,6 +268,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       return {
+        ...token,
         id: dbUser.id,
         name: dbUser.name,
         email: dbUser.email ?? email,

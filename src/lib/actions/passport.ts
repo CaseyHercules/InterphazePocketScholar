@@ -53,7 +53,7 @@ export const getCharacterForPassport = cache(async function getCharacterForPassp
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   // Fetch the character with all its relations
@@ -475,7 +475,7 @@ export async function addSkillToCharacter(
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   try {
@@ -547,7 +547,7 @@ export async function removeSkillFromCharacter(
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   try {

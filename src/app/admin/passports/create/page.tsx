@@ -19,7 +19,7 @@ export default async function AdminPassportsCreatePage() {
     !session?.user ||
     (session.user.role !== "ADMIN" && session.user.role !== "SUPERADMIN")
   ) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const classes = await db.class.findMany({

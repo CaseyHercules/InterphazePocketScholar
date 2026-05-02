@@ -29,7 +29,7 @@ export default async function EventsAdminPage() {
     !session?.user ||
     (session.user.role !== "ADMIN" && session.user.role !== "SUPERADMIN")
   ) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   const events = await db.event.findMany({

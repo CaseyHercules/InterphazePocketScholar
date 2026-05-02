@@ -26,7 +26,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect("/login");
   }
 
   if (session.user.role !== "ADMIN" && session.user.role !== "SUPERADMIN") {

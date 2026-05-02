@@ -56,13 +56,17 @@ function validateAuthEnv() {
   }
   const authUrlRaw = getEnv("NEXTAUTH_URL");
   if (!authUrlRaw) return;
+  let parsedAuthUrl: URL;
   try {
-    const parsed = new URL(authUrlRaw);
-    if (isProduction && parsed.protocol !== "https:") {
-      throw new Error("[auth] NEXTAUTH_URL must use https in production.");
-    }
+    parsedAuthUrl = new URL(authUrlRaw);
   } catch {
     throw new Error(`[auth] NEXTAUTH_URL is invalid: ${authUrlRaw}`);
+  }
+  const isLocalHost =
+    parsedAuthUrl.hostname === "localhost" ||
+    parsedAuthUrl.hostname === "127.0.0.1";
+  if (isProduction && parsedAuthUrl.protocol !== "https:" && !isLocalHost) {
+    throw new Error("[auth] NEXTAUTH_URL must use https in production.");
   }
 }
 

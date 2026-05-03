@@ -1,8 +1,8 @@
 "use client";
 
 import { ExtenededPost } from "@/types/db";
-import { FC, useEffect, useRef } from "react";
-import { useIntersection } from "@mantine/hooks";
+import { FC, useEffect } from "react";
+import { useIntersection } from "@/hooks/use-intersection";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Post from "./Post";
@@ -17,10 +17,7 @@ interface PostListProps {
 }
 
 const PostList: FC<PostListProps> = ({ initialPosts, topicName, userRole }) => {
-  console.log("Initial Posts:", initialPosts);
-  const lastPostRef = useRef<HTMLElement>(null);
   const { ref, entry } = useIntersection({
-    root: lastPostRef.current,
     threshold: 1,
   });
 

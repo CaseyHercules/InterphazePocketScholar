@@ -22,7 +22,7 @@ type AdminLinkItem =
 
 const ADMIN_LINKS: AdminLinkItem[] = [
   {
-    href: "/admin/dash",
+    href: "/admin",
     title: "Admin Dashboard",
     description:
       "Dashboard for all things needed for admins and others to do. Review of things far from being started RN.",

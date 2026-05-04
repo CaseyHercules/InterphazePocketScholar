@@ -141,9 +141,19 @@ export default async function Home() {
           >
             Welcome to the Lands of Interphaze
           </h1>
-          <p className="post-letter mx-auto mt-5 max-w-[600px] text-base leading-relaxed text-stone-600 md:text-xl">
-            One of a kind Family Friendly LARP vacation
-          </p>
+          <div className="post-letter mx-auto mt-5 max-w-2xl space-y-3 text-base leading-relaxed text-stone-600 md:text-lg">
+            <p>
+              Interphaze is a longest running LARP in the midwest. Offering a family-friendly
+              LARP weekend gatherings in the Lands of Interphaze where you step away from everyday
+              life and play together in a shared fantasy world.
+            </p>
+            <p>
+              Expect camping, costumes if you want them, and stories told
+              through intrigue, music, safe staged combat, and spellcraft.
+              Newcomers and veterans alike are welcome. Every Phaze is its own
+              memorable, adventure.
+            </p>
+          </div>
 
           <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
             <Button

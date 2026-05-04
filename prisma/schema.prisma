@@ -6,7 +6,6 @@ datasource db {
   provider          = "postgresql"
   url               = env("PocketScholar_DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode      = "prisma"
 }
 
 model Account {
@@ -63,21 +62,21 @@ model Post {
 }
 
 model User {
-  id                String      @id @default(cuid())
+  id                String              @id @default(cuid())
   name              String?
-  email             String?     @unique
+  email             String?             @unique
   emailVerified     DateTime?
-  username          String?     @unique
+  username          String?             @unique
   image             String?
-  UnallocatedLevels Int         @default(0)
-  UnrequestedSkills Int         @default(0)
-  role              Role        @default(USER)
+  UnallocatedLevels Int                 @default(0)
+  UnrequestedSkills Int                 @default(0)
+  role              Role                @default(USER)
   accounts          Account[]
   sessions          Session[]
   characters        Character[]
   request           Request[]
   posts             Post[]
-  spellsReviewed    Spell[]     @relation("SpellReviewedBy")
+  spellsReviewed    Spell[]             @relation("SpellReviewedBy")
   registrations     EventRegistration[]
 }
 
@@ -330,27 +329,27 @@ model EventFAQ {
 }
 
 model EventRegistration {
-  id                     String          @id
-  eventId                String
-  userId                 String
-  ticketTypeId           String?
-  status                 RegisterStatus  @default(WAITLIST)
-  promoCode              String?
-  promoCodeId            String?
-  stripePaymentId        String?         @unique
-  stripeCheckoutSessionId String?        @unique
-  stripePaymentIntentId  String?         @unique
-  totalAmount            Float?
-  amountPaidCents        Int?
-  currency               String?         @default("usd")
-  discountAmountCents    Int?
-  answers                Json?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime
-  event                  Event           @relation(fields: [eventId], references: [id])
-  user                   User            @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  ticketType             EventTicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull, onUpdate: Restrict)
-  promoCodeRelation      PromoCode?      @relation("EventRegistrationToPromoCode", fields: [promoCodeId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  id                      String           @id
+  eventId                 String
+  userId                  String
+  status                  RegisterStatus   @default(WAITLIST)
+  promoCode               String?
+  stripePaymentId         String?          @unique
+  totalAmount             Float?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime
+  ticketTypeId            String?
+  promoCodeId             String?
+  stripeCheckoutSessionId String?          @unique
+  stripePaymentIntentId   String?          @unique
+  amountPaidCents         Int?
+  currency                String?          @default("usd")
+  discountAmountCents     Int?
+  answers                 Json?
+  event                   Event            @relation(fields: [eventId], references: [id])
+  user                    User             @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  ticketType              EventTicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  promoCodeRelation       PromoCode?       @relation("EventRegistrationToPromoCode", fields: [promoCodeId], references: [id], onDelete: SetNull, onUpdate: Restrict)
 
   @@index([eventId])
   @@index([userId])
@@ -361,18 +360,18 @@ model EventRegistration {
 }
 
 model PromoCode {
-  id           String    @id
-  code         String    @unique
-  discount     Float
-  isPercentage Boolean   @default(true)
-  maxUses      Int?
-  usedCount    Int       @default(0)
-  validFrom    DateTime  @default(now())
-  validUntil   DateTime?
-  eventId      String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime
-  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  id            String              @id
+  code          String              @unique
+  discount      Float
+  isPercentage  Boolean             @default(true)
+  maxUses       Int?
+  usedCount     Int                 @default(0)
+  validFrom     DateTime            @default(now())
+  validUntil    DateTime?
+  eventId       String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Restrict)
   registrations EventRegistration[] @relation("EventRegistrationToPromoCode")
 
   @@index([code])
@@ -393,7 +392,7 @@ model EventTicketType {
   stripePriceId   String?
   metadata        Json?
   createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  updatedAt       DateTime            @default(now()) @updatedAt
   event           Event               @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Restrict)
   registrations   EventRegistration[]
 
@@ -453,6 +452,7 @@ enum RequestType {
   SKILL
   SPELL
   CHARACTER
+  PASSPORT_APPEAL
   OTHER
 }
 

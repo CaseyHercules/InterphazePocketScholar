@@ -42,6 +42,11 @@ async function getEvents() {
             registrations: true,
           },
         },
+        ticketTypes: {
+          select: {
+            amountCents: true,
+          },
+        },
       },
     });
 
@@ -127,11 +132,6 @@ async function EventsList() {
                     <MapPinIcon className="h-4 w-4 mr-2 mt-1" />
                     <div>
                       <p className="font-medium">{event.location}</p>
-                      {event.address && (
-                        <p className="text-xs text-muted-foreground">
-                          {event.address}
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}
@@ -146,10 +146,13 @@ async function EventsList() {
                   </div>
                 )}
 
-                {event.price && (
+                {(event.ticketTypes.length > 0 || event.price) && (
                   <div className="flex items-center">
                     <span className="font-medium">
-                      ${event.price.toFixed(2)}
+                      $
+                      {event.ticketTypes.length > 0
+                        ? (Math.min(...event.ticketTypes.map((t) => t.amountCents)) / 100).toFixed(2)
+                        : event.price?.toFixed(2)}
                     </span>
                   </div>
                 )}

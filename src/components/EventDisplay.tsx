@@ -60,6 +60,11 @@ type EventWithData = Event & {
     registrations: number;
   };
   isRegistered?: boolean;
+  ticketTypes?: Array<{
+    id: string;
+    title: string;
+    amountCents: number;
+  }>;
 };
 
 interface EventDisplayProps {
@@ -92,7 +97,7 @@ export function EventDisplay({
             <MapPin className="h-4 w-4 mr-2" />
             <span>{event.location || "Location TBA"}</span>
           </div>
-          {event.address && (
+          {isAdmin && event.address && (
             <div className="flex items-center">
               <MapPin className="h-4 w-4 mr-2 opacity-0" />
               <span className="text-sm text-muted-foreground">
@@ -122,10 +127,16 @@ export function EventDisplay({
 
         <div className="mt-6 flex justify-between items-center">
           <div>
-            {event.price ? (
-              <p className="font-medium text-lg">
-                Price: ${event.price.toFixed(2)}
-              </p>
+            {event.ticketTypes && event.ticketTypes.length > 0 ? (
+              <div className="space-y-1">
+                {event.ticketTypes.map((ticket) => (
+                  <p key={ticket.id} className="font-medium text-sm">
+                    {ticket.title}: ${(ticket.amountCents / 100).toFixed(2)}
+                  </p>
+                ))}
+              </div>
+            ) : event.price ? (
+              <p className="font-medium text-lg">Price: ${event.price.toFixed(2)}</p>
             ) : (
               <p className="font-medium text-lg">Free Event</p>
             )}

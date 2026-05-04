@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EventDisplay } from "@/components/EventDisplay";
 import { PenSquare, ArrowLeft } from "lucide-react";
+import { TicketingAdminPanel } from "./components/TicketingAdminPanel";
 
 interface EventPageProps {
   params: Promise<{ id: string }>;
@@ -39,6 +40,36 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const event = await db.event.findUnique({
     where: { id },
+    include: {
+      ticketTypes: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
+      promoCodes: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      registrations: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          user: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+          ticketType: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!event) {
@@ -141,6 +172,14 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
         </div>
       </div>
+
+      <TicketingAdminPanel
+        eventId={event.id}
+        isSuperAdmin={session.user.role === "SUPERADMIN"}
+        ticketTypes={event.ticketTypes}
+        promoCodes={event.promoCodes}
+        registrations={event.registrations}
+      />
     </div>
   );
 }

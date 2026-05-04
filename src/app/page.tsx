@@ -121,12 +121,12 @@ export default async function Home() {
   const exploreEntries = await getHomeExploreEntries();
 
   return (
-    <div className="flex w-full flex-col gap-12 pb-10 sm:gap-16 sm:pb-14">
+    <div className="flex w-full flex-col gap-8 pb-8 sm:gap-12 sm:pb-10 md:gap-16 md:pb-14">
       <section
         aria-labelledby="hero-heading"
         className="w-full overflow-hidden rounded-md border border-stone-200/90 bg-gradient-to-b from-[#fffefb] via-[#faf6ee] to-[#f3ebe0] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)]"
       >
-        <div className="mx-auto max-w-3xl px-5 pb-12 pt-11 text-center sm:px-8 sm:pb-16 sm:pt-14">
+        <div className="mx-auto max-w-3xl px-4 pb-10 pt-9 text-center sm:px-8 sm:pb-16 sm:pt-14">
           <div
             className="mb-6 flex items-center justify-center gap-3 text-stone-400"
             aria-hidden
@@ -137,32 +137,33 @@ export default async function Home() {
           </div>
           <h1
             id="hero-heading"
-            className="post-letter text-3xl font-semibold leading-[1.15] text-stone-900 sm:text-5xl sm:leading-tight"
+            className="post-letter text-balance text-2xl font-semibold leading-[1.2] text-stone-900 sm:text-4xl sm:leading-tight md:text-5xl"
           >
             Welcome to the Lands of Interphaze
           </h1>
-          <div className="post-letter mx-auto mt-5 max-w-2xl space-y-3 text-base leading-relaxed text-stone-600 md:text-lg">
+          <div className="post-letter mx-auto mt-5 max-w-2xl space-y-3 text-sm leading-relaxed text-stone-600 text-pretty sm:text-base md:text-lg">
             <p>
-              Interphaze is a longest running LARP in the midwest. Offering a family-friendly
-              LARP weekend gatherings in the Lands of Interphaze where you step away from everyday
-              life and play together in a shared fantasy world.
+              Interphaze is one of the longest-running LARPs in the Midwest. We
+              offer family-friendly weekend gatherings in the Lands of
+              Interphaze where you step away from everyday life and play together
+              in a shared fantasy world.
             </p>
             <p>
               Expect camping, costumes if you want them, and stories told
               through intrigue, music, safe staged combat, and spellcraft.
               Newcomers and veterans alike are welcome. Every Phaze is its own
-              memorable, adventure.
+              memorable adventure.
             </p>
           </div>
 
-          <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
+          <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
             <Button
               asChild
               size="lg"
-              className="post-letter h-12 border-0 bg-stone-800 px-7 text-base text-amber-50 shadow-md hover:bg-stone-700"
+              className="post-letter h-12 w-full min-w-0 border-0 bg-stone-800 px-7 text-base text-amber-50 shadow-md hover:bg-stone-700 sm:w-auto"
             >
               <Link href="/intro" className="gap-2">
-                <BookOpen className="h-5 w-5" aria-hidden />
+                <BookOpen className="h-5 w-5 shrink-0" aria-hidden />
                 New to LARP?
               </Link>
             </Button>
@@ -170,16 +171,16 @@ export default async function Home() {
               asChild
               size="lg"
               variant="outline"
-              className="post-letter h-12 border-stone-300 bg-white/90 px-7 text-base text-stone-800 shadow-sm hover:bg-amber-50/90"
+              className="post-letter h-12 w-full min-w-0 border-stone-300 bg-white/90 px-7 text-base text-stone-800 shadow-sm hover:bg-amber-50/90 sm:w-auto"
             >
               <Link href="/events" className="gap-2">
-                <Calendar className="h-5 w-5" aria-hidden />
+                <Calendar className="h-5 w-5 shrink-0" aria-hidden />
                 Upcoming events
               </Link>
             </Button>
           </div>
 
-          <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-stone-500">
+          <p className="mx-auto mt-6 max-w-md px-1 text-sm leading-relaxed text-stone-500 sm:px-0">
             Been before?{" "}
             <Link
               href="/events"
@@ -203,11 +204,11 @@ export default async function Home() {
         aria-labelledby="gallery-heading"
         className="mx-auto w-full max-w-[1000px] px-3 sm:px-4"
       >
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center sm:mb-8">
           <h2 id="gallery-heading" className="section-heading-medieval mb-3">
             Gallery
           </h2>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">
+          <p className="mx-auto max-w-2xl text-pretty text-sm leading-relaxed text-stone-600 sm:text-base">
             Scenes from Interphaze weekends—costume, combat, and camp. Swipe or
             use the arrows to browse.
           </p>
@@ -254,7 +255,7 @@ export default async function Home() {
         aria-label="Guides and next event"
         className="mx-auto w-full max-w-[1000px] px-3 sm:px-4"
       >
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 md:gap-7 xl:grid-cols-3 xl:gap-8 [&>*]:min-h-0">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-7 xl:grid-cols-3 xl:gap-8 [&>*]:min-h-0">
           {exploreEntries.map((entry) =>
             entry.kind === "nextEvent" ? (
               <NextEventHomeCard key="next-event" event={entry.payload} />
@@ -269,12 +270,12 @@ export default async function Home() {
         aria-labelledby="pillars-heading"
         className="mx-auto w-full max-w-[1000px] px-3 pb-2 pt-2 sm:px-4"
       >
-        <h2 id="pillars-heading" className="section-heading-medieval mb-8">
+        <h2 id="pillars-heading" className="section-heading-medieval mb-6 sm:mb-8">
           Why Interphaze
         </h2>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {pillars.map(({ title, body, Icon }) => (
-            <div key={title} className="medieval-frame rounded-md p-5">
+            <div key={title} className="medieval-frame rounded-md p-4 sm:p-5">
               <div className="flex gap-3 border-b border-stone-200 pb-3">
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-stone-300 bg-amber-50 text-stone-700"
@@ -304,7 +305,7 @@ function TopicExploreCard({ entry }: { entry: TopicCardEntry }) {
       href={entry.href}
       className={cn(
         "medieval-frame medieval-frame-interactive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40",
-        "block rounded-md p-5 no-underline sm:p-6",
+        "block rounded-md p-4 no-underline sm:p-6",
         entry.href === "/intro" &&
           "ring-2 ring-amber-400/35 ring-offset-2 ring-offset-[#fdfbf7]"
       )}

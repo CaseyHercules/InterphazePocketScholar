@@ -23,10 +23,16 @@ const NavBar = async () => {
   return (
     <div className="h-fit w-full bg-transparent px-2 py-2 sm:px-3">
       <div className="container mx-auto flex h-full items-center justify-between gap-2 md:hidden">
-        <MenuSmall />
-        <div className="flex items-center">
-          <Link href="/" className="h-full gap-2">
-            <Icons.logo className="h-10 w-14 sm:h-10 sm:w-14" />
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <MenuSmall />
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-2 text-amber-950 no-underline"
+          >
+            <Icons.logo className="h-8 w-11 shrink-0 sm:h-10 sm:w-14" aria-hidden />
+            <span className="post-letter truncate text-base font-semibold tracking-wide text-amber-900/90">
+              Interphaze
+            </span>
           </Link>
         </div>
         {session?.user ? (
@@ -38,10 +44,10 @@ const NavBar = async () => {
         )}
       </div>
       <div className="mx-auto hidden h-full max-w-[1000px] items-center justify-between gap-2 md:flex">
-        <Link href="/" className="flex items-center gap-2">
-          <Icons.logo className="hidden h-10 w-14 sm:block sm:h-10 sm:w-14" />
-          <p className="post-letter hidden text-xl font-semibold tracking-wide text-amber-900/85 md:block">
-            Pocket Scholar
+        <Link href="/" className="flex items-center gap-2 text-amber-950 no-underline">
+          <Icons.logo className="h-10 w-14 shrink-0" aria-hidden />
+          <p className="post-letter text-xl font-semibold tracking-wide text-amber-900/85">
+            Interphaze
           </p>
         </Link>
 

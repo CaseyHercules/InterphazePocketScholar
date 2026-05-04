@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="wash" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5c4a38" stop-opacity="0.06"/>
+      <stop offset="50%" stop-color="#5c4a38" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#5c4a38" stop-opacity="0.07"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="#4a3d32" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <path stroke-width="1.1" opacity="0.35" d="M80 620 C180 480 280 520 400 440 C520 360 640 400 760 320 C880 240 1000 280 1120 200"/>
+    <path stroke-width="0.9" opacity="0.28" d="M40 380 C200 340 320 260 480 300 C640 340 760 220 920 260 C1040 290 1120 180 1160 120"/>
+    <path stroke-width="0.85" opacity="0.22" d="M60 200 C220 280 360 140 520 200 C680 260 780 120 940 180"/>
+    <path stroke-width="0.75" opacity="0.2" d="M200 720 Q420 660 600 700 T980 640"/>
+    <path stroke-width="1" opacity="0.3" d="M100 500 Q340 420 540 480 T920 420"/>
+    <path stroke-width="0.7" opacity="0.18" d="M340 60 Q520 140 680 80 Q840 20 980 100"/>
+  </g>
+  <g fill="url(#wash)" stroke="#5c4a38" stroke-width="1.2" opacity="0.45">
+    <path d="M180 340 C240 280 320 300 380 360 C440 420 400 500 320 520 C240 540 160 480 140 400 C130 360 150 340 180 340 Z"/>
+    <path d="M680 180 C760 120 860 160 900 240 C940 320 880 400 780 420 C680 440 600 360 620 280 C630 220 640 200 680 180 Z"/>
+    <path d="M520 560 C580 520 660 540 720 600 C780 660 740 740 640 760 C540 780 460 720 460 640 C460 580 480 560 520 560 Z"/>
+    <path d="M880 480 C940 440 1020 460 1060 520 C1100 580 1060 660 980 680 C900 700 820 640 820 560 C820 500 840 480 880 480 Z"/>
+  </g>
+  <g fill="none" stroke="#6b5344" stroke-width="0.65" opacity="0.25">
+    <path d="M420 120 L440 160 L400 160 Z"/>
+    <path d="M920 340 L940 380 L900 380 Z"/>
+    <path d="M260 640 L280 680 L240 680 Z"/>
+  </g>
+</svg>

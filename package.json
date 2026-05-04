@@ -12,6 +12,7 @@
     "seed:content": "tsx scripts/restore-content-documents.ts",
     "seed:classes": "tsx scripts/seed-classes.ts",
     "import:posts:wordpress": "tsx scripts/import-wordpress-posts.ts",
+    "import:interphaze": "tsx scripts/import-interphaze-nav-pages.ts",
     "snapshot:content": "tsx scripts/seed-content-documents.ts",
     "seed:all": "npm run seed:classes && npm run import:posts:wordpress",
     "seed:full": "npm run seed:all && npm run seed:content"

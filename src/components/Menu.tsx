@@ -12,6 +12,20 @@ import {
 
 import { Menu } from "lucide-react";
 
+const NAV_TRIGGER =
+  "post-letter rounded-md border-0 bg-transparent px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-stone-900 focus:bg-amber-50/90 data-[state=open]:bg-amber-50 data-[state=open]:text-stone-900";
+const NAV_ROOT =
+  "flex h-auto flex-wrap items-center gap-0 border-0 bg-transparent p-0 shadow-none md:flex-nowrap";
+
+const DROPDOWN_PANEL =
+  "border border-stone-200/90 bg-white p-1 text-stone-700 shadow-md ring-1 ring-stone-100";
+
+const DROPDOWN_ITEM =
+  "cursor-pointer rounded-sm px-2 py-1.5 text-stone-700 focus:bg-amber-50 focus:text-stone-900";
+
+const SUB_TRIGGER_NESTED =
+  "post-letter text-stone-700 focus:bg-amber-50 data-[state=open]:bg-amber-50";
+
 // Menu configuration
 const MENU_ITEMS = [
   {
@@ -105,12 +119,12 @@ const MenuItem = ({ item }: { item: any }) => {
   if (item.subItems) {
     return (
       <MenubarSub>
-        <MenubarSubTrigger asChild>
+        <MenubarSubTrigger asChild className={SUB_TRIGGER_NESTED}>
           <Link href={item.href}>{item.label}</Link>
         </MenubarSubTrigger>
-        <MenubarSubContent>
+        <MenubarSubContent className={DROPDOWN_PANEL}>
           {item.subItems.map((subItem: any) => (
-            <MenubarItem key={subItem.href} asChild>
+            <MenubarItem key={subItem.href} asChild className={DROPDOWN_ITEM}>
               <Link href={subItem.href}>{subItem.label}</Link>
             </MenubarItem>
           ))}
@@ -120,7 +134,7 @@ const MenuItem = ({ item }: { item: any }) => {
   }
 
   return (
-    <MenubarItem asChild>
+    <MenubarItem asChild className={DROPDOWN_ITEM}>
       <Link href={item.href}>{item.label}</Link>
     </MenubarItem>
   );
@@ -137,12 +151,14 @@ const MenuContent = ({
   const Component = isNested ? MenubarSubContent : MenubarContent;
 
   return (
-    <Component>
+    <Component className={DROPDOWN_PANEL}>
       {items.map((item) => {
         if (Array.isArray(item.items)) {
           return isNested ? (
             <MenubarSub key={item.label}>
-              <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
+              <MenubarSubTrigger className={SUB_TRIGGER_NESTED}>
+                {item.label}
+              </MenubarSubTrigger>
               <MenuContent items={item.items} isNested />
             </MenubarSub>
           ) : (
@@ -156,11 +172,11 @@ const MenuContent = ({
 };
 
 const MenuWide = () => (
-  <div className="hidden sm:block">
-    <Menubar>
+  <div className="hidden md:block">
+    <Menubar className={NAV_ROOT}>
       {MENU_ITEMS.map((item) => (
         <MenubarMenu key={item.label}>
-          <MenubarTrigger>{item.label}</MenubarTrigger>
+          <MenubarTrigger className={NAV_TRIGGER}>{item.label}</MenubarTrigger>
           <MenuContent items={item.items} />
         </MenubarMenu>
       ))}
@@ -169,16 +185,18 @@ const MenuWide = () => (
 );
 
 const MenuSmall = () => (
-  <div className="sm:hidden">
-    <Menubar>
+  <div className="md:hidden">
+    <Menubar className={NAV_ROOT}>
       <MenubarMenu>
-        <MenubarTrigger>
-          <Menu size={24} />
+        <MenubarTrigger className={`${NAV_TRIGGER} px-1`}>
+          <Menu className="h-7 w-7 text-stone-600" strokeWidth={2} />
         </MenubarTrigger>
-        <MenubarContent>
+        <MenubarContent className={DROPDOWN_PANEL}>
           {MENU_ITEMS.map((item) => (
             <MenubarSub key={item.label}>
-              <MenubarSubTrigger>{item.label}</MenubarSubTrigger>
+              <MenubarSubTrigger className={SUB_TRIGGER_NESTED}>
+                {item.label}
+              </MenubarSubTrigger>
               <MenuContent items={item.items} isNested />
             </MenubarSub>
           ))}

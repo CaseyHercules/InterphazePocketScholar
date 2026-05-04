@@ -38,6 +38,12 @@ const ADMIN_LINKS: AdminLinkItem[] = [
     description: "View and edit registered users. Only SUPERADMIN can change roles.",
   },
   {
+    href: "/admin/media",
+    title: "Site media",
+    description:
+      "Upload home gallery and page background images via UploadThing (admin only).",
+  },
+  {
     href: "/admin/passports",
     title: "Passport Management",
     description: "Create, assign, and edit character passports. Assign passports to users by email or username.",

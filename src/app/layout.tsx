@@ -1,8 +1,11 @@
+import type { CSSProperties } from "react";
+
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Inter, Gentium_Book_Plus } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
+import { getPageBackgroundImageUrl } from "@/lib/page-background";
 import Providers from "./providers";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -51,22 +54,30 @@ const gbp = Gentium_Book_Plus({
   variable: "--font-gentium-book-plus",
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   authModal,
 }: {
   children: React.ReactNode;
   authModal: React.ReactNode;
 }) {
+  const pageBgUrl = await getPageBackgroundImageUrl();
+  const pageWatermarkStyle: CSSProperties | undefined = pageBgUrl
+    ? {
+        ["--page-watermark-url" as string]: `url(${JSON.stringify(pageBgUrl)})`,
+      }
+    : undefined;
+
   return (
     <html
       lang="en"
       className={cn(
-        "bg-white text-stone-900 antialias light",
+        "bg-[#efe8dc] text-stone-800 antialias light",
         inter.className,
         gbp.className,
         gbp.variable
       )}
+      style={pageWatermarkStyle}
     >
       <body
         className="min-h-screen antialiased flex flex-col aesthetic-bg"
@@ -75,7 +86,7 @@ export default function RootLayout({
         <Analytics />
         <Providers>
           {/* Fixed navbar at the top */}
-          <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
+          <div className="fixed top-0 left-0 right-0 z-50 isolate mix-blend-normal border-b border-stone-200/80 bg-gradient-to-b from-white to-[#fdfbf7] text-stone-900 shadow-[0_1px_8px_rgba(80,70,60,0.05)]">
             <Navbar />
           </div>
 
@@ -83,8 +94,8 @@ export default function RootLayout({
           {authModal}
 
           {/* Main content area with proper padding for fixed header */}
-          <main className="flex-1 w-[96%] mx-auto pt-16 pb-8">
-            <div className="h-full glass-container content-container smooth-transition enhanced-text">
+          <main className="relative z-10 mx-auto flex w-full max-w-[1000px] flex-1 px-2 pt-[4.5rem] pb-8 sm:px-3 sm:pb-10">
+            <div className="retro-content-panel content-container smooth-transition enhanced-text h-full w-full">
               {children}
             </div>
           </main>

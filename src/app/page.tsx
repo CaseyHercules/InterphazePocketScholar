@@ -1,144 +1,340 @@
-import { User } from "lucide-react";
+import Link from "next/link";
+import {
+  BookOpen,
+  Calendar,
+  ScrollText,
+  Shirt,
+  Sparkles,
+  Swords,
+  Users,
+  Wand2,
+} from "lucide-react";
 
-export default function Home() {
+import { HomeGalleryCarousel } from "@/components/HomeGalleryCarousel";
+import { NextEventHomeCard } from "@/components/NextEventHomeCard";
+import { Button } from "@/components/ui/button";
+import { db } from "@/lib/db";
+import {
+  getArchiveGalleryAttribution,
+  getHomeGalleryState,
+} from "@/lib/home-gallery";
+import { getNextPublishedEvent, type NextEventPayload } from "@/lib/next-event";
+import { cn } from "@/lib/utils";
+
+const TOPIC_START_ENTRIES: {
+  key: string;
+  label: string;
+  description: string;
+  Icon: typeof BookOpen;
+}[] = [
+  {
+    key: "intro",
+    label: "New to Interphaze",
+    description:
+      "Orientation and practical first steps before your first event.",
+    Icon: BookOpen,
+  },
+  {
+    key: "rules",
+    label: "Rules & mechanics",
+    description:
+      "Combat, advancement, spellcasting, and the core systems of play.",
+    Icon: ScrollText,
+  },
+];
+
+type TopicCardEntry = {
+  kind: "topic";
+  href: string;
+  title: string;
+  description: string;
+  Icon: typeof BookOpen;
+};
+
+type ExploreEntry =
+  | TopicCardEntry
+  | { kind: "nextEvent"; payload: NextEventPayload | null };
+
+async function getHomeExploreEntries(): Promise<ExploreEntry[]> {
+  const topics = await db.topic.findMany({ select: { title: true } });
+  const lowerTitles = new Set(topics.map((t) => t.title.toLowerCase()));
+
+  const topicCards: TopicCardEntry[] = TOPIC_START_ENTRIES.filter((e) =>
+    lowerTitles.has(e.key)
+  ).map((e) => ({
+    kind: "topic" as const,
+    href: `/${e.key}`,
+    title: e.label,
+    description: e.description,
+    Icon: e.Icon,
+  }));
+
+  const introCard = topicCards.find((c) => c.href === "/intro");
+  const rulesCard = topicCards.find((c) => c.href === "/rules");
+  const nextEvent = await getNextPublishedEvent();
+
+  const entries: ExploreEntry[] = [];
+  if (introCard) entries.push(introCard);
+  entries.push({ kind: "nextEvent", payload: nextEvent });
+  if (rulesCard) entries.push(rulesCard);
+
+  return entries;
+}
+
+const pillars = [
+  {
+    title: "Shared stories",
+    body:
+      "Weekends are player-driven: your choices steer negotiation, intrigue, and the arc of each gathering.",
+    Icon: Sparkles,
+  },
+  {
+    title: "Your character",
+    body:
+      "Heroes, mages, and everything between—build a concept and play it in the world.",
+    Icon: Wand2,
+  },
+  {
+    title: "All ages",
+    body:
+      "Family-friendly and welcoming whether you are new to LARP or have years at the table.",
+    Icon: Users,
+  },
+  {
+    title: "Combat & spellcraft",
+    body:
+      "Systems meant to be learned at the table—physical play and magic that fit your character.",
+    Icon: Swords,
+  },
+  {
+    title: "Come as you are",
+    body:
+      "Costuming optional; bring what helps your story, with support on-site when you need it.",
+    Icon: Shirt,
+  },
+] as const;
+
+export default async function Home() {
+  const { items: galleryItems, showArchiveAttribution } =
+    await getHomeGalleryState();
+  const galleryAttribution = getArchiveGalleryAttribution();
+  const exploreEntries = await getHomeExploreEntries();
+
   return (
-    // <div className="col flex-col w-full content-center justify-between">
-    //   <p className="text-4xl font-extrabold text-center pt-5">
-    //     Welcome to the Lands of Interphaze
-    //   </p>
+    <div className="flex w-full flex-col gap-12 pb-10 sm:gap-16 sm:pb-14">
+      <section
+        aria-labelledby="hero-heading"
+        className="w-full overflow-hidden rounded-md border border-stone-200/90 bg-gradient-to-b from-[#fffefb] via-[#faf6ee] to-[#f3ebe0] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)]"
+      >
+        <div className="mx-auto max-w-3xl px-5 pb-12 pt-11 text-center sm:px-8 sm:pb-16 sm:pt-14">
+          <p className="post-letter mb-3 text-xs font-medium uppercase tracking-[0.2em] text-amber-900/70">
+            Live-action fantasy weekend
+          </p>
+          <div
+            className="mb-6 flex items-center justify-center gap-3 text-stone-400"
+            aria-hidden
+          >
+            <span className="h-px w-10 max-w-[18%] bg-stone-300 sm:w-14" />
+            <span className="post-letter text-xl text-stone-500">&#x2767;</span>
+            <span className="h-px w-10 max-w-[18%] bg-stone-300 sm:w-14" />
+          </div>
+          <h1
+            id="hero-heading"
+            className="post-letter text-3xl font-semibold leading-[1.15] text-stone-900 sm:text-5xl sm:leading-tight"
+          >
+            Interphaze
+          </h1>
+          <div className="mx-auto mt-6 max-w-2xl space-y-4 text-base leading-relaxed text-stone-600 sm:text-lg">
+            <p>
+              A family-friendly fantasy live-action game: weekend gatherings
+              where players of all ages tell shared stories—negotiation and
+              intrigue, safe staged combat, spellcraft, music, and time around
+              the fire. Costumes welcome but not required; newcomers find space
+              to learn while veterans push the plot.
+            </p>
+            <p>
+              Rules, character creation, skills and classes, world background,
+              and what to know before you pack the car—whether it&apos;s your
+              first event or your tenth.
+            </p>
+          </div>
 
-    // </div>
-    <div className="w-full justify-center text-center py-12 md:py-24 xl:py-32 ">
-      <div className="space-y-2 pb-6 md:pb-10">
-        <h1 className="text-3xl font-bold py-2 tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-black to-orange-300">
-          Welcome to the Lands of Interphaze
-        </h1>
-        <p className="max-w-[600px] md:text-xl mx-auto">
-          One of a kind Family Friendly LARP vacation
-        </p>
-      </div>
-      <div className="w-full max-w-full space-y-4 mx-auto">
-        <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-6 grid-flow-dense">
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-lg">
-            <div className="p-2 bg-black bg-opacity-50 rounded-full">
-              <User />
-            </div>
-            <h2 className="text-xl font-bold">
-              Dynamic Player-Driven Storytelling
-            </h2>
-            <p>
-              Shape the destiny of Interphaze through your actions and
-              decisions. The player-driven narrative ensures every weekend is an
-              entirely distinct and captivating adventure, where your choices
-              matter.
-            </p>
+          <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
+            <Button
+              asChild
+              size="lg"
+              className="post-letter h-12 border-0 bg-stone-800 px-7 text-base text-amber-50 shadow-md hover:bg-stone-700"
+            >
+              <Link href="/intro" className="gap-2">
+                <BookOpen className="h-5 w-5" aria-hidden />
+                New to LARP?
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="post-letter h-12 border-stone-300 bg-white/90 px-7 text-base text-stone-800 shadow-sm hover:bg-amber-50/90"
+            >
+              <Link href="/events" className="gap-2">
+                <Calendar className="h-5 w-5" aria-hidden />
+                Upcoming events
+              </Link>
+            </Button>
           </div>
-          <div className="flex flex-col md:col-span-2 items-center space-y-2 p-4 rounded-lg">
-            <div className="p-2 bg-black bg-opacity-50 rounded-full">
-              <User />
-            </div>
-            <h2 className="text-xl font-bold">Unparalleled Creative Freedom</h2>
-            <p>
-              In Interphaze, the only limit is your imagination. Craft and
-              embody your own unique character, from valiant heroes to enigmatic
-              mages, and weave your own stories within this expansive, dynamic
-              world.
+
+          <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-stone-500">
+            Returning?{" "}
+            <Link
+              href="/events"
+              className="font-medium text-amber-900 underline decoration-amber-300/80 underline-offset-2 hover:text-amber-950"
+            >
+              Events &amp; registration
+            </Link>
+            ,{" "}
+            <Link
+              href="/rules/summary"
+              className="font-medium text-amber-900 underline decoration-amber-300/80 underline-offset-2 hover:text-amber-950"
+            >
+              rules
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="gallery-heading"
+        className="mx-auto w-full max-w-[1000px] px-3 sm:px-4"
+      >
+        <div className="mb-8 text-center">
+          <h2 id="gallery-heading" className="section-heading-medieval mb-3">
+            Gallery
+          </h2>
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">
+            Swipe or use the arrows to browse scenes from weekends in the
+            Lands—moments from our community and archive.
+          </p>
+        </div>
+
+        {galleryItems.length === 0 ? (
+          <div className="mx-auto max-w-4xl">
+            <p className="sr-only">
+              Photo gallery—event images will be added here in the future.
             </p>
-          </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-lg">
-            <div className="p-2 bg-black bg-opacity-50 rounded-full">
-              <User />
+            <div
+              className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3"
+              aria-hidden
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-md border border-dashed border-stone-300 bg-stone-50/80"
+                />
+              ))}
             </div>
-            <h2 className="text-xl font-bold">
-              Family-Friendly and RPG Player-Focused
-            </h2>
-            <p>
-              Designed for families and attendees of Renaissance Faires and RPG
-              players alike, our LARP offers a safe, inclusive, and educational
-              experience that caters to different age groups, interests, and
-              experience levels.
-            </p>
           </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-lg">
-            <div className="p-2 bg-black bg-opacity-50 rounded-full">
-              <User />
+        ) : (
+          <div className="mx-auto w-full max-w-4xl">
+            <HomeGalleryCarousel items={galleryItems} />
+            {showArchiveAttribution ? (
+              <p className="post-letter mt-6 text-center text-xs leading-relaxed text-stone-500">
+                {galleryAttribution.label}{" "}
+                <a
+                  href={galleryAttribution.archiveUrl}
+                  className="font-medium text-amber-800/90 underline decoration-amber-300 underline-offset-2 hover:text-amber-900"
+                  rel="noopener noreferrer"
+                >
+                  View the archived page
+                </a>
+                .
+              </p>
+            ) : null}
+          </div>
+        )}
+      </section>
+
+      <section
+        aria-label="Guides and next event"
+        className="mx-auto w-full max-w-[1000px] px-3 sm:px-4"
+      >
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 md:gap-7 xl:grid-cols-3 xl:gap-8 [&>*]:min-h-0">
+          {exploreEntries.map((entry) =>
+            entry.kind === "nextEvent" ? (
+              <NextEventHomeCard key="next-event" event={entry.payload} />
+            ) : (
+              <TopicExploreCard key={entry.href} entry={entry} />
+            )
+          )}
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="pillars-heading"
+        className="mx-auto w-full max-w-[1000px] px-3 pb-2 pt-2 sm:px-4"
+      >
+        <h2 id="pillars-heading" className="section-heading-medieval mb-8">
+          Why Interphaze
+        </h2>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+          {pillars.map(({ title, body, Icon }) => (
+            <div key={title} className="medieval-frame rounded-md p-5">
+              <div className="flex gap-3 border-b border-stone-200 pb-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-stone-300 bg-amber-50 text-stone-700"
+                  aria-hidden
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <h3 className="post-letter text-base font-semibold leading-snug text-stone-800">
+                  {title}
+                </h3>
+              </div>
+              <p className="mt-4 text-left text-sm leading-relaxed text-stone-600">
+                {body}
+              </p>
             </div>
-            <h2 className="text-xl font-bold">
-              Approachable Combat and Unique Spellcasting
-            </h2>
-            <p>
-              Experience a one-of-a-kind combat system that&apos;s approachable
-              yet strategic. Plus, dive into spellcasting with a customizable
-              system, crafting your own spells to shape your character&apos;s
-              magical abilities.
-            </p>
-          </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-lg">
-            <div className="p-2 bg-black bg-opacity-50 rounded-full">
-              <User />
-            </div>
-            <h2 className="text-xl font-bold">
-              Costuming and Props Customization
-            </h2>
-            <p>
-              Bring your own costume and props to showcase your creativity, and
-              enhance your character&apos;s appearance. For added convenience,
-              select items are available on-site, making the experience
-              accessible to all.
-            </p>
-          </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TopicExploreCard({ entry }: { entry: TopicCardEntry }) {
+  const Icon = entry.Icon;
+  return (
+    <Link
+      href={entry.href}
+      className={cn(
+        "medieval-frame medieval-frame-interactive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40",
+        "block rounded-md p-5 no-underline sm:p-6",
+        entry.href === "/intro" &&
+          "ring-2 ring-amber-400/35 ring-offset-2 ring-offset-[#fdfbf7]"
+      )}
+    >
+      <div className="flex gap-4 sm:gap-5">
+        <span
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-stone-300 bg-amber-50 text-stone-700"
+          aria-hidden
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 text-left">
+          <p className="text-xs font-medium uppercase tracking-wide text-amber-900/70">
+            {entry.href === "/intro" ? "Recommended first" : "Guide"}
+          </p>
+          <h3 className="post-letter mt-1 text-lg font-semibold text-stone-800">
+            {entry.title}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-stone-600">
+            {entry.description}
+          </p>
+          <p className="post-letter mt-4 text-sm font-medium text-amber-800/90">
+            Continue »
+          </p>
         </div>
       </div>
-    </div>
-    // <div className="w-full justify-center text-center py-12 md:py-24 xl:py-32 ">
-    //   <div className="space-y-2">
-    //     <h1 className="text-3xl font-bold py-2  tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-black to-orange-300">
-    //       Welcome to the Lands of Interphaze
-    //     </h1>
-    //     <p className="max-w-[600px] md:text-xl mx-auto">
-    //       One of a kind Family Friendly LARP vacation
-    //     </p>
-    //   </div>
-    //   <div className="w-full max-w-full space-y-4 mx-auto">
-    //     <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-6 grid-flow-dense">
-    //       <div className="flex flex-col row-span-2 items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col col-span-2 items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //       <div className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-red-500">
-    //         <User />
-    //       </div>
-    //     </div>
-    //   </div>
-    // </div>
+    </Link>
   );
 }

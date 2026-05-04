@@ -41,21 +41,38 @@ export async function getHomeGalleryState(): Promise<{
   items: HomeGalleryItem[];
   showArchiveAttribution: boolean;
 }> {
-  const rows = await db.galleryImage.findMany({
-    where: { placement: GalleryPlacement.HOME, isPublished: true },
-    orderBy: { sortOrder: "asc" },
-    select: { imageUrl: true, altText: true, caption: true },
-  });
-  if (rows.length > 0) {
-    return {
-      items: rows.map((r) => ({
-        src: r.imageUrl,
-        alt: r.altText,
-        caption: r.caption ?? undefined,
-      })),
-      showArchiveAttribution: false,
+  const galleryImageModel = (db as unknown as {
+    galleryImage?: {
+      findMany: (args: unknown) => Promise<
+        Array<{ imageUrl: string; altText: string; caption: string | null }>
+      >;
     };
+  }).galleryImage;
+
+  if (!galleryImageModel?.findMany) {
+    return { items: ARCHIVE_GALLERY, showArchiveAttribution: true };
   }
+
+  try {
+    const rows = await galleryImageModel.findMany({
+      where: { placement: GalleryPlacement.HOME, isPublished: true },
+      orderBy: { sortOrder: "asc" },
+      select: { imageUrl: true, altText: true, caption: true },
+    });
+    if (rows.length > 0) {
+      return {
+        items: rows.map((r) => ({
+          src: r.imageUrl,
+          alt: r.altText,
+          caption: r.caption ?? undefined,
+        })),
+        showArchiveAttribution: false,
+      };
+    }
+  } catch (error) {
+    console.warn("[home-gallery] Falling back to archive gallery.", error);
+  }
+
   return { items: ARCHIVE_GALLERY, showArchiveAttribution: true };
 }
 

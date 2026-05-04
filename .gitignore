@@ -32,7 +32,13 @@ yarn-error.log*
 
 # vercel
 .vercel
+.agents
+.claude
+skills-lock.json
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local data, seed, import, and restore tooling (not committed)
+/scripts/

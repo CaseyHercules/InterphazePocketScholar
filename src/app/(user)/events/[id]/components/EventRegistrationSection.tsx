@@ -16,6 +16,11 @@ interface EventRegistrationSectionProps {
   isRegistered: boolean;
   characters: Character[];
   hasCharacters: boolean;
+  ticketTypes: Array<{
+    id: string;
+    title: string;
+    amountCents: number;
+  }>;
   showRegistrationModal?: boolean;
   onShowRegistrationModalChange?: (open: boolean) => void;
 }
@@ -25,6 +30,7 @@ export function EventRegistrationSection({
   isRegistered,
   characters,
   hasCharacters,
+  ticketTypes,
   showRegistrationModal: controlledOpen,
   onShowRegistrationModalChange,
 }: EventRegistrationSectionProps) {
@@ -82,6 +88,7 @@ export function EventRegistrationSection({
         eventId={eventId}
         characters={characters}
         hasCharacters={hasCharacters}
+        ticketTypes={ticketTypes}
       />
     </div>
   );

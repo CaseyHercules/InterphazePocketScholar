@@ -31,6 +31,13 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const event = await db.event.findUnique({
     where: { id },
+    include: {
+      ticketTypes: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
+    },
   });
 
   if (!event) {
@@ -42,9 +49,17 @@ export default async function EventPage({ params }: EventPageProps) {
     where: { eventId: event.id },
   });
 
+  const eventForViewer = isAdmin
+    ? event
+    : {
+        ...event,
+        address: null,
+        coordinates: null,
+      };
+
   // Add registration count to event and process FAQ data
   const eventWithCount = {
-    ...event,
+    ...eventForViewer,
     _count: {
       registrations: registrationCount,
     },

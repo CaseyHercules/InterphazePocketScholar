@@ -31,6 +31,11 @@ export default async function RegistrationPage() {
     where: { userId: session.user.id },
     include: {
       event: true,
+      ticketType: {
+        select: {
+          title: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -98,6 +103,10 @@ export default async function RegistrationPage() {
                         >
                           {reg.status}
                         </span>
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Ticket: {reg.ticketType?.title || "General registration"} · $
+                        {(reg.totalAmount ?? 0).toFixed(2)}
                       </p>
                     </CardContent>
                     <CardFooter>

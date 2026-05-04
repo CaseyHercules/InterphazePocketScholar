@@ -43,7 +43,12 @@ export async function GET(req: Request, { params }: Params) {
 
     // If the user is not an admin, only return public event details
     if (!isAdmin) {
-      const { data: _data, ...publicEvent } = eventWithRegistrationCount;
+      const {
+        data: _data,
+        address: _address,
+        coordinates: _coordinates,
+        ...publicEvent
+      } = eventWithRegistrationCount;
       return NextResponse.json(publicEvent);
     }
 

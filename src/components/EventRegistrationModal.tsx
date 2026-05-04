@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
-import { registerForEvent } from "@/lib/actions/event";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +38,9 @@ import Link from "next/link";
 // Define form schema
 const registrationFormSchema = z.object({
   characterId: z.string(),
+  ticketTypeId: z.string().min(1, "Select a ticket type"),
+  promoCode: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type RegistrationFormValues = z.infer<typeof registrationFormSchema>;
@@ -55,6 +57,11 @@ interface EventRegistrationModalProps {
   eventId: string;
   characters: Character[];
   hasCharacters: boolean;
+  ticketTypes: Array<{
+    id: string;
+    title: string;
+    amountCents: number;
+  }>;
 }
 
 export function EventRegistrationModal({
@@ -63,6 +70,7 @@ export function EventRegistrationModal({
   eventId,
   characters,
   hasCharacters,
+  ticketTypes,
 }: EventRegistrationModalProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
@@ -74,27 +82,42 @@ export function EventRegistrationModal({
     resolver: zodResolver(registrationFormSchema),
     defaultValues: {
       characterId: "none",
+      ticketTypeId: ticketTypes[0]?.id ?? "",
+      promoCode: "",
+      notes: "",
     },
   });
 
   async function onSubmit(data: RegistrationFormValues) {
     setIsPending(true);
     try {
-      // Convert "none" to undefined/null for the registration action
       const characterIdToSubmit =
         data.characterId === "none" ? undefined : data.characterId;
-
-      const result = await registerForEvent(eventId, characterIdToSubmit);
+      const response = await fetch(`/api/events/${eventId}/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          characterId: characterIdToSubmit,
+          ticketTypeId: data.ticketTypeId,
+          promoCode: data.promoCode,
+          answers: data.notes ? { notes: data.notes } : null,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Checkout could not be started.");
+      }
 
       if (result.success) {
-        setRegistrationStatus(result.status as "REGISTERED" | "WAITLIST");
-        toast({
-          title: "Registration successful",
-          description:
-            result.status === "REGISTERED"
-              ? "You are now registered for this event."
-              : "You have been added to the waitlist for this event.",
-        });
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+        setRegistrationStatus("REGISTERED");
+        toast({ title: "Registration successful", description: "You are now registered for this event." });
+        router.refresh();
       }
     } catch (error) {
       toast({
@@ -166,6 +189,31 @@ export function EventRegistrationModal({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
+                name="ticketTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ticket</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select ticket type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ticketTypes.map((ticketType) => (
+                          <SelectItem key={ticketType.id} value={ticketType.id}>
+                            {ticketType.title} - ${(ticketType.amountCents / 100).toFixed(2)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="characterId"
                 render={({ field }) => (
                   <FormItem>
@@ -196,6 +244,42 @@ export function EventRegistrationModal({
                       You can register without selecting a character, or create
                       a new one during the process.
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="promoCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Promo code (optional)</FormLabel>
+                    <FormControl>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Enter promo code"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customization notes (optional)</FormLabel>
+                    <FormControl>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Any special requests"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

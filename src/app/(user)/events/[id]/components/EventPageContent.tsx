@@ -14,6 +14,11 @@ interface Character {
 type EventWithData = Event & {
   _count?: { registrations: number };
   isRegistered?: boolean;
+  ticketTypes?: Array<{
+    id: string;
+    title: string;
+    amountCents: number;
+  }>;
 };
 
 interface EventPageContentProps {
@@ -43,6 +48,7 @@ export function EventPageContent({
         isRegistered={isRegistered}
         characters={characters}
         hasCharacters={characters.length > 0}
+        ticketTypes={event.ticketTypes || []}
         showRegistrationModal={showRegistrationModal}
         onShowRegistrationModalChange={setShowRegistrationModal}
       />

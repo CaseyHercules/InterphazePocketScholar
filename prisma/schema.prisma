@@ -295,6 +295,36 @@ model Request {
   @@index([userId])
 }
 
+model ContentDocument {
+  id        String                @id
+  ownerType ContentOwnerType
+  ownerRef  String
+  status    ContentDocumentStatus @default(DRAFT)
+  format    ContentDocumentFormat @default(BLOCK_V1)
+  version   Int                   @default(1)
+  blocks    Json
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@unique([ownerType, ownerRef])
+  @@index([ownerType, status])
+  @@index([status])
+}
+
+model GalleryImage {
+  id          String           @id @default(cuid())
+  placement   GalleryPlacement @default(HOME)
+  imageUrl    String
+  altText     String
+  caption     String?
+  sortOrder   Int              @default(0)
+  isPublished Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([placement, isPublished, sortOrder])
+}
+
 model CharacterToEvent {
   A String
   B String
@@ -410,6 +440,7 @@ enum RequestType {
   SKILL
   SPELL
   CHARACTER
+  PASSPORT_APPEAL
   OTHER
 }
 
@@ -432,4 +463,27 @@ enum SpellPublicationStatus {
   PUBLISHED_IN_LIBRARY
   ARCHIVED_PRIVATE
   ARCHIVED_PUBLIC_LEGACY
+}
+
+enum ContentDocumentFormat {
+  BLOCK_V1
+  QUILL_DELTA
+}
+
+enum ContentDocumentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ContentOwnerType {
+  HOME
+  EVENT
+  POST
+}
+
+enum GalleryPlacement {
+  HOME
+  EVENT
+  POST
+  PAGE_BACKGROUND
 }

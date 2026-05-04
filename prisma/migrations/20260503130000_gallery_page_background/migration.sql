@@ -1,0 +1,1 @@
+ALTER TYPE "GalleryPlacement" ADD VALUE 'PAGE_BACKGROUND';

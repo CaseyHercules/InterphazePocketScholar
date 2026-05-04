@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local-only seed / DB import tooling (not committed)
+scripts/seed-classes.ts
+scripts/seed-content-documents.ts
+scripts/restore-content-documents.ts
+scripts/import-wordpress-posts.ts
+scripts/data/
+scripts/seed-data/

@@ -3,6 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'uploadthing.com', port: '', pathname: '/**', search: '' },
+      { protocol: 'https', hostname: 'utfs.io', port: '', pathname: '/**', search: '' },
+      { protocol: 'https', hostname: 'ufs.sh', port: '', pathname: '/**', search: '' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com', port: '', pathname: '/**', search: '' },
       { protocol: 'https', hostname: 'secure.gravatar.com', port: '', pathname: '/**', search: '' },
     ],

@@ -15,46 +15,45 @@ const NavBar = async () => {
     : null;
 
   return (
-    <div className="h-fit w-full border-b border-zinc-300 bg-zinc-100 py-2">
-      <div className="container mx-auto flex h-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
-        <div className="flex w-full items-center justify-between gap-2 md:hidden">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <MenuSmall />
-            <Link
-              href="/"
-              className="flex min-w-0 items-center gap-2 text-zinc-800 no-underline"
-            >
-              <Icons.logo className="h-8 w-11 shrink-0" aria-hidden />
-              <span className="truncate text-base font-semibold tracking-tight sm:text-lg">
-                Interphaze
-              </span>
-            </Link>
-          </div>
-          {session?.user ? (
-            <UserAccountNav user={UserObj!} />
-          ) : (
-            <Link href="/login" className={buttonVariants({ size: "sm" })}>
-              Login
-            </Link>
-          )}
-        </div>
-
-        <div className="hidden h-full w-full items-center justify-between gap-4 md:flex">
-          <Link href="/" className="flex items-center gap-2 text-zinc-800 no-underline">
-            <Icons.logo className="h-10 w-14 shrink-0" aria-hidden />
-            <span className="text-xl font-medium text-zinc-700">Interphaze</span>
+    <div className="w-full h-fit bg-zinc-100 border-b border-zinc-300 py-2">
+      <div className="sm:hidden container h-full mx-auto flex items-center justify-between gap-2">
+        <MenuSmall />
+        <div className="flex items-center">
+          <Link href="/" className="h-full gap-2">
+            <Icons.logo className="h-10 w-14 sm:h-10 sm:w-14 " />
           </Link>
+        </div>
+        {session?.user ? (
+          <UserAccountNav user={UserObj!} />
+        ) : (
+          <Link href="/login" className={buttonVariants()}>
+            Login
+          </Link>
+        )}
+      </div>
+      <div className="md-lg:hidden container max-w-7xl h-full mx-auto flex items-center justify-between gap-2">
+        <Link href="/" className="flex gap-2 items-center">
+          <Icons.logo className="hidden h-10 w-14 sm:h-10 sm:w-14 sm:block" />
+          <p className="hidden text-zinc-700 text-xl font-medium md:block">
+            Pocket Scholar
+          </p>
+        </Link>
 
-          <div className="flex items-center gap-4">
-            <MenuWide />
-            {session?.user ? (
+        <div className="flex gap-4 items-center ml-0">
+          <MenuWide />
+
+          {/* search bar */}
+          {session?.user ? (
+            <div className="hidden sm:block">
               <UserAccountNav user={UserObj!} />
-            ) : (
+            </div>
+          ) : (
+            <div className="hidden sm:block">
               <Link href="/login" className={buttonVariants()}>
                 Login
               </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

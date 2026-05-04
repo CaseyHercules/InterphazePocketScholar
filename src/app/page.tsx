@@ -83,33 +83,33 @@ async function getHomeExploreEntries(): Promise<ExploreEntry[]> {
 
 const pillars = [
   {
-    title: "Shared stories",
+    title: "Dynamic Player-Driven Storytelling",
     body:
-      "Weekends are player-driven: your choices steer negotiation, intrigue, and the arc of each gathering.",
+      "Shape the destiny of Interphaze through your actions and decisions. The player-driven narrative ensures every weekend is an entirely distinct and captivating adventure, where your choices matter.",
     Icon: Sparkles,
   },
   {
-    title: "Your character",
+    title: "Unparalleled Creative Freedom",
     body:
-      "Heroes, mages, and everything between—build a concept and play it in the world.",
+      "In Interphaze, the only limit is your imagination. Craft and embody your own unique character, from valiant heroes to enigmatic mages, and weave your own stories within this expansive, dynamic world.",
     Icon: Wand2,
   },
   {
-    title: "All ages",
+    title: "Family-Friendly and RPG Player-Focused",
     body:
-      "Family-friendly and welcoming whether you are new to LARP or have years at the table.",
+      "Designed for families and attendees of Renaissance Faires and RPG players alike, our LARP offers a safe, inclusive, and educational experience that caters to different age groups, interests, and experience levels.",
     Icon: Users,
   },
   {
-    title: "Combat & spellcraft",
+    title: "Approachable Combat and Unique Spellcasting",
     body:
-      "Systems meant to be learned at the table—physical play and magic that fit your character.",
+      "Experience a one-of-a-kind combat system that's approachable yet strategic. Plus, dive into spellcasting with a customizable system, crafting your own spells to shape your character's magical abilities.",
     Icon: Swords,
   },
   {
-    title: "Come as you are",
+    title: "Costuming and Props Customization",
     body:
-      "Costuming optional; bring what helps your story, with support on-site when you need it.",
+      "Bring your own costume and props to showcase your creativity, and enhance your character's appearance. For added convenience, select items are available on-site, making the experience accessible to all.",
     Icon: Shirt,
   },
 ] as const;
@@ -127,9 +127,6 @@ export default async function Home() {
         className="w-full overflow-hidden rounded-md border border-stone-200/90 bg-gradient-to-b from-[#fffefb] via-[#faf6ee] to-[#f3ebe0] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)]"
       >
         <div className="mx-auto max-w-3xl px-5 pb-12 pt-11 text-center sm:px-8 sm:pb-16 sm:pt-14">
-          <p className="post-letter mb-3 text-xs font-medium uppercase tracking-[0.2em] text-amber-900/70">
-            Live-action fantasy weekend
-          </p>
           <div
             className="mb-6 flex items-center justify-center gap-3 text-stone-400"
             aria-hidden
@@ -142,22 +139,11 @@ export default async function Home() {
             id="hero-heading"
             className="post-letter text-3xl font-semibold leading-[1.15] text-stone-900 sm:text-5xl sm:leading-tight"
           >
-            Interphaze
+            Welcome to the Lands of Interphaze
           </h1>
-          <div className="mx-auto mt-6 max-w-2xl space-y-4 text-base leading-relaxed text-stone-600 sm:text-lg">
-            <p>
-              A family-friendly fantasy live-action game: weekend gatherings
-              where players of all ages tell shared stories—negotiation and
-              intrigue, safe staged combat, spellcraft, music, and time around
-              the fire. Costumes welcome but not required; newcomers find space
-              to learn while veterans push the plot.
-            </p>
-            <p>
-              Rules, character creation, skills and classes, world background,
-              and what to know before you pack the car—whether it&apos;s your
-              first event or your tenth.
-            </p>
-          </div>
+          <p className="post-letter mx-auto mt-5 max-w-[600px] text-base leading-relaxed text-stone-600 md:text-xl">
+            One of a kind Family Friendly LARP vacation
+          </p>
 
           <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
             <Button
@@ -184,19 +170,19 @@ export default async function Home() {
           </div>
 
           <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-stone-500">
-            Returning?{" "}
+            Been before?{" "}
             <Link
               href="/events"
               className="font-medium text-amber-900 underline decoration-amber-300/80 underline-offset-2 hover:text-amber-950"
             >
-              Events &amp; registration
+              Register for the next event
             </Link>
-            ,{" "}
+            {" "}or open the{" "}
             <Link
               href="/rules/summary"
               className="font-medium text-amber-900 underline decoration-amber-300/80 underline-offset-2 hover:text-amber-950"
             >
-              rules
+              rules summary
             </Link>
             .
           </p>
@@ -212,8 +198,8 @@ export default async function Home() {
             Gallery
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">
-            Swipe or use the arrows to browse scenes from weekends in the
-            Lands—moments from our community and archive.
+            Scenes from Interphaze weekends—costume, combat, and camp. Swipe or
+            use the arrows to browse.
           </p>
         </div>
 

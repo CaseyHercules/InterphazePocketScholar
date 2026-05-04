@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAppBaseUrl, getStripeClient } from "@/lib/stripe";
@@ -103,7 +104,9 @@ export async function POST(req: Request, { params }: Params) {
           discountAmountCents,
           currency: "usd",
           answers:
-            body.answers && typeof body.answers === "object" ? body.answers : null,
+            body.answers && typeof body.answers === "object"
+              ? (body.answers as Prisma.InputJsonValue)
+              : undefined,
           updatedAt: new Date(),
         },
       });

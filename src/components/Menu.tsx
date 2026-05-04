@@ -26,14 +26,15 @@ const MENU_ITEMS = [
     items: [
       { label: "Intro to Interphaze", href: "/intro/new" },
       { label: "Code of conduct", href: "/intro/conduct" },
-      { label: "Character Creation", href: "/intro/character" },
+      { label: "Character Creation", href: "/rules/character" },
     ],
   },
   {
     label: "Rules",
     items: [
       { label: "Summary", href: "/rules/summary" },
-      { label: "Character Advancement", href: "/rules/advancement" },
+      { label: "STEP Combat", href: "/rules/step" },
+      { label: "Character Creation", href: "/rules/character" },
       {
         label: "Classes",
         href: "/class",
@@ -66,7 +67,6 @@ const MENU_ITEMS = [
           { label: "Pumerre", href: "/race/pumerre" },
         ],
       },
-      { label: "STEP Combat", href: "/rules/combat" },
       { label: "Character Abilities", href: "/rules/abilities" },
       { label: "Items", href: "/rules/items" },
       { label: "Spellcasting", href: "/rules/spellcasting" },
@@ -92,10 +92,8 @@ const MENU_ITEMS = [
   {
     label: "About",
     items: [
-      { label: "Why Us", href: "/about/us" },
       { label: "Our Team", href: "/about/team" },
       { label: "Contact us", href: "/about/contact" },
-      { label: "Join our Team", href: "/about/join" },
     ],
   },
 ];

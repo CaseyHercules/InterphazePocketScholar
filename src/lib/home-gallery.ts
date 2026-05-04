@@ -1,5 +1,3 @@
-import { GalleryPlacement } from "@prisma/client";
-
 import { db } from "@/lib/db";
 
 export type HomeGalleryItem = {
@@ -9,6 +7,7 @@ export type HomeGalleryItem = {
 };
 
 const ARCHIVE_SNAPSHOT_ID = "20150801162203";
+const HOME_PLACEMENT = "HOME";
 
 const ARCHIVE_GALLERY: HomeGalleryItem[] = [
   {
@@ -55,7 +54,7 @@ export async function getHomeGalleryState(): Promise<{
 
   try {
     const rows = await galleryImageModel.findMany({
-      where: { placement: GalleryPlacement.HOME, isPublished: true },
+      where: { placement: HOME_PLACEMENT, isPublished: true },
       orderBy: { sortOrder: "asc" },
       select: { imageUrl: true, altText: true, caption: true },
     });

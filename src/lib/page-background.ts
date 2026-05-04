@@ -1,13 +1,23 @@
 import "server-only";
 
-import { GalleryPlacement } from "@prisma/client";
-
 import { db } from "@/lib/db";
 
+const PAGE_BACKGROUND_PLACEMENT = "PAGE_BACKGROUND";
+
 export async function getPageBackgroundImageUrl(): Promise<string | null> {
+  const galleryImageModel = (db as unknown as {
+    galleryImage?: {
+      findFirst: (args: unknown) => Promise<{ imageUrl: string } | null>;
+    };
+  }).galleryImage;
+
+  if (!galleryImageModel?.findFirst) {
+    return null;
+  }
+
   try {
-    const row = await db.galleryImage.findFirst({
-      where: { placement: GalleryPlacement.PAGE_BACKGROUND, isPublished: true },
+    const row = await galleryImageModel.findFirst({
+      where: { placement: PAGE_BACKGROUND_PLACEMENT, isPublished: true },
       orderBy: { updatedAt: "desc" },
       select: { imageUrl: true },
     });

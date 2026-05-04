@@ -83,7 +83,7 @@ export async function upsertEventTicketType(input: z.infer<typeof ticketTypeSche
       capacity: parsed.capacity || null,
       stripeProductId: product.id,
       stripePriceId: price.id,
-      metadata: null,
+      metadata: undefined,
     },
     update: {
       title: parsed.title,

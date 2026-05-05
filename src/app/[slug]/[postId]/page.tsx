@@ -94,13 +94,10 @@ const page = async ({ params }: pageProps) => {
       <div>
         <div className="h-full flex flex-col sm:flex-row items-center sm:items-start justify-between">
           <div className="post-letter sm:w-0 w-full flex-1 bg-stone-50/90 border border-stone-200/80 shadow-sm p-6 sm:p-8 rounded-sm">
-            <h1 className="text-2xl font-semibold leading-7 text-amber-950 pb-4">
-              {post?.title}
-            </h1>
-
             <EditorOutput
               content={post?.content}
               dynamicLayout
+              postTitle={post?.title}
               quickNavigationLinks={quickNavigationLinks}
             />
 

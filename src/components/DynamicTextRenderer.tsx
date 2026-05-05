@@ -6,10 +6,11 @@ import {
   prepareWithSegments,
   type LayoutCursor,
 } from "@chenglou/pretext";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface DynamicTextRendererProps {
   text: string;
+  postTitle?: string;
   className?: string;
   font?: string;
   lineHeight?: number;
@@ -37,17 +38,23 @@ const DEFAULT_QUICK_LINKS = [
 
 const DynamicTextRenderer = ({
   text,
+  postTitle,
   className,
   font = DEFAULT_FONT,
   lineHeight = DEFAULT_LINE_HEIGHT,
   quickNavigationLinks,
   obstacleWidth = 172,
   obstacleHeight = 112,
-  obstacleTop = 10,
-  obstacleRight = 10,
+  obstacleTop = 0,
+  obstacleRight = 8,
 }: DynamicTextRendererProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const navBoxRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [titleBlockHeight, setTitleBlockHeight] = useState(0);
+  const [measuredNavHeight, setMeasuredNavHeight] = useState(obstacleHeight);
+
   const resolvedQuickLinks = useMemo(
     () =>
       quickNavigationLinks === undefined
@@ -55,14 +62,19 @@ const DynamicTextRenderer = ({
         : quickNavigationLinks,
     [quickNavigationLinks]
   );
-  const resolvedObstacleHeight = useMemo(() => {
+
+  const estimatedNavHeight = useMemo(() => {
     const paddingY = 32;
-    const titleBlock = 44;
+    const titleBlock = 48;
     const perLink = 26;
     const linksTotal = resolvedQuickLinks.length * perLink;
     const raw = paddingY + titleBlock + linksTotal;
     return Math.max(obstacleHeight, raw);
   }, [obstacleHeight, resolvedQuickLinks.length]);
+
+  useEffect(() => {
+    setMeasuredNavHeight(estimatedNavHeight);
+  }, [estimatedNavHeight]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -73,6 +85,36 @@ const DynamicTextRenderer = ({
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const el = navBoxRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect?.height ?? 0;
+      if (h > 0) setMeasuredNavHeight(h);
+    });
+    observer.observe(el);
+    const initial = el.getBoundingClientRect().height;
+    if (initial > 0) setMeasuredNavHeight(initial);
+    return () => observer.disconnect();
+  }, [resolvedQuickLinks]);
+
+  useLayoutEffect(() => {
+    if (!postTitle) {
+      setTitleBlockHeight(0);
+      return;
+    }
+    const el = titleRef.current;
+    if (!el) return;
+    const update = () =>
+      setTitleBlockHeight(el.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [postTitle]);
+
+  const bodyTop = postTitle ? titleBlockHeight : 0;
 
   const { lines, height } = useMemo(() => {
     if (!text || containerWidth <= 0) {
@@ -87,8 +129,10 @@ const DynamicTextRenderer = ({
 
     while (guard < 10000) {
       guard += 1;
+      const globalTop = bodyTop + top;
       const overlapsObstacle =
-        top < obstacleTop + resolvedObstacleHeight && top + lineHeight > obstacleTop;
+        globalTop < obstacleTop + measuredNavHeight &&
+        globalTop + lineHeight > obstacleTop;
       const obstacleLeft = containerWidth - obstacleRight - obstacleWidth;
       const slotWidth = overlapsObstacle
         ? Math.max(1, obstacleLeft)
@@ -118,6 +162,7 @@ const DynamicTextRenderer = ({
 
     return { lines: nextLines, height: Math.max(top, lineHeight) };
   }, [
+    bodyTop,
     containerWidth,
     text,
     font,
@@ -125,18 +170,32 @@ const DynamicTextRenderer = ({
     obstacleTop,
     obstacleRight,
     obstacleWidth,
-    resolvedObstacleHeight,
+    measuredNavHeight,
   ]);
+
+  const articleMinHeight = height;
+
+  const titleRightPad = obstacleWidth + obstacleRight + 8;
 
   return (
     <div ref={containerRef} className={`relative w-full ${className ?? ""}`}>
+      {postTitle ? (
+        <h1
+          ref={titleRef}
+          className="text-2xl font-semibold leading-7 text-amber-950 pb-4"
+          style={{ paddingRight: titleRightPad }}
+        >
+          {postTitle}
+        </h1>
+      ) : null}
+
       <div
+        ref={navBoxRef}
         className="absolute z-10 h-fit min-h-0 rounded-md border border-stone-300 bg-stone-100 p-4 text-stone-700 shadow-sm"
         style={{
           top: obstacleTop,
           right: obstacleRight,
           width: obstacleWidth,
-          height: resolvedObstacleHeight,
         }}
       >
         <div className="mb-3 text-center">
@@ -154,7 +213,8 @@ const DynamicTextRenderer = ({
           ))}
         </ul>
       </div>
-      <div className="relative w-full" style={{ height }}>
+
+      <div className="relative w-full" style={{ minHeight: articleMinHeight }}>
         {lines.map((line, index) => (
           <div
             key={`${line.y}-${index}`}

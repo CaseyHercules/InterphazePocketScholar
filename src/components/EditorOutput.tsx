@@ -8,12 +8,14 @@ interface EditorOutputProps {
   content: any;
   dynamicLayout?: boolean;
   quickNavigationLinks?: Array<{ label: string; href: string }>;
+  postTitle?: string;
 }
 
 const EditorOutput: FC<EditorOutputProps> = ({
   content,
   dynamicLayout = false,
   quickNavigationLinks,
+  postTitle,
 }) => {
   const normalized = normalizePostContent(content);
 
@@ -37,6 +39,7 @@ const EditorOutput: FC<EditorOutputProps> = ({
     <div className="text-sm text-zinc-800">
       {dynamicLayout ? (
         <DynamicTextRenderer
+          postTitle={postTitle}
           text={normalized.text}
           font='400 14px "Inter", sans-serif'
           lineHeight={22}

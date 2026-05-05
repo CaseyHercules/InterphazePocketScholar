@@ -62,10 +62,7 @@ const page = async ({ params }: pageProps) => {
   });
 
   const quickNavigationLinks = siblingPosts.map((siblingPost) => ({
-    label:
-      siblingPost.title.length > 28
-        ? `${siblingPost.title.slice(0, 25)}...`
-        : siblingPost.title,
+    label: siblingPost.title,
     href: `/${slug}/${siblingPost.id}`,
   }));
 

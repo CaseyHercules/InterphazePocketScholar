@@ -62,6 +62,7 @@ function collectQuickNavBandRects(
 
   pushEl(navRoot.querySelector("[data-quick-nav-label]"));
   navRoot.querySelectorAll("[data-quick-nav-chip]").forEach((el) => pushEl(el));
+  pushEl(navRoot.querySelector("[data-quick-nav-tail]"));
 
   return bands;
 }
@@ -314,6 +315,7 @@ const DynamicTextRenderer = ({
             </li>
           ))}
         </ul>
+        <div aria-hidden className="ml-auto h-3 w-14" data-quick-nav-tail />
       </div>
 
       <div className="relative w-full" style={{ minHeight: articleMinHeight }}>

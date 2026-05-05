@@ -7,11 +7,13 @@ import { normalizePostContent } from "@/lib/post-content/normalize";
 interface EditorOutputProps {
   content: any;
   dynamicLayout?: boolean;
+  quickNavigationLinks?: Array<{ label: string; href: string }>;
 }
 
 const EditorOutput: FC<EditorOutputProps> = ({
   content,
   dynamicLayout = false,
+  quickNavigationLinks,
 }) => {
   const normalized = normalizePostContent(content);
 
@@ -38,6 +40,7 @@ const EditorOutput: FC<EditorOutputProps> = ({
           text={normalized.text}
           font='400 14px "Inter", sans-serif'
           lineHeight={22}
+          quickNavigationLinks={quickNavigationLinks}
         />
       ) : (
         <div className="whitespace-pre-wrap leading-6">{normalized.text}</div>

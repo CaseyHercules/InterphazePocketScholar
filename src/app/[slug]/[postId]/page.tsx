@@ -2,6 +2,7 @@ import EditorOutput from "@/components/EditorOutput";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Post, Role, User } from "@prisma/client";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditButtonOnPosts from "@/components/EditButtonOnPosts";
 import SkillEmbedTableServer from "@/components/SkillEmbedTableServer";
@@ -46,6 +47,28 @@ const page = async ({ params }: pageProps) => {
 
   if (!post) return notFound();
 
+  const siblingPosts = await db.post.findMany({
+    where: {
+      topicId: topic.id,
+      NOT: { id: post.id },
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+    orderBy: {
+      title: "asc",
+    },
+  });
+
+  const quickNavigationLinks = siblingPosts.map((siblingPost) => ({
+    label:
+      siblingPost.title.length > 28
+        ? `${siblingPost.title.slice(0, 25)}...`
+        : siblingPost.title,
+    href: `/${slug}/${siblingPost.id}`,
+  }));
+
   const normalizedPostContent = normalizePostContent(post.content);
   const embedClassName = normalizedPostContent.skillTableClassName;
   const classRecord = embedClassName
@@ -68,33 +91,41 @@ const page = async ({ params }: pageProps) => {
 
   return (
     <>
-      <div className="col-span-1 md:col-span-3 md:row-start-1">
+      <div>
         <div className="h-full flex flex-col sm:flex-row items-center sm:items-start justify-between">
           <div className="post-letter sm:w-0 w-full flex-1 bg-stone-50/90 border border-stone-200/80 shadow-sm p-6 sm:p-8 rounded-sm">
-            <p className="max-h-40 mt-1 truncate text-xs text-amber-800/70">
-              {UserObj?.role === Role.ADMIN ||
-              UserObj?.role === Role.SUPERADMIN ||
-              UserObj?.role === Role.MODERATOR ? (
-                <span className="hidden md:inline-block">
-                  <EditButtonOnPosts
-                    topictitle={post.Topic.title}
-                    postId={postId}
-                  />
-                </span>
-              ) : null}
-            </p>
-
-            <h1 className="text-2xl font-semibold py-2 leading-7 text-amber-950">
+            <h1 className="text-2xl font-semibold leading-7 text-amber-950 pb-4">
               {post?.title}
             </h1>
 
-            <EditorOutput content={post?.content} dynamicLayout />
+            <EditorOutput
+              content={post?.content}
+              dynamicLayout
+              quickNavigationLinks={quickNavigationLinks}
+            />
+
+            {UserObj?.role === Role.ADMIN ||
+            UserObj?.role === Role.SUPERADMIN ||
+            UserObj?.role === Role.MODERATOR ? (
+              <div className="mt-8 flex flex-wrap items-center justify-end gap-4 border-t border-stone-200/80 pt-6">
+                <Link
+                  className="text-sm font-medium text-amber-950 underline underline-offset-2"
+                  href={`/${slug.toLowerCase()}/create`}
+                >
+                  Create
+                </Link>
+                <EditButtonOnPosts
+                  topictitle={post.Topic.title}
+                  postId={postId}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
       {embedClassName && (
-        <div className="col-span-1 md:col-span-4 md:row-start-2">
+        <div className="w-full">
           <SkillEmbedTableServer
             classTitle={classRecord?.Title ?? embedClassName}
             skills={classRecord?.skills ?? []}

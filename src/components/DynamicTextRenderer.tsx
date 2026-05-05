@@ -13,7 +13,7 @@ interface DynamicTextRendererProps {
   className?: string;
   font?: string;
   lineHeight?: number;
-  obstacleLabel?: string;
+  quickNavigationLinks?: Array<{ label: string; href: string }>;
   obstacleWidth?: number;
   obstacleHeight?: number;
   obstacleTop?: number;
@@ -29,20 +29,40 @@ interface PositionedLine {
 
 const DEFAULT_FONT = '400 14px "Inter", sans-serif';
 const DEFAULT_LINE_HEIGHT = 22;
+const DEFAULT_QUICK_LINKS = [
+  { label: "Home", href: "/" },
+  { label: "Events", href: "/events" },
+  { label: "Rules", href: "/rules/summary" },
+];
 
 const DynamicTextRenderer = ({
   text,
   className,
   font = DEFAULT_FONT,
   lineHeight = DEFAULT_LINE_HEIGHT,
-  obstacleLabel = "test",
-  obstacleWidth = 116,
-  obstacleHeight = 68,
-  obstacleTop = 0,
-  obstacleRight = 0,
+  quickNavigationLinks,
+  obstacleWidth = 172,
+  obstacleHeight = 112,
+  obstacleTop = 10,
+  obstacleRight = 10,
 }: DynamicTextRendererProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const resolvedQuickLinks = useMemo(
+    () =>
+      quickNavigationLinks === undefined
+        ? DEFAULT_QUICK_LINKS
+        : quickNavigationLinks,
+    [quickNavigationLinks]
+  );
+  const resolvedObstacleHeight = useMemo(() => {
+    const paddingY = 32;
+    const titleBlock = 44;
+    const perLink = 26;
+    const linksTotal = resolvedQuickLinks.length * perLink;
+    const raw = paddingY + titleBlock + linksTotal;
+    return Math.max(obstacleHeight, raw);
+  }, [obstacleHeight, resolvedQuickLinks.length]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -68,7 +88,7 @@ const DynamicTextRenderer = ({
     while (guard < 10000) {
       guard += 1;
       const overlapsObstacle =
-        top < obstacleTop + obstacleHeight && top + lineHeight > obstacleTop;
+        top < obstacleTop + resolvedObstacleHeight && top + lineHeight > obstacleTop;
       const obstacleLeft = containerWidth - obstacleRight - obstacleWidth;
       const slotWidth = overlapsObstacle
         ? Math.max(1, obstacleLeft)
@@ -105,21 +125,34 @@ const DynamicTextRenderer = ({
     obstacleTop,
     obstacleRight,
     obstacleWidth,
-    obstacleHeight,
+    resolvedObstacleHeight,
   ]);
 
   return (
     <div ref={containerRef} className={`relative w-full ${className ?? ""}`}>
       <div
-        className="absolute z-10 flex items-center justify-center border border-stone-300 bg-stone-100 text-xs font-semibold uppercase tracking-wide text-stone-700"
+        className="absolute z-10 h-fit min-h-0 rounded-md border border-stone-300 bg-stone-100 p-4 text-stone-700 shadow-sm"
         style={{
           top: obstacleTop,
           right: obstacleRight,
           width: obstacleWidth,
-          height: obstacleHeight,
+          height: resolvedObstacleHeight,
         }}
       >
-        {obstacleLabel}
+        <div className="mb-3 text-center">
+          <p className="whitespace-nowrap text-base font-semibold uppercase tracking-wide text-stone-800">
+            Quick Navigation
+          </p>
+        </div>
+        <ul className="space-y-1 text-right text-sm leading-snug pl-0.5">
+          {resolvedQuickLinks.map((link) => (
+            <li key={`${link.label}-${link.href}`} className="text-right">
+              <a className="underline underline-offset-2" href={link.href}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
       <div className="relative w-full" style={{ height }}>
         {lines.map((line, index) => (

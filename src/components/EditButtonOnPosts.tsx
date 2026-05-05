@@ -58,7 +58,7 @@ const EditButtonOnPosts: FC<EditButtonOnPostsProps> = ({
     <ContextMenu>
       <ContextMenuTrigger>
         <Link
-          className="float-right"
+          className="text-sm font-medium text-amber-950 underline underline-offset-2"
           href={`/${topictitle.toLowerCase()}/${postId}/edit`}
         >
           Edit

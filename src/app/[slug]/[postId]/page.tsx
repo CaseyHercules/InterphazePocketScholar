@@ -5,6 +5,7 @@ import { Post, Role, User } from "@prisma/client";
 import { notFound } from "next/navigation";
 import EditButtonOnPosts from "@/components/EditButtonOnPosts";
 import SkillEmbedTableServer from "@/components/SkillEmbedTableServer";
+import { normalizePostContent } from "@/lib/post-content/normalize";
 
 interface pageProps {
   params: Promise<{ slug: string; postId: string }>;
@@ -12,54 +13,6 @@ interface pageProps {
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
-
-const SKILL_TABLE_TAG_REGEX =
-  /\[\[SkillTable\s+class\s*=\s*([^\]]+)\]\]/gi;
-
-const extractSkillTableClass = (content: any) => {
-  const scanText = (text: string) => {
-    if (!text) return null;
-    const match = SKILL_TABLE_TAG_REGEX.exec(text);
-    SKILL_TABLE_TAG_REGEX.lastIndex = 0;
-    return match?.[1]?.trim() || null;
-  };
-
-  if (!content) return null;
-
-  const tryScanOps = (ops: any[]) => {
-    for (const op of ops) {
-      if (typeof op?.insert === "string") {
-        const found = scanText(op.insert);
-        if (found) return found;
-      }
-      if (op?.insert?.skilltable?.className) {
-        return String(op.insert.skilltable.className).trim();
-      }
-    }
-    return null;
-  };
-
-  if (content?.content?.ops) {
-    return tryScanOps(content.content.ops);
-  }
-
-  if (content?.ops) {
-    return tryScanOps(content.ops);
-  }
-
-  if (content?.content && typeof content.content === "string") {
-    try {
-      const parsed = JSON.parse(content.content);
-      if (parsed?.ops) {
-        return tryScanOps(parsed.ops);
-      }
-    } catch {
-      return scanText(content.content);
-    }
-  }
-
-  return null;
-};
 
 const page = async ({ params }: pageProps) => {
   const { slug, postId } = await params;
@@ -93,7 +46,8 @@ const page = async ({ params }: pageProps) => {
 
   if (!post) return notFound();
 
-  const embedClassName = extractSkillTableClass(post.content);
+  const normalizedPostContent = normalizePostContent(post.content);
+  const embedClassName = normalizedPostContent.skillTableClassName;
   const classRecord = embedClassName
     ? await db.class.findFirst({
         where: {
@@ -134,7 +88,7 @@ const page = async ({ params }: pageProps) => {
               {post?.title}
             </h1>
 
-            <EditorOutput content={post?.content} />
+            <EditorOutput content={post?.content} dynamicLayout />
           </div>
         </div>
       </div>

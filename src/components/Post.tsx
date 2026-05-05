@@ -1,4 +1,4 @@
-import { FC, useRef } from "react";
+import { FC } from "react";
 import type { Post, User } from "@prisma/client";
 import { formatTimeToNow } from "@/lib/utils";
 import EditorOutput from "./EditorOutput";
@@ -12,7 +12,6 @@ interface PostProps {
 }
 
 const Post: FC<PostProps> = ({ topicName, post, viewExtraParams }) => {
-  const pRef = useRef<HTMLDivElement>(null);
   return (
     <div className="rounded-md bg-white shadow">
       <div className="px-6 py-4 flex justify-between">
@@ -40,12 +39,9 @@ const Post: FC<PostProps> = ({ topicName, post, viewExtraParams }) => {
           </a>
           <div
             className="relative text-sm max-h-40 w-full overflow-clip"
-            ref={pRef}
           >
-            <EditorOutput content={post.content} />
-            {pRef.current?.clientHeight === 160 ? (
-              <div className="absolute bottom-0 left-0 h-24 w-full bg-gradient-to-t from-white to-transparent"></div>
-            ) : null}
+            <EditorOutput content={post.content} dynamicLayout />
+            <div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-white/95 to-transparent"></div>
           </div>
         </div>
       </div>

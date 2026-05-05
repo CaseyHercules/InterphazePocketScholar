@@ -301,7 +301,7 @@ const DynamicTextRenderer = ({
             Quick Navigation
           </p>
         </div>
-        <ul className="flex flex-col items-end gap-1.5">
+        <ul className="flex flex-col items-end gap-1.5 pb-3">
           {resolvedQuickLinks.map((link) => (
             <li key={`${link.label}-${link.href}`} className="max-w-full text-right">
               <a
